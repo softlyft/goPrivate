@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Glass } from '@/components/ui/glass';
 import { cn } from '@/utils/cn';
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'] as const;
@@ -21,7 +22,6 @@ export function PinPad({
   onComplete: (pin: string) => void;
   onCancel?: () => void;
   mode?: 'setup' | 'verify';
-  /** Shown when parent rejects a verify attempt (e.g. wrong vault PIN). */
   externalError?: string | null;
 }) {
   const [pin, setPin] = useState('');
@@ -77,7 +77,6 @@ export function PinPad({
     if (activeValue.length !== 4) return;
 
     if (mode === 'verify') {
-      // Parent verifies against the vault (no plaintext PIN comparison here)
       onComplete(activeValue);
       return;
     }
@@ -106,23 +105,25 @@ export function PinPad({
         : 'Confirm your PIN';
 
   return (
-    <div className="flex w-full max-w-xs flex-col items-center gap-6 animate-fade-in">
+    <Glass
+      className="w-full max-w-xs animate-fade-in"
+      contentClassName="flex flex-col items-center gap-6 px-5 py-7"
+    >
       <div className="space-y-2 text-center">
-        <h2 className="text-lg font-medium tracking-tight">{title}</h2>
-        {subtitle && <p className="text-sm text-muted leading-relaxed">{subtitle}</p>}
+        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+        {subtitle && <p className="text-sm leading-relaxed text-muted">{subtitle}</p>}
         <p className="text-xs text-muted">{stepLabel}</p>
       </div>
 
-      <div
-        className={cn('flex gap-3', shake && 'animate-pin-shake')}
-        aria-label="PIN digits"
-      >
+      <div className={cn('flex gap-3', shake && 'animate-pin-shake')} aria-label="PIN digits">
         {Array.from({ length: 4 }).map((_, i) => (
           <span
             key={i}
             className={cn(
-              'h-3 w-3 rounded-full border border-border transition-colors',
-              i < activeValue.length ? 'bg-foreground border-foreground' : 'bg-transparent',
+              'h-3.5 w-3.5 rounded-full border transition-all duration-200',
+              i < activeValue.length
+                ? 'scale-110 border-foreground bg-foreground shadow-[0_0_0_3px_rgba(0,0,0,0.08)]'
+                : 'border-black/15 bg-white/40',
             )}
           />
         ))}
@@ -141,7 +142,7 @@ export function PinPad({
                 key={key}
                 type="button"
                 onClick={backspace}
-                className="rounded-md py-3 text-sm text-muted hover:bg-bubble-peer"
+                className="rounded-2xl py-3.5 text-sm text-muted transition-colors hover:bg-black/[0.05]"
                 aria-label="Delete"
               >
                 ⌫
@@ -153,7 +154,7 @@ export function PinPad({
               key={key}
               type="button"
               onClick={() => pushDigit(key)}
-              className="rounded-md py-3 font-mono text-lg hover:bg-bubble-peer"
+              className="rounded-2xl border border-white/40 bg-white/40 py-3.5 font-mono text-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-md transition-transform hover:bg-white/60 active:scale-95"
             >
               {key}
             </button>
@@ -173,10 +174,10 @@ export function PinPad({
       </div>
 
       {mode === 'setup' && (
-        <p className="text-center text-[11px] text-muted leading-relaxed">
+        <p className="text-center text-[11px] leading-relaxed text-muted">
           This PIN stays on your device only. It is never sent to the relay.
         </p>
       )}
-    </div>
+    </Glass>
   );
 }

@@ -8,8 +8,6 @@ import { cn } from '@/utils/cn';
 export type MaskLevel = 'clear' | 'soft' | 'masked';
 
 const DOUBLE_TAP_MS = 300;
-
-/** Fixed mask — never derives from plaintext (would leak length / content). */
 const MASK_PLACEHOLDER = '••••••••••';
 
 function DecryptedBody({
@@ -77,7 +75,7 @@ export function MessageBubble({
   return (
     <div
       className={cn(
-        'flex transition-[filter,opacity] duration-500 ease-out',
+        'flex transition-[filter,opacity,transform] duration-500 ease-out',
         message.fromPeer ? 'justify-start' : 'justify-end',
         effectiveLevel === 'soft' && 'opacity-70',
         effectiveLevel === 'masked' && 'opacity-45',
@@ -88,13 +86,14 @@ export function MessageBubble({
         disabled={!masked || !onRequestReveal}
         onPointerUp={handlePointerUp}
         className={cn(
-          'max-w-[75%] rounded-2xl px-3.5 py-2 text-left text-sm leading-relaxed transition-[filter] duration-500 ease-out',
+          'max-w-[78%] px-4 py-2.5 text-left text-sm leading-relaxed tracking-tight',
+          'rounded-[1.35rem] transition-[filter,box-shadow,transform] duration-500 ease-out',
           message.fromPeer
-            ? 'bg-bubble-peer text-foreground'
-            : 'bg-bubble-self text-accent-fg',
+            ? 'rounded-bl-md border border-white/50 bg-white/55 text-foreground shadow-[var(--shadow-glass)] backdrop-blur-xl'
+            : 'rounded-br-md bg-accent text-accent-fg shadow-[var(--shadow-ink)]',
           effectiveLevel === 'soft' && 'blur-[2.5px] select-none',
           effectiveLevel === 'masked' && 'blur-[5px] select-none',
-          masked && onRequestReveal && 'cursor-pointer hover:ring-1 hover:ring-border',
+          masked && onRequestReveal && 'cursor-pointer hover:ring-1 hover:ring-black/10',
           !masked && 'cursor-default',
         )}
         title={masked ? 'Double-tap to enter PIN and reveal' : undefined}
@@ -106,7 +105,9 @@ export function MessageBubble({
         )}
       </button>
       {masked && (
-        <span className="sr-only">Older message encrypted and masked. Double-tap to reveal with PIN.</span>
+        <span className="sr-only">
+          Older message encrypted and masked. Double-tap to reveal with PIN.
+        </span>
       )}
     </div>
   );

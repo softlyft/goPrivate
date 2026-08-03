@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { Glass } from '@/components/ui/glass';
+import { cn } from '@/utils/cn';
 
 export function Header({
   title = 'goPrivate',
@@ -14,24 +16,29 @@ export function Header({
   onHomeClick?: () => void;
 }) {
   return (
-    <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b border-border px-3 pt-[max(0.625rem,env(safe-area-inset-top))] pb-2.5 sm:px-4 sm:py-3">
-      <h1 className="justify-self-start truncate text-sm font-medium tracking-tight">
+    <Glass
+      as="header"
+      shape="none"
+      className="shrink-0 rounded-none border-b border-black/[0.06] !shadow-none"
+      contentClassName="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 sm:px-4"
+    >
+      <h1 className="justify-self-start truncate text-sm font-semibold tracking-tight">
         {onHomeClick ? (
           <button
             type="button"
             onClick={onHomeClick}
-            className="hover:opacity-70 transition-opacity"
+            className="transition-opacity hover:opacity-70"
           >
             {title}
           </button>
         ) : (
-          <Link href="/" className="hover:opacity-70 transition-opacity">
+          <Link href="/" className="transition-opacity hover:opacity-70">
             {title}
           </Link>
         )}
       </h1>
       <div className="justify-self-center">{center}</div>
-      <div className="min-w-0 justify-self-end">{right}</div>
-    </header>
+      <div className={cn('min-w-0 justify-self-end')}>{right}</div>
+    </Glass>
   );
 }

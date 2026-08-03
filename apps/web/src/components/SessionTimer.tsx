@@ -51,7 +51,9 @@ export function SessionTimer({
     <div
       className={cn(
         'font-mono text-sm tabular-nums tracking-tight',
-        urgent ? 'text-danger' : 'text-muted',
+        urgent
+          ? 'rounded-full bg-red-50/80 px-2 py-0.5 text-danger'
+          : 'rounded-full bg-white/40 px-2 py-0.5 text-muted backdrop-blur-md',
       )}
       title="Session ends automatically after 15 minutes"
       aria-live="polite"

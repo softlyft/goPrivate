@@ -2,6 +2,7 @@
 
 import { type FormEvent, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Glass } from '@/components/ui/glass';
 import { Input } from '@/components/ui/input';
 
 export function MessageComposer({
@@ -28,23 +29,26 @@ export function MessageComposer({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex shrink-0 gap-2 border-t border-border px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+    <Glass
+      shape="none"
+      className="shrink-0 rounded-none border-t border-black/[0.06] !shadow-none"
+      contentClassName="px-3 pt-3 pb-[max(0.85rem,env(safe-area-inset-bottom))] sm:px-4"
     >
-      <Input
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder={disabled ? 'Waiting for secure channel…' : 'Type a message'}
-        disabled={disabled || sending}
-        enterKeyHint="send"
-        autoComplete="off"
-        autoCorrect="on"
-        autoCapitalize="sentences"
-      />
-      <Button type="submit" disabled={disabled || sending || !text.trim()}>
-        Send
-      </Button>
-    </form>
+      <form onSubmit={handleSubmit} className="flex w-full gap-2">
+        <Input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={disabled ? 'Waiting for secure channel…' : 'Type a message'}
+          disabled={disabled || sending}
+          enterKeyHint="send"
+          autoComplete="off"
+          autoCorrect="on"
+          autoCapitalize="sentences"
+        />
+        <Button type="submit" disabled={disabled || sending || !text.trim()} className="shrink-0 px-5">
+          Send
+        </Button>
+      </form>
+    </Glass>
   );
 }

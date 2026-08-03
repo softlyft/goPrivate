@@ -25,10 +25,10 @@ const shortLabels: Record<Status, string> = {
 
 const colors: Record<Status, string> = {
   disconnected: 'bg-muted',
-  connecting: 'bg-amber-400',
-  connected: 'bg-amber-400',
-  awaiting_partner: 'bg-amber-400',
-  handshaking: 'bg-amber-400',
+  connecting: 'bg-foreground/40',
+  connected: 'bg-foreground/40',
+  awaiting_partner: 'bg-foreground/40',
+  handshaking: 'bg-foreground/40',
   ready: 'bg-success',
   error: 'bg-danger',
   expired: 'bg-danger',
@@ -36,8 +36,15 @@ const colors: Record<Status, string> = {
 
 export function ConnectionStatus({ status }: { status: Status }) {
   return (
-    <div className="flex max-w-[7.5rem] items-center gap-1.5 text-xs text-muted sm:max-w-none sm:gap-2">
-      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', colors[status])} />
+    <div className="flex max-w-[7.5rem] items-center gap-1.5 rounded-full border border-black/6 bg-white/40 px-2 py-1 text-xs text-muted backdrop-blur-md sm:max-w-none sm:gap-2 sm:px-2.5">
+      <span
+        className={cn(
+          'h-1.5 w-1.5 shrink-0 rounded-full',
+          colors[status],
+          (status === 'connecting' || status === 'handshaking' || status === 'awaiting_partner') &&
+            'animate-pulse',
+        )}
+      />
       <span className="truncate sm:hidden" title={labels[status]}>
         {shortLabels[status]}
       </span>

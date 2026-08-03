@@ -1,13 +1,17 @@
 import { cn } from '@/utils/cn';
 import type { ButtonHTMLAttributes } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'glass';
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-accent text-accent-fg hover:opacity-90',
-  secondary: 'bg-surface text-foreground border border-border hover:bg-bubble-peer',
-  ghost: 'bg-transparent text-muted hover:text-foreground',
-  danger: 'bg-transparent text-danger hover:bg-red-50',
+  primary:
+    'btn-sheen bg-accent text-accent-fg shadow-[var(--shadow-ink)] hover:brightness-110 active:scale-[0.98]',
+  secondary:
+    'border border-black/8 bg-white/55 text-foreground backdrop-blur-xl shadow-[var(--shadow-glass)] hover:bg-white/75 active:scale-[0.98]',
+  ghost: 'bg-transparent text-muted hover:text-foreground hover:bg-black/[0.04]',
+  danger: 'bg-transparent text-danger hover:bg-red-50/80',
+  glass:
+    'border border-white/40 bg-white/30 text-foreground backdrop-blur-xl shadow-[var(--shadow-glass)] hover:bg-white/45 active:scale-[0.98]',
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -18,7 +22,7 @@ export function Button({ className, variant = 'primary', disabled, ...props }: B
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-40',
+        'inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium tracking-tight transition-[transform,opacity,filter,background-color] duration-200 disabled:cursor-not-allowed disabled:opacity-40',
         variants[variant],
         className,
       )}

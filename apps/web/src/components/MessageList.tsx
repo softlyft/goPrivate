@@ -112,7 +112,7 @@ export function MessageList({
       <div ref={bottomRef} />
 
       {pendingRevealId && vaultReady && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/90 px-6 backdrop-blur-sm animate-fade-in">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/50 px-6 backdrop-blur-xl animate-fade-in">
           <PinPad
             title="Reveal message"
             subtitle="Enter your reveal PIN to decrypt this message temporarily."

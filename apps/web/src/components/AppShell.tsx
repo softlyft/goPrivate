@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/utils/cn';
+import { AmbientCanvas } from '@/components/ui/glass';
 import { useAppViewport } from '@/hooks/use-app-viewport';
 
 /**
@@ -18,10 +19,7 @@ export function AppShell({
 
   return (
     <div
-      className={cn(
-        'fixed left-0 top-0 z-0 flex justify-center overflow-hidden bg-background',
-        'sm:bg-[#ececec]',
-      )}
+      className={cn('fixed left-0 top-0 z-0 flex justify-center overflow-hidden bg-background', 'sm:bg-[#e8e8ea]')}
       style={{
         width: 'var(--app-width, 100vw)',
         height: 'var(--app-height, 100dvh)',
@@ -29,13 +27,13 @@ export function AppShell({
     >
       <div
         className={cn(
-          'flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden bg-background',
-          // Desktop / tablet: phone frame. Mobile: full device width.
-          'max-w-none sm:max-w-[430px] sm:shadow-lg',
+          'relative flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden bg-background',
+          'max-w-none sm:max-w-[430px] sm:shadow-[0_24px_80px_-24px_rgba(0,0,0,0.35)]',
           className,
         )}
       >
-        {children}
+        <AmbientCanvas />
+        <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
       </div>
     </div>
   );

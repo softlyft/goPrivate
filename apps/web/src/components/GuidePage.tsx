@@ -1,13 +1,15 @@
 import Link from 'next/link';
 import { AppShell } from '@/components/AppShell';
 import { Header } from '@/components/Header';
+import { Button } from '@/components/ui/button';
+import { Glass } from '@/components/ui/glass';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3">
-      <h2 className="text-base font-medium tracking-tight text-foreground">{title}</h2>
-      <div className="space-y-3 text-sm text-muted leading-relaxed">{children}</div>
-    </section>
+    <Glass contentClassName="space-y-3 px-5 py-5">
+      <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
+      <div className="space-y-3 text-sm leading-relaxed text-muted">{children}</div>
+    </Glass>
   );
 }
 
@@ -17,23 +19,29 @@ export function GuidePage() {
       <Header
         title="goPrivate"
         right={
-          <Link href="/" className="text-xs text-muted hover:text-foreground transition-colors">
+          <Link
+            href="/"
+            className="rounded-full px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-black/[0.04] hover:text-foreground"
+          >
             Back
           </Link>
         }
       />
       <main
         data-scroll
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 animate-fade-in"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 animate-fade-in sm:px-5"
       >
-        <div className="mx-auto flex max-w-md flex-col gap-8">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-medium tracking-tight text-foreground">How goPrivate works</h1>
-            <p>
+        <div className="mx-auto flex max-w-md flex-col gap-4 pb-10">
+          <Glass contentClassName="space-y-2 px-5 py-6">
+            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted">Guide</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              How goPrivate works
+            </h1>
+            <p className="text-sm leading-relaxed text-muted">
               A private chat that disappears when you’re done. No sign-up. No profile. No saved
               history. Just you, one other person, and a short conversation that stays between you.
             </p>
-          </div>
+          </Glass>
 
           <Section title="Who it’s for">
             <p>Use it when you want to talk privately without leaving a trail:</p>
@@ -50,7 +58,7 @@ export function GuidePage() {
               <div>
                 <h3 className="mb-1 text-sm font-medium text-foreground">Start a private chat</h3>
                 <p>
-                  Tap <strong className="text-foreground font-medium">Create Session</strong>, choose
+                  Tap <strong className="font-medium text-foreground">Create Session</strong>, choose
                   a 4-digit PIN, and you’ll get a link. Send that link to the one person you want to
                   talk to.
                 </p>
@@ -59,7 +67,7 @@ export function GuidePage() {
                 <h3 className="mb-1 text-sm font-medium text-foreground">Join someone’s chat</h3>
                 <p>
                   Open the link they sent you (or paste it on the home screen and tap{' '}
-                  <strong className="text-foreground font-medium">Join</strong>). You’ll set your own
+                  <strong className="font-medium text-foreground">Join</strong>). You’ll set your own
                   PIN, then you’re in.
                 </p>
               </div>
@@ -84,8 +92,9 @@ export function GuidePage() {
                   Peek at an older message (only you)
                 </h3>
                 <p>
-                  Double-tap a hidden message and enter <strong className="text-foreground font-medium">your</strong> PIN.
-                  It shows briefly, then hides again.
+                  Double-tap a hidden message and enter{' '}
+                  <strong className="font-medium text-foreground">your</strong> PIN. It shows briefly,
+                  then hides again.
                 </p>
                 <p>
                   Your PIN lives only on your phone or computer. The other person has their own PIN.
@@ -95,12 +104,12 @@ export function GuidePage() {
               <div>
                 <h3 className="mb-1 text-sm font-medium text-foreground">Watch the clock</h3>
                 <p>
-                  Every chat lasts <strong className="text-foreground font-medium">15 minutes</strong>.
+                  Every chat lasts <strong className="font-medium text-foreground">15 minutes</strong>.
                   You’ll see a timer at the top. When it hits zero, the chat ends.
                 </p>
                 <p>
                   You can also leave anytime with{' '}
-                  <strong className="text-foreground font-medium">Leave</strong>, or tap goPrivate to
+                  <strong className="font-medium text-foreground">Leave</strong>, or tap goPrivate to
                   go home.
                 </p>
               </div>
@@ -121,23 +130,25 @@ export function GuidePage() {
           <Section title="Good to know">
             <ul className="list-disc space-y-1.5 pl-5">
               <li>
-                <strong className="text-foreground font-medium">Nothing is saved on a server for later.</strong>{' '}
+                <strong className="font-medium text-foreground">
+                  Nothing is saved on a server for later.
+                </strong>{' '}
                 When the chat ends, it’s over.
               </li>
               <li>
-                <strong className="text-foreground font-medium">No accounts.</strong> There’s nothing
+                <strong className="font-medium text-foreground">No accounts.</strong> There’s nothing
                 to log into or delete later.
               </li>
               <li>
-                <strong className="text-foreground font-medium">One guest only.</strong> A session is
+                <strong className="font-medium text-foreground">One guest only.</strong> A session is
                 for you and one other person.
               </li>
               <li>
-                <strong className="text-foreground font-medium">Remember your PIN</strong> for that
+                <strong className="font-medium text-foreground">Remember your PIN</strong> for that
                 chat. If you forget it, you can’t unhide older messages.
               </li>
               <li>
-                <strong className="text-foreground font-medium">Leaving closes your side.</strong>{' '}
+                <strong className="font-medium text-foreground">Leaving closes your side.</strong>{' '}
                 Refreshing or closing the tab disconnects you.
               </li>
             </ul>
@@ -161,7 +172,10 @@ export function GuidePage() {
           <Section title="A quick privacy promise">
             <ul className="list-disc space-y-1.5 pl-5">
               <li>Your messages are encrypted in transit so the relay can’t read them</li>
-              <li>Messages are also encrypted on your device — inspecting app storage won’t show chat text</li>
+              <li>
+                Messages are also encrypted on your device — inspecting app storage won’t show chat
+                text
+              </li>
               <li>We don’t ask who you are</li>
               <li>We don’t keep your chats after the session ends</li>
               <li>Your reveal PIN never leaves your device; it unlocks local decryption</li>
@@ -171,11 +185,8 @@ export function GuidePage() {
             </p>
           </Section>
 
-          <Link
-            href="/"
-            className="mb-4 inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg hover:opacity-90"
-          >
-            Back to home
+          <Link href="/" className="w-full">
+            <Button className="w-full">Back to home</Button>
           </Link>
         </div>
       </main>

@@ -34,14 +34,14 @@ export function JoinSessionForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full max-w-md gap-2">
+    <form onSubmit={handleSubmit} className="flex w-full gap-2">
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Paste link or session ID"
         aria-label="Session link or ID"
       />
-      <Button type="submit" variant="secondary" disabled={!value.trim()}>
+      <Button type="submit" variant="secondary" disabled={!value.trim()} className="shrink-0">
         Join
       </Button>
     </form>
