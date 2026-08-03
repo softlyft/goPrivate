@@ -35,57 +35,50 @@ wss://goprivate-relay.onrender.com/ws
 
 ## 2. Web on Vercel (GitHub Actions)
 
-### One-time setup
+### Fix “No Next.js version detected”
 
-1. Create a Vercel account (Hobby is fine).
-2. Install the CLI locally and log in:
+That error means Vercel’s Root Directory is wrong (often linked from `apps/web` *and* set to `apps/web`, so it looks for `apps/web/apps/web`).
+
+**Re-link from the monorepo root:**
 
 ```bash
-npm i -g vercel
+cd /path/to/goPrivate
+rm -rf .vercel apps/web/.vercel
 vercel login
-```
-
-3. From the repo, link the web app (creates the project **without** connecting the org GitHub app):
-
-```bash
-cd apps/web
 vercel link
 ```
 
-- Set **Root Directory** to `apps/web` when asked (or confirm if detected).
-- Say yes to linking / creating the project.
+When prompted, set **Root Directory** to `apps/web`.
 
-4. Copy IDs from `apps/web/.vercel/project.json`:
+In the Vercel dashboard → Project → **Settings → General → Root Directory**: confirm it is `apps/web`.
 
-```json
-{
-  "orgId": "team_...",
-  "projectId": "prj_..."
-}
-```
+Update GitHub secrets `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` from the new root `.vercel/project.json` if they changed.
 
-(Do **not** commit `.vercel/` — it should stay local / gitignored.)
+### One-time setup
 
-5. Create a Vercel token: [Account → Tokens](https://vercel.com/account/tokens).
-
-6. In the Vercel project → **Settings → Environment Variables**, add for Production:
+1. Create a Vercel account (Hobby is fine).
+2. Install the CLI and log in: `npm i -g vercel && vercel login`
+3. From the **repo root**, run `vercel link` with Root Directory `apps/web` (see above).
+4. Copy `orgId` / `projectId` from `.vercel/project.json` (repo root).
+5. Create a token: [vercel.com/account/tokens](https://vercel.com/account/tokens)
+6. Vercel project env (Production):
 
 | Name | Value |
 |------|--------|
 | `NEXT_PUBLIC_RELAY_URL` | `wss://<your-render-service>.onrender.com/ws` |
 
-7. In GitHub → repo → **Settings → Secrets and variables → Actions**, add:
+7. GitHub → **Settings → Secrets and variables → Actions**:
 
 | Secret | Value |
 |--------|--------|
-| `VERCEL_TOKEN` | Token from step 5 |
-| `VERCEL_ORG_ID` | `orgId` from `project.json` |
-| `VERCEL_PROJECT_ID` | `projectId` from `project.json` |
-| `NEXT_PUBLIC_RELAY_URL` | Same `wss://…/ws` URL (used at build time in CI) |
+| `VERCEL_TOKEN` | Vercel token |
+| `VERCEL_ORG_ID` | `orgId` |
+| `VERCEL_PROJECT_ID` | `projectId` |
+| `NEXT_PUBLIC_RELAY_URL` | Same `wss://…/ws` URL |
 
-8. Push to `main` (or run the workflow manually under **Actions**).
+8. Push to `main` or run the workflow manually.
 
-The workflow `.github/workflows/deploy-vercel.yml` uploads the repo and runs a **remote Vercel build** (`vercel deploy --prod`). It does not use `--prebuilt`, which breaks with pnpm’s `node_modules` layout.
+The Action deploys from the **repo root** (full monorepo). Vercel builds using Root Directory `apps/web`.
 
 ### Updating the relay URL later
 
