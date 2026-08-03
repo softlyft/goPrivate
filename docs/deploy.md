@@ -78,7 +78,7 @@ Update GitHub secrets `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` from the new root `.
 
 8. Push to `main` or run the workflow manually.
 
-The Action checks out the **full monorepo**, runs `vercel build` on the runner (so workspace packages exist), then `vercel deploy --prebuilt`. A plain remote `vercel deploy` only uploads `apps/web` and cannot install workspace dependencies.
+The Action checks out the **full monorepo**, runs `vercel pull` / `vercel build` / `vercel deploy --prebuilt` from the **repo root** (not `apps/web`). Vercel project Root Directory must stay `apps/web`. Running the CLI inside `apps/web` makes `--prebuilt` look for pnpm paths under the app folder and fail (e.g. missing `@swc/helpers`).
 
 ### Updating the relay URL later
 
