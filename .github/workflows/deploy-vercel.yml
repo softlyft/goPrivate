@@ -1,6 +1,5 @@
-# Build the monorepo in GitHub Actions (full checkout), then deploy the
-# prebuilt output to Vercel. Remote `vercel deploy` alone only uploads
-# apps/web (~300KB) and breaks workspace installs.
+# Build monorepo on the runner, then deploy prebuilt to Vercel.
+# Avoids remote upload of only apps/web (missing workspace packages).
 
 name: Deploy Web to Vercel
 
@@ -56,9 +55,29 @@ jobs:
         working-directory: apps/web
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Build with Vercel (uses full monorepo on the runner)
+      - name: Build with Vercel
         working-directory: apps/web
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Ensure @swc/helpers is resolvable for prebuilt deploy
+        working-directory: apps/web
+        run: |
+          set -e
+          TARGET="node_modules/@swc/helpers/_/_interop_require_default/package.json"
+          if [ -f "$TARGET" ]; then
+            echo "Found $TARGET"
+            exit 0
+          fi
+          echo "Missing $TARGET — linking from workspace..."
+          mkdir -p node_modules/@swc
+          # Prefer app-local resolution, then monorepo root hoist
+          ROOT_HELPERS="$(node -e "try{console.log(require('path').dirname(require.resolve('@swc/helpers/package.json')))}catch(e){process.exit(1)}")" \
+            || ROOT_HELPERS="../../node_modules/@swc/helpers"
+          if [ ! -d "$ROOT_HELPERS" ] && [ -d "../../node_modules/@swc/helpers" ]; then
+            ROOT_HELPERS="../../node_modules/@swc/helpers"
+          fi
+          ln -sfn "$ROOT_HELPERS" node_modules/@swc/helpers
+          ls -la node_modules/@swc/helpers/_/_interop_require_default/package.json
 
       - name: Deploy prebuilt to production
         id: deploy

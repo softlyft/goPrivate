@@ -18,6 +18,7 @@ COPY package.json pnpm-workspace.yaml tsconfig.base.json ./
 COPY packages ./packages
 COPY apps/web ./apps/web
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV DOCKER_BUILD=1
 ARG NEXT_PUBLIC_RELAY_URL=ws://localhost:3001/ws
 ENV NEXT_PUBLIC_RELAY_URL=$NEXT_PUBLIC_RELAY_URL
 RUN pnpm --filter @goprivate/protocol build \
