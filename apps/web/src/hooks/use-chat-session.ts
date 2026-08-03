@@ -1,11 +1,16 @@
 'use client';
 
+import { useEffect } from 'react';
 import { createRelayClient, type IRelayClient } from '@goprivate/sdk';
 import { messageVault } from '@/services/vault';
 import { useSessionStore } from '@/store/session';
 import { getRelayUrl, getShareUrl } from '@/utils/env';
 
 let clientSingleton: IRelayClient | null = null;
+let wired = false;
+let lifecycleBound = false;
+let resumeTimer: ReturnType<typeof setTimeout> | null = null;
+let resumeInFlight: Promise<void> | null = null;
 
 function getClient(): IRelayClient {
   if (!clientSingleton) {
@@ -36,6 +41,12 @@ async function ingestPlaintextMessage(message: {
 function wireClient(client: IRelayClient): void {
   client.on('status', (status) => {
     useSessionStore.getState().setStatus(status);
+    // Auto-resume when the socket drops while the tab is still visible
+    if (status === 'disconnected' && typeof document !== 'undefined') {
+      if (document.visibilityState === 'visible') {
+        scheduleResume(400);
+      }
+    }
   });
 
   client.on('sessionCreated', (sessionId, expiresAt) => {
@@ -47,6 +58,7 @@ function wireClient(client: IRelayClient): void {
   client.on('partnerJoined', (expiresAt) => {
     useSessionStore.getState().setPartnerPresent(true);
     useSessionStore.getState().setExpiresAt(expiresAt);
+    useSessionStore.getState().setError(null);
   });
 
   client.on('partnerLeft', () => {
@@ -66,6 +78,10 @@ function wireClient(client: IRelayClient): void {
   });
 
   client.on('error', (code, message) => {
+    if (code === 'SESSION_NOT_FOUND') {
+      // Handled by reconnect/join callers
+      return;
+    }
     useSessionStore.getState().setError(message);
     if (code === 'SESSION_EXPIRED') {
       messageVault.lock();
@@ -75,10 +91,72 @@ function wireClient(client: IRelayClient): void {
   });
 }
 
-let wired = false;
+function scheduleResume(delayMs = 0): void {
+  if (resumeTimer) clearTimeout(resumeTimer);
+  resumeTimer = setTimeout(() => {
+    resumeTimer = null;
+    void resumeSession();
+  }, delayMs);
+}
+
+async function resumeSession(): Promise<void> {
+  if (resumeInFlight) return resumeInFlight;
+
+  const store = useSessionStore.getState();
+  const client = clientSingleton;
+  if (!client) return;
+  if (!store.sessionId && !client.sessionId) return;
+  if (store.status === 'expired') return;
+  if (!messageVault.isUnlocked) return;
+
+  // Socket still open and session healthy — nothing to do
+  if (
+    client.connected &&
+    (store.status === 'ready' ||
+      store.status === 'awaiting_partner' ||
+      store.status === 'handshaking')
+  ) {
+    return;
+  }
+  if (store.status === 'connecting' && client.connected) return;
+
+  resumeInFlight = (async () => {
+    try {
+      store.setError(null);
+      store.setStatus('connecting');
+      await client.reconnect();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to reconnect';
+      useSessionStore.getState().setError(message);
+      useSessionStore.getState().setStatus('disconnected');
+    } finally {
+      resumeInFlight = null;
+    }
+  })();
+
+  return resumeInFlight;
+}
+
+function bindLifecycle(): void {
+  if (lifecycleBound || typeof window === 'undefined') return;
+  lifecycleBound = true;
+
+  const onResume = () => scheduleResume(150);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') onResume();
+  });
+  window.addEventListener('pageshow', onResume);
+  window.addEventListener('online', onResume);
+  window.addEventListener('focus', onResume);
+}
 
 export function useChatSession() {
   const store = useSessionStore();
+
+  useEffect(() => {
+    bindLifecycle();
+  }, []);
 
   async function ensureConnected(): Promise<IRelayClient> {
     const client = getClient();
@@ -86,7 +164,12 @@ export function useChatSession() {
       wireClient(client);
       wired = true;
     }
-    if (client.status === 'disconnected' || client.status === 'error' || client.status === 'expired') {
+    bindLifecycle();
+    if (
+      client.status === 'disconnected' ||
+      client.status === 'error' ||
+      client.status === 'expired'
+    ) {
       await client.connect(getRelayUrl());
     }
     return client;
@@ -125,7 +208,10 @@ export function useChatSession() {
 
   async function sendMessage(text: string): Promise<void> {
     const client = getClient();
-    await client.sendMessage(text);
+    if (client.status !== 'ready') {
+      await resumeSession();
+    }
+    await getClient().sendMessage(text);
   }
 
   async function leaveSession(): Promise<void> {

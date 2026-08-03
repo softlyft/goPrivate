@@ -40,6 +40,8 @@ export interface RelayClientEvents {
 
 export interface IRelayClient {
   connect(url: string): Promise<void>;
+  /** Re-open socket + rejoin current session (mobile background / dropped WS). */
+  reconnect(): Promise<void>;
   createSession(sessionId?: string): Promise<string>;
   joinSession(sessionId: string): Promise<void>;
   sendMessage(text: string): Promise<EncryptedMessage>;
@@ -50,4 +52,6 @@ export interface IRelayClient {
   readonly status: ConnectionStatus;
   readonly sessionId: string | null;
   readonly expiresAt: number | null;
+  /** True when the underlying WebSocket is OPEN. */
+  readonly connected: boolean;
 }

@@ -32,12 +32,19 @@ function generateSessionId(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+const PING_INTERVAL_MS = 20_000;
+
 export class RelayClient implements IRelayClient {
   private transport: ITransport;
   private crypto: ICryptoProvider;
   private _status: ConnectionStatus = 'disconnected';
   private _sessionId: string | null = null;
   private _expiresAt: number | null = null;
+  private _url: string | null = null;
+  private _isHost = false;
+  private intentionalClose = false;
+  private reconnectInFlight: Promise<void> | null = null;
+  private pingTimer: ReturnType<typeof setInterval> | null = null;
   private keyPair: KeyPair | null = null;
   private sharedKey: CryptoKey | null = null;
   private peerPublicKeyReceived = false;
@@ -70,6 +77,14 @@ export class RelayClient implements IRelayClient {
     return this._expiresAt;
   }
 
+  get isHost(): boolean {
+    return this._isHost;
+  }
+
+  get connected(): boolean {
+    return this.transport.readyState === 1;
+  }
+
   on<K extends keyof RelayClientEvents>(event: K, handler: RelayClientEvents[K]): void {
     this.handlers[event].add(handler);
   }
@@ -93,21 +108,63 @@ export class RelayClient implements IRelayClient {
   }
 
   async connect(url: string): Promise<void> {
+    this._url = url;
+    this.intentionalClose = false;
     this.setStatus('connecting');
     this.transport.onMessage((data) => this.handleRawMessage(data));
-    this.transport.onClose(() => {
-      if (this._status !== 'expired') {
-        this.setStatus('disconnected');
-      }
-      this.resetCryptoState();
-    });
+    this.transport.onClose(() => this.handleTransportClose());
     await this.transport.connect(url);
-    this.setStatus('connected');
+    this.setStatus(this._sessionId ? 'connected' : 'connected');
+    this.startPing();
+  }
+
+  /**
+   * Re-open the socket and re-enter the current session after mobile backgrounding
+   * or a dropped connection. Preserves sessionId; re-runs ECDH handshake.
+   */
+  async reconnect(): Promise<void> {
+    if (!this._url || !this._sessionId) {
+      throw new Error('Nothing to reconnect');
+    }
+    if (this._status === 'expired') {
+      throw new Error('Session expired');
+    }
+    if (this.reconnectInFlight) {
+      return this.reconnectInFlight;
+    }
+
+    this.reconnectInFlight = this.runReconnect().finally(() => {
+      this.reconnectInFlight = null;
+    });
+    return this.reconnectInFlight;
+  }
+
+  private async runReconnect(): Promise<void> {
+    const sessionId = this._sessionId!;
+    const url = this._url!;
+    const host = this._isHost;
+
+    this.stopPing();
+    this.resetCryptoState();
+    await this.connect(url);
+
+    try {
+      await this.joinSession(sessionId, { retainHost: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (host && message.includes('SESSION_NOT_FOUND')) {
+        this._isHost = true;
+        await this.createSession(sessionId);
+        return;
+      }
+      throw err;
+    }
   }
 
   async createSession(sessionId?: string): Promise<string> {
     const id = sessionId ?? generateSessionId();
     this._sessionId = id;
+    this._isHost = true;
     this.keyPair = await this.crypto.generateKeyPair();
 
     const created = new Promise<string>((resolve, reject) => {
@@ -115,7 +172,7 @@ export class RelayClient implements IRelayClient {
         this.off('sessionCreated', onCreated);
         this.off('error', onError);
         reject(new Error('Timed out creating session'));
-      }, 5000);
+      }, 8000);
 
       const onCreated = (createdId: string) => {
         clearTimeout(timer);
@@ -139,18 +196,57 @@ export class RelayClient implements IRelayClient {
     return created;
   }
 
-  async joinSession(sessionId: string): Promise<void> {
+  async joinSession(sessionId: string, options?: { retainHost?: boolean }): Promise<void> {
     if (
       this._sessionId === sessionId &&
       this._status !== 'disconnected' &&
       this._status !== 'error' &&
-      this._status !== 'expired'
+      this._status !== 'expired' &&
+      this._status !== 'connected' &&
+      this._status !== 'connecting'
     ) {
       return;
     }
     this._sessionId = sessionId;
+    if (!options?.retainHost) {
+      this._isHost = false;
+    }
     this.keyPair = await this.crypto.generateKeyPair();
+    this.peerPublicKeyReceived = false;
+    this.localPublicKeySent = false;
+    this.sharedKey = null;
+
+    const joined = new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error('Timed out joining session'));
+      }, 8000);
+
+      const onSuccess = () => {
+        cleanup();
+        resolve();
+      };
+
+      const onError = (code: string, message: string) => {
+        cleanup();
+        reject(new Error(`${code}: ${message}`));
+      };
+
+      const cleanup = () => {
+        clearTimeout(timer);
+        this.off('partnerJoined', onSuccess);
+        this.off('sessionCreated', onSuccess);
+        this.off('error', onError);
+      };
+
+      // Empty-session reclaim emits SESSION_CREATED; normal join emits PARTNER_JOINED
+      this.on('partnerJoined', onSuccess);
+      this.on('sessionCreated', onSuccess);
+      this.on('error', onError);
+    });
+
     this.send({ type: ClientEvent.JOIN_SESSION, payload: { sessionId } });
+    return joined;
   }
 
   async sendMessage(text: string): Promise<EncryptedMessage> {
@@ -191,12 +287,50 @@ export class RelayClient implements IRelayClient {
   }
 
   disconnect(): void {
+    this.intentionalClose = true;
+    this.stopPing();
     this.transport.close();
     this.resetCryptoState();
     this._sessionId = null;
     this._expiresAt = null;
+    this._isHost = false;
     if (this._status !== 'expired') {
       this.setStatus('disconnected');
+    }
+  }
+
+  private handleTransportClose(): void {
+    this.stopPing();
+    if (this.intentionalClose) {
+      return;
+    }
+    if (this._status === 'expired') {
+      return;
+    }
+    // Keep sessionId / isHost so we can resume after mobile backgrounding
+    this.resetCryptoState();
+    this.setStatus('disconnected');
+  }
+
+  private startPing(): void {
+    this.stopPing();
+    this.pingTimer = setInterval(() => {
+      try {
+        this.send({ type: ClientEvent.PING, payload: {} });
+      } catch {
+        try {
+          this.transport.close();
+        } catch {
+          // ignore
+        }
+      }
+    }, PING_INTERVAL_MS);
+  }
+
+  private stopPing(): void {
+    if (this.pingTimer) {
+      clearInterval(this.pingTimer);
+      this.pingTimer = null;
     }
   }
 
@@ -229,6 +363,7 @@ export class RelayClient implements IRelayClient {
       case RelayEvent.SESSION_CREATED:
         this._sessionId = event.payload.sessionId;
         this._expiresAt = event.payload.expiresAt;
+        this._isHost = true;
         this.emit('sessionCreated', event.payload.sessionId, event.payload.expiresAt);
         this.setStatus('awaiting_partner');
         break;
@@ -263,7 +398,8 @@ export class RelayClient implements IRelayClient {
         this.emit('error', event.payload.code, event.payload.message);
         if (event.payload.code === 'SESSION_EXPIRED') {
           this.setStatus('expired');
-        } else {
+        } else if (event.payload.code !== 'SESSION_NOT_FOUND') {
+          // SESSION_NOT_FOUND is handled by reconnect/join callers
           this.setStatus('error');
         }
         break;

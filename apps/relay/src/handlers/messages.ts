@@ -94,7 +94,28 @@ function handleCreateSession(
   }
 
   const id = sessionId ?? crypto.randomUUID().replace(/-/g, '');
-  if (store.get(id)) {
+  const current = store.get(id);
+
+  // Reclaim an empty session after a mobile disconnect (reconnect grace)
+  if (current && current.participants.length === 0) {
+    cancelPendingDestroy(id);
+    if (expireIfNeeded(store, current)) {
+      sendToSocket(socket, {
+        type: RelayEvent.ERROR,
+        payload: { code: 'SESSION_EXPIRED', message: 'Session has expired' },
+      });
+      return;
+    }
+    const participant: Participant = { id: createParticipantId(), socket };
+    current.participants.push(participant);
+    sendToSocket(socket, {
+      type: RelayEvent.SESSION_CREATED,
+      payload: { sessionId: id, expiresAt: current.expiresAt },
+    });
+    return;
+  }
+
+  if (current) {
     sendToSocket(socket, {
       type: RelayEvent.ERROR,
       payload: { code: 'SESSION_EXISTS', message: 'Session already exists' },
@@ -138,8 +159,20 @@ function handleJoinSession(store: ISessionStore, socket: WebSocket, sessionId: s
     return;
   }
 
+  cancelPendingDestroy(sessionId);
+
   try {
     const participant: Participant = { id: createParticipantId(), socket };
+    // Empty session after disconnect: treat rejoin like occupying the free slot
+    if (session.participants.length === 0) {
+      session.participants.push(participant);
+      sendToSocket(socket, {
+        type: RelayEvent.SESSION_CREATED,
+        payload: { sessionId, expiresAt: session.expiresAt },
+      });
+      return;
+    }
+
     store.addParticipant(sessionId, participant);
 
     const updated = store.get(sessionId)!;
@@ -197,6 +230,30 @@ export function handleDisconnect(store: ISessionStore, socket: WebSocket): void 
   handleLeave(store, socket);
 }
 
+/** Keep empty sessions briefly so mobile app-switch can reconnect without refresh. */
+const RECONNECT_GRACE_MS = 20_000;
+const pendingDestroy = new Map<string, ReturnType<typeof setTimeout>>();
+
+function cancelPendingDestroy(sessionId: string): void {
+  const timer = pendingDestroy.get(sessionId);
+  if (timer) {
+    clearTimeout(timer);
+    pendingDestroy.delete(sessionId);
+  }
+}
+
+function scheduleDestroyIfEmpty(store: ISessionStore, sessionId: string): void {
+  cancelPendingDestroy(sessionId);
+  const timer = setTimeout(() => {
+    pendingDestroy.delete(sessionId);
+    const session = store.get(sessionId);
+    if (session && session.participants.length === 0) {
+      store.destroy(sessionId);
+    }
+  }, RECONNECT_GRACE_MS);
+  pendingDestroy.set(sessionId, timer);
+}
+
 function handleLeave(store: ISessionStore, socket: WebSocket): void {
   const found = store.findBySocket(socket);
   if (!found) return;
@@ -213,5 +270,9 @@ function handleLeave(store: ISessionStore, socket: WebSocket): void {
       type: RelayEvent.PARTNER_LEFT,
       payload: { sessionId: session.id },
     });
+    return;
   }
+
+  // Last participant left — keep the empty session briefly for reconnect
+  scheduleDestroyIfEmpty(store, session.id);
 }

@@ -149,7 +149,8 @@ export function GuidePage() {
               </li>
               <li>
                 <strong className="font-medium text-foreground">Leaving closes your side.</strong>{' '}
-                Refreshing or closing the tab disconnects you.
+                Leaving closes your side. Switching apps briefly should reconnect automatically;
+                staying away too long may end the session.
               </li>
             </ul>
           </Section>

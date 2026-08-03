@@ -2,6 +2,7 @@ import type { ITransport } from './types.js';
 
 export class WebSocketTransport implements ITransport {
   private socket: WebSocket | null = null;
+  private generation = 0;
   private messageHandler: ((data: string) => void) | null = null;
   private closeHandler: (() => void) | null = null;
   private errorHandler: ((error: Event) => void) | null = null;
@@ -12,27 +13,41 @@ export class WebSocketTransport implements ITransport {
 
   connect(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
+      const generation = ++this.generation;
+      this.detachSocket();
+
       const socket = new WebSocket(url);
 
       socket.onopen = () => {
+        if (generation !== this.generation) {
+          try {
+            socket.close();
+          } catch {
+            // ignore
+          }
+          return;
+        }
         this.socket = socket;
         resolve();
       };
 
       socket.onerror = (event) => {
+        if (generation !== this.generation) return;
         this.errorHandler?.(event);
         reject(new Error('WebSocket connection failed'));
       };
 
       socket.onmessage = (event) => {
+        if (generation !== this.generation) return;
         if (typeof event.data === 'string') {
           this.messageHandler?.(event.data);
         }
       };
 
       socket.onclose = () => {
-        this.closeHandler?.();
+        if (generation !== this.generation) return;
         this.socket = null;
+        this.closeHandler?.();
       };
     });
   }
@@ -57,7 +72,22 @@ export class WebSocketTransport implements ITransport {
   }
 
   close(): void {
-    this.socket?.close();
+    this.generation += 1;
+    this.detachSocket();
+  }
+
+  private detachSocket(): void {
+    if (!this.socket) return;
+    const socket = this.socket;
     this.socket = null;
+    socket.onopen = null;
+    socket.onerror = null;
+    socket.onmessage = null;
+    socket.onclose = null;
+    try {
+      socket.close();
+    } catch {
+      // ignore
+    }
   }
 }

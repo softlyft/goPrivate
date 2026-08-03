@@ -70,8 +70,8 @@ export class InMemorySessionStore implements ISessionStore {
 
     session.participants = session.participants.filter((p) => p.id !== participantId);
 
+    // Empty sessions stay in the map briefly (relay schedules destroy) so clients can rejoin
     if (session.participants.length === 0) {
-      this.sessions.delete(sessionId);
       return { destroyed: true };
     }
 
