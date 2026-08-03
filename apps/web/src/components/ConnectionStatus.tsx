@@ -12,6 +12,17 @@ const labels: Record<Status, string> = {
   expired: 'Expired',
 };
 
+const shortLabels: Record<Status, string> = {
+  disconnected: 'Offline',
+  connecting: 'Connecting',
+  connected: 'Connected',
+  awaiting_partner: 'Waiting',
+  handshaking: 'Encrypting',
+  ready: 'Encrypted',
+  error: 'Error',
+  expired: 'Expired',
+};
+
 const colors: Record<Status, string> = {
   disconnected: 'bg-muted',
   connecting: 'bg-amber-400',
@@ -25,9 +36,12 @@ const colors: Record<Status, string> = {
 
 export function ConnectionStatus({ status }: { status: Status }) {
   return (
-    <div className="flex items-center gap-2 text-xs text-muted">
-      <span className={cn('h-1.5 w-1.5 rounded-full', colors[status])} />
-      <span>{labels[status]}</span>
+    <div className="flex max-w-[7.5rem] items-center gap-1.5 text-xs text-muted sm:max-w-none sm:gap-2">
+      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', colors[status])} />
+      <span className="truncate sm:hidden" title={labels[status]}>
+        {shortLabels[status]}
+      </span>
+      <span className="hidden sm:inline">{labels[status]}</span>
     </div>
   );
 }

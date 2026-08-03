@@ -14,8 +14,8 @@ export function Header({
   onHomeClick?: () => void;
 }) {
   return (
-    <header className="grid grid-cols-[1fr_auto_1fr] items-center border-b border-border px-4 py-3">
-      <h1 className="justify-self-start text-sm font-medium tracking-tight">
+    <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b border-border px-3 py-2.5 sm:px-4 sm:py-3">
+      <h1 className="justify-self-start truncate text-sm font-medium tracking-tight">
         {onHomeClick ? (
           <button
             type="button"
@@ -31,7 +31,7 @@ export function Header({
         )}
       </h1>
       <div className="justify-self-center">{center}</div>
-      <div className="justify-self-end">{right}</div>
+      <div className="min-w-0 justify-self-end">{right}</div>
     </header>
   );
 }

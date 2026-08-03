@@ -28,13 +28,19 @@ export function MessageComposer({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 border-t border-border px-4 py-3">
+    <form
+      onSubmit={handleSubmit}
+      className="flex gap-2 border-t border-border px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+    >
       <Input
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={disabled ? 'Waiting for secure channel…' : 'Type a message'}
         disabled={disabled || sending}
-        autoFocus
+        enterKeyHint="send"
+        autoComplete="off"
+        autoCorrect="on"
+        autoCapitalize="sentences"
       />
       <Button type="submit" disabled={disabled || sending || !text.trim()}>
         Send

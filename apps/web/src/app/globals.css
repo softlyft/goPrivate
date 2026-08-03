@@ -12,6 +12,8 @@
   --success: #16a34a;
   --bubble-self: #111111;
   --bubble-peer: #f3f4f6;
+  --app-height: 100dvh;
+  --app-offset: 0px;
 }
 
 @theme inline {
@@ -30,11 +32,32 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  height: 100%;
+  /* Avoid rubber-band scrolling the page behind the app shell */
+  overscroll-behavior: none;
+}
+
+html,
+body {
+  /* Lock document scroll; panes inside AppShell scroll instead */
+  overflow: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
-  min-height: 100dvh;
+  min-height: var(--app-height, 100dvh);
+  min-height: -webkit-fill-available;
+  /* Improve tap targets / reduce tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Narrow phones: slightly denser chrome so header actions fit */
+html[data-mobile='true'] {
+  font-size: 15px;
 }
 
 @keyframes fade-in {
