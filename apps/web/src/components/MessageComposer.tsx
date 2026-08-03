@@ -1,0 +1,44 @@
+'use client';
+
+import { type FormEvent, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+export function MessageComposer({
+  disabled,
+  onSend,
+}: {
+  disabled?: boolean;
+  onSend: (text: string) => Promise<void>;
+}) {
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const value = text.trim();
+    if (!value || disabled || sending) return;
+    setSending(true);
+    try {
+      await onSend(value);
+      setText('');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex gap-2 border-t border-border px-4 py-3">
+      <Input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={disabled ? 'Waiting for secure channel…' : 'Type a message'}
+        disabled={disabled || sending}
+        autoFocus
+      />
+      <Button type="submit" disabled={disabled || sending || !text.trim()}>
+        Send
+      </Button>
+    </form>
+  );
+}

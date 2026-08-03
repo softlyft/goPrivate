@@ -1,0 +1,26 @@
+{
+  "name": "goprivate",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Ephemeral end-to-end encrypted messaging MVP",
+  "scripts": {
+    "dev": "pnpm build:packages && pnpm -r --parallel --filter @goprivate/relay --filter @goprivate/web dev",
+    "dev:relay": "pnpm --filter @goprivate/relay dev",
+    "dev:web": "pnpm --filter @goprivate/web dev",
+    "build": "pnpm --filter @goprivate/protocol build && pnpm --filter @goprivate/crypto build && pnpm --filter @goprivate/sdk build && pnpm --filter @goprivate/relay build && pnpm --filter @goprivate/web build",
+    "build:packages": "pnpm --filter @goprivate/protocol build && pnpm --filter @goprivate/crypto build && pnpm --filter @goprivate/sdk build",
+    "smoke:relay": "node scripts/smoke-relay.mjs",
+    "smoke:crypto": "node scripts/smoke-crypto.mjs",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.34.5",
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2"
+  }
+}

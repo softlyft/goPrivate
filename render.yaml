@@ -1,0 +1,22 @@
+# Render Blueprint — goPrivate relay (WebSocket)
+# https://render.com/docs/blueprint-spec
+#
+# Deploy: Dashboard → New → Blueprint → select this repo
+# After deploy, copy the service URL and set on Vercel:
+#   NEXT_PUBLIC_RELAY_URL=wss://<your-service>.onrender.com/ws
+
+services:
+  - type: web
+    name: goprivate-relay
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./apps/relay/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      # Render injects PORT automatically; the relay reads process.env.PORT
