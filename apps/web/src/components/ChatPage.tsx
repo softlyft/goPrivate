@@ -142,7 +142,7 @@ export function ChatPage() {
         onHomeClick={handleHome}
         center={<SessionTimer expiresAt={expiresAt} onExpire={handleExpire} />}
         right={
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 sm:gap-4">
             <ConnectionStatus status={status} />
             <Button variant="danger" onClick={handleLeave}>
               Leave

@@ -20,7 +20,7 @@ export function Header({
       as="header"
       shape="none"
       className="shrink-0 rounded-none border-b border-black/[0.06] !shadow-none"
-      contentClassName="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 sm:px-4"
+      contentClassName="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 sm:gap-4 sm:px-4"
     >
       <h1 className="justify-self-start truncate text-sm font-semibold tracking-tight">
         {onHomeClick ? (
@@ -37,8 +37,8 @@ export function Header({
           </Link>
         )}
       </h1>
-      <div className="justify-self-center">{center}</div>
-      <div className={cn('min-w-0 justify-self-end')}>{right}</div>
+      <div className="justify-self-center px-2 sm:px-3">{center}</div>
+      <div className={cn('min-w-0 justify-self-end pl-1')}>{right}</div>
     </Glass>
   );
 }
