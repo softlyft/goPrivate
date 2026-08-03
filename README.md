@@ -35,8 +35,16 @@ pnpm dev
 ```
 
 - Web: http://localhost:3000
-- Relay WebSocket: ws://localhost:3001/ws
+- Relay WebSocket: `ws://localhost:3001/ws`
 - Health: http://localhost:3001/health
+
+To use the hosted Render relay from local Next.js, set in `apps/web/.env.local`:
+
+```bash
+NEXT_PUBLIC_RELAY_URL=wss://goprivate-relay.onrender.com/ws
+```
+
+See [docs/deploy.md](docs/deploy.md) for Vercel + Render setup and URL format rules (`wss://…/ws`, not `https://`).
 
 ## Docker
 

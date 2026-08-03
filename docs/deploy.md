@@ -13,21 +13,46 @@ Deploy the **relay first**, then the web app (the web app needs the relay’s `w
 
 ---
 
+## Relay URL format (important)
+
+| Purpose | Scheme | Example |
+|---------|--------|---------|
+| Browser / health check | `https://` | `https://goprivate-relay.onrender.com/health` |
+| App WebSocket (`NEXT_PUBLIC_RELAY_URL`) | `wss://` + `/ws` | `wss://goprivate-relay.onrender.com/ws` |
+
+Do **not** put the HTTPS homepage URL in `NEXT_PUBLIC_RELAY_URL`. The client opens a WebSocket; it must be `wss://…/ws`.
+
+Quick checks:
+
+```bash
+curl -sS https://goprivate-relay.onrender.com/health
+# {"status":"ok","sessions":0}
+
+# Optional: Node smoke (needs `ws` or use any WebSocket client)
+node -e "const W=require('ws');const s=new W('wss://goprivate-relay.onrender.com/ws');s.on('open',()=>{console.log('ok');s.close()});s.on('error',e=>console.error(e))"
+```
+
+---
+
 ## 1. Relay on Render
 
 1. Push this repo to GitHub.
 2. In Render: **New** → **Blueprint** → select the repo (uses `render.yaml`).
 3. Create the `goprivate-relay` service on the **free** plan.
 4. Wait for the deploy to finish.
-5. Open the service URL, e.g. `https://goprivate-relay.onrender.com`.
-6. Check health: `https://goprivate-relay.onrender.com/health`
+5. Note the service hostname (e.g. `goprivate-relay.onrender.com`).
+6. Confirm health: `https://<hostname>/health`
 7. Your WebSocket URL is:
+
+```text
+wss://<hostname>/ws
+```
+
+Example for this project’s relay:
 
 ```text
 wss://goprivate-relay.onrender.com/ws
 ```
-
-(Replace with your real hostname.)
 
 **Note:** Free Render services sleep when idle. The first connection after sleep can take ~30–60s, and any in-memory sessions are lost on sleep (fine for ephemeral chat).
 
@@ -65,7 +90,7 @@ Update GitHub secrets `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` from the new root `.
 
 | Name | Value |
 |------|--------|
-| `NEXT_PUBLIC_RELAY_URL` | `wss://<your-render-service>.onrender.com/ws` |
+| `NEXT_PUBLIC_RELAY_URL` | `wss://goprivate-relay.onrender.com/ws` (or your hostname) |
 
 7. GitHub → **Settings → Secrets and variables → Actions**:
 
@@ -74,36 +99,66 @@ Update GitHub secrets `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` from the new root `.
 | `VERCEL_TOKEN` | Vercel token |
 | `VERCEL_ORG_ID` | `orgId` |
 | `VERCEL_PROJECT_ID` | `projectId` |
-| `NEXT_PUBLIC_RELAY_URL` | Same `wss://…/ws` URL |
+| `NEXT_PUBLIC_RELAY_URL` | Same `wss://…/ws` URL as above |
 
-8. Push to `main` or run the workflow manually.
+8. Push to `main` or run the workflow manually (**Deploy Web to Vercel**).
 
-The Action checks out the **full monorepo**, runs `vercel pull` / `vercel build` / `vercel deploy --prebuilt` from the **repo root** (not `apps/web`). Vercel project Root Directory must stay `apps/web`. Running the CLI inside `apps/web` makes `--prebuilt` look for pnpm paths under the app folder and fail (e.g. missing `@swc/helpers`).
+### How the Action deploys
+
+The Action checks out the **full monorepo**, then from the **repo root** runs:
+
+1. `pnpm install`
+2. `vercel pull`
+3. `vercel build --prod`
+4. `vercel deploy --prebuilt --prod`
+
+Vercel project **Root Directory** must stay `apps/web`. Always run the Vercel CLI from the monorepo root in CI — not from `apps/web`. Running inside `apps/web` makes `--prebuilt` look for pnpm paths under the app folder and fail (e.g. missing `@swc/helpers`).
+
+`.npmrc` uses `node-linker=hoisted` so the prebuilt upload matches what the CLI expects.
 
 ### Updating the relay URL later
 
-1. Change `NEXT_PUBLIC_RELAY_URL` in Vercel project env **and** the GitHub Action secret.
-2. Re-run the deploy workflow (or push a commit).
+1. Change `NEXT_PUBLIC_RELAY_URL` in **both** Vercel project env and the GitHub Actions secret.
+2. Re-run the deploy workflow (or push a commit that triggers it).
+
+`NEXT_PUBLIC_*` is baked in at build time — changing the secret alone without a redeploy will not update the client.
 
 ---
 
-## 3. Quick smoke check
+## 3. Local development against the hosted relay
 
-1. Visit the Vercel URL from the Action summary.
+Default local stack uses a relay on your machine (`pnpm dev` → `ws://localhost:3001/ws`).
+
+To point the **local** Next app at Render instead, set `apps/web/.env.local`:
+
+```bash
+NEXT_PUBLIC_RELAY_URL=wss://goprivate-relay.onrender.com/ws
+```
+
+Restart `pnpm --filter @goprivate/web dev` after changing it (Next only reads `NEXT_PUBLIC_*` on startup).
+
+| Environment | `NEXT_PUBLIC_RELAY_URL` |
+|-------------|-------------------------|
+| Local + local relay | `ws://localhost:3001/ws` |
+| Local + Render relay | `wss://goprivate-relay.onrender.com/ws` |
+| Production (Vercel) | `wss://goprivate-relay.onrender.com/ws` |
+
+---
+
+## 4. Quick smoke check
+
+1. Visit the Vercel URL from the Action summary (or http://localhost:3000).
 2. Create a session (set PIN).
 3. Open the share link in another browser / incognito.
 4. Confirm status becomes **Encrypted** and messages work.
 
-If create hangs on “Creating…”:
-- Relay may be waking from sleep — wait and retry
-- Confirm `NEXT_PUBLIC_RELAY_URL` uses `wss://` and ends with `/ws`
-- Confirm `https://<relay>/health` returns OK
+### “WebSocket connection failed”
 
----
+- Wrong scheme or path — must be `wss://…/ws`, not `https://…` and not missing `/ws`
+- Local app still on `ws://localhost:3001/ws` while the relay isn’t running — fix `.env.local` or start the relay
+- Production build still has an old URL — update Vercel env **and** GitHub secret, then **redeploy**
+- Relay sleeping on Render free tier — wait ~30–60s and retry; confirm `https://<relay>/health` returns OK
 
-## Local vs production env
+### Create hangs on “Creating…”
 
-| Environment | `NEXT_PUBLIC_RELAY_URL` |
-|-------------|-------------------------|
-| Local | `ws://localhost:3001/ws` |
-| Production | `wss://<render-host>/ws` |
+Same checklist as above; cold start is the most common cause after idle.
