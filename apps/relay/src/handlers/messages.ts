@@ -231,7 +231,7 @@ export function handleDisconnect(store: ISessionStore, socket: WebSocket): void 
 }
 
 /** Keep empty sessions briefly so mobile app-switch can reconnect without refresh. */
-const RECONNECT_GRACE_MS = 20_000;
+const RECONNECT_GRACE_MS = 60_000;
 const pendingDestroy = new Map<string, ReturnType<typeof setTimeout>>();
 
 function cancelPendingDestroy(sessionId: string): void {
