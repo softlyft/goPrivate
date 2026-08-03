@@ -85,7 +85,7 @@ vercel link
 
 8. Push to `main` (or run the workflow manually under **Actions**).
 
-The workflow `.github/workflows/deploy-vercel.yml` runs `vercel pull` → `vercel build` → `vercel deploy --prebuilt --prod`.
+The workflow `.github/workflows/deploy-vercel.yml` uploads the repo and runs a **remote Vercel build** (`vercel deploy --prod`). It does not use `--prebuilt`, which breaks with pnpm’s `node_modules` layout.
 
 ### Updating the relay URL later
 
