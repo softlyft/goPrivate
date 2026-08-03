@@ -30,7 +30,7 @@ export function MessageComposer({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex gap-2 border-t border-border px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      className="flex shrink-0 gap-2 border-t border-border px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
     >
       <Input
         value={text}

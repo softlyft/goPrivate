@@ -22,7 +22,10 @@ export function GuidePage() {
           </Link>
         }
       />
-      <main className="flex-1 overflow-y-auto px-5 py-6 animate-fade-in">
+      <main
+        data-scroll
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 animate-fade-in"
+      >
         <div className="mx-auto flex max-w-md flex-col gap-8">
           <div className="space-y-2">
             <h1 className="text-2xl font-medium tracking-tight text-foreground">How goPrivate works</h1>

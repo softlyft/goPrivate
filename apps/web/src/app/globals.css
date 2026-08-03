@@ -13,6 +13,7 @@
   --bubble-self: #111111;
   --bubble-peer: #f3f4f6;
   --app-height: 100dvh;
+  --app-width: 100vw;
   --app-offset: 0px;
 }
 
@@ -32,30 +33,33 @@
   --font-mono: var(--font-geist-mono);
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
+  width: 100%;
   height: 100%;
-  /* Avoid rubber-band scrolling the page behind the app shell */
-  overscroll-behavior: none;
-}
-
-html,
-body {
-  /* Lock document scroll; panes inside AppShell scroll instead */
   overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
-  min-height: var(--app-height, 100dvh);
-  min-height: -webkit-fill-available;
-  /* Improve tap targets / reduce tap highlight on mobile */
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
 
-/* Narrow phones: slightly denser chrome so header actions fit */
 html[data-mobile='true'] {
   font-size: 15px;
 }

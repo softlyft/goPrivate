@@ -79,7 +79,7 @@ export function MessageList({
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center px-4">
+      <div className="flex min-h-0 flex-1 items-center justify-center px-4" data-scroll>
         <p className="text-sm text-muted text-center">
           Messages appear here once the channel is ready.
         </p>
@@ -88,7 +88,7 @@ export function MessageList({
   }
 
   return (
-    <div className="relative flex flex-1 flex-col gap-2 overflow-y-auto px-4 py-4">
+    <div className="relative flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-4 py-4" data-scroll>
       {messages.map((message, index) => {
         const level = maskLevelFor(index, messages.length);
         const revealed = revealedIds.has(message.id);

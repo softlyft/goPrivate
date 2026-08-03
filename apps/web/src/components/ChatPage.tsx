@@ -114,7 +114,7 @@ export function ChatPage() {
             </Button>
           }
         />
-        <main className="flex flex-1 items-center justify-center px-6">
+        <main className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto overscroll-contain px-6" data-scroll>
           <PinPad
             title="Set reveal PIN"
             subtitle="This PIN encrypts messages on your device and unlocks older ones."

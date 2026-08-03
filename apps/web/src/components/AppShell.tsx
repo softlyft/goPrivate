@@ -3,7 +3,10 @@
 import { cn } from '@/utils/cn';
 import { useAppViewport } from '@/hooks/use-app-viewport';
 
-/** Full-height phone column that fits the visible mobile browser viewport. */
+/**
+ * On mobile: fills the entire device screen (no side gutters, no page scroll).
+ * On larger screens: centered phone column (~430px).
+ */
 export function AppShell({
   children,
   className,
@@ -15,17 +18,20 @@ export function AppShell({
 
   return (
     <div
-      className="fixed inset-x-0 z-0 flex justify-center bg-[#ececec]"
+      className={cn(
+        'fixed left-0 top-0 z-0 flex justify-center overflow-hidden bg-background',
+        'sm:bg-[#ececec]',
+      )}
       style={{
-        top: 'var(--app-offset, 0px)',
+        width: 'var(--app-width, 100vw)',
         height: 'var(--app-height, 100dvh)',
       }}
     >
       <div
         className={cn(
-          'flex h-full w-full max-w-[430px] flex-col overflow-hidden bg-background',
-          'pt-[env(safe-area-inset-top)]',
-          'shadow-[0_0_0_1px_rgba(0,0,0,0.04)] sm:shadow-lg',
+          'flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden bg-background',
+          // Desktop / tablet: phone frame. Mobile: full device width.
+          'max-w-none sm:max-w-[430px] sm:shadow-lg',
           className,
         )}
       >
