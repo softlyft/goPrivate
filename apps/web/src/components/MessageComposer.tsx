@@ -1,6 +1,6 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type MouseEvent, type PointerEvent, useRef, useState } from 'react';
 import { MAX_CHAT_TEXT_CHARS } from '@goprivate/protocol';
 import { Button } from '@/components/ui/button';
 import { Glass } from '@/components/ui/glass';
@@ -16,6 +16,12 @@ export function MessageComposer({
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function keepKeyboardOpen(e: PointerEvent | MouseEvent) {
+    // Prevent the control from taking focus so the input (and soft keyboard) stay active.
+    e.preventDefault();
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -25,15 +31,21 @@ export function MessageComposer({
       setLocalError(`Max ${MAX_CHAT_TEXT_CHARS} characters`);
       return;
     }
+
     setSending(true);
     setLocalError(null);
+    setText('');
+    inputRef.current?.focus();
+
     try {
       await onSend(value);
-      setText('');
     } catch (err) {
+      setText(value);
       setLocalError(err instanceof Error ? err.message : 'Failed to send');
     } finally {
       setSending(false);
+      // Re-focus after React updates / any transient disable so iOS/Android keep the keyboard up.
+      requestAnimationFrame(() => inputRef.current?.focus());
     }
   }
 
@@ -46,13 +58,14 @@ export function MessageComposer({
       <form onSubmit={handleSubmit} className="flex w-full flex-col gap-1.5">
         <div className="flex w-full gap-2">
           <Input
+            ref={inputRef}
             value={text}
             onChange={(e) => {
               setText(e.target.value.slice(0, MAX_CHAT_TEXT_CHARS));
               setLocalError(null);
             }}
             placeholder={disabled ? 'Waiting for secure channel…' : 'Type a message'}
-            disabled={disabled || sending}
+            disabled={disabled}
             maxLength={MAX_CHAT_TEXT_CHARS}
             enterKeyHint="send"
             autoComplete="off"
@@ -63,6 +76,8 @@ export function MessageComposer({
             type="submit"
             disabled={disabled || sending || !text.trim()}
             className="shrink-0 px-5"
+            onMouseDown={keepKeyboardOpen}
+            onPointerDown={keepKeyboardOpen}
           >
             Send
           </Button>

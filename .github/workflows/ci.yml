@@ -33,6 +33,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Build workspace packages
+        run: pnpm build:packages
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -42,8 +45,8 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
-      - name: Build packages + apps
-        run: pnpm build:packages && pnpm --filter @goprivate/relay build && pnpm --filter @goprivate/web build
+      - name: Build apps
+        run: pnpm --filter @goprivate/relay build && pnpm --filter @goprivate/web build
 
       - name: Unit tests with coverage
         run: pnpm test:coverage
