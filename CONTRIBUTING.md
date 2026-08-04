@@ -34,11 +34,14 @@ pnpm smoke:relay     # requires a running relay
 
 ## Pull requests
 
-1. Fork and create a branch
+1. Fork and create a branch (**do not push to `main`**)
 2. Keep PRs focused (protocol vs client UX vs docs)
 3. Ensure typecheck, lint, format check, and tests pass
 4. Fill out the PR template
 5. Link related issues / RFCs / ADRs
+6. Wait for CI (`check`) and **at least one approval** before merge
+
+Branch protection is defined in [`.github/git-policy.yml`](./.github/git-policy.yml) and enforced as a GitHub ruleset on `main`.
 
 ## Coding conventions
 

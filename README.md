@@ -108,6 +108,24 @@ The public reference relay is funded by people who believe private communication
 
 See [`.github/FUNDING.yml`](./.github/FUNDING.yml) (GitHub Sponsors). Optional client link: `NEXT_PUBLIC_SUPPORT_URL`.
 
+## Branch policy
+
+`main` is protected by a GitHub ruleset (see [`.github/git-policy.yml`](./.github/git-policy.yml)):
+
+- No direct pushes — pull requests only
+- At least one approving review
+- Stale reviews dismissed on new pushes
+- Review threads must be resolved
+- Linear history (squash/rebase)
+- CI job `check` must pass
+- No force-push or branch deletion
+
+Apply or refresh on GitHub (needs repo admin):
+
+```bash
+pnpm policy:git
+```
+
 ## License
 
 [GNU Affero General Public License v3.0](./LICENSE).

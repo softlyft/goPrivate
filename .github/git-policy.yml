@@ -1,0 +1,46 @@
+# Git branch policy for goPrivate
+# Source of truth for maintainers. Apply with: pnpm policy:git
+# GitHub also accepts the JSON export under .github/rulesets/ for Settings → Rules → Import.
+
+version: 1
+
+ruleset:
+  name: Protect main
+  target: branch
+  enforcement: active
+  conditions:
+    ref_name:
+      include:
+        - refs/heads/main
+        - refs/heads/master
+      exclude: []
+  # Org admins may bypass in emergencies (prefer temporary disable over routine bypass).
+  bypass_actors:
+    - actor_id: 1
+      actor_type: OrganizationAdmin
+      bypass_mode: always
+  rules:
+    # No direct commits to main — changes must come through a pull request.
+    - type: pull_request
+      parameters:
+        required_approving_review_count: 1
+        dismiss_stale_reviews_on_push: true
+        require_code_owner_review: false
+        require_last_push_approval: false
+        required_review_thread_resolution: true
+        allowed_merge_methods:
+          - squash
+          - rebase
+    # Block force-push to protected branches.
+    - type: non_fast_forward
+    # Block deleting protected branches.
+    - type: deletion
+    # Prefer linear history (squash or rebase merges).
+    - type: required_linear_history
+    # CI must be green before merge.
+    - type: required_status_checks
+      parameters:
+        strict_required_status_checks_policy: true
+        do_not_enforce_on_create: false
+        required_status_checks:
+          - context: check
