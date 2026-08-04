@@ -1,14 +1,18 @@
 /**
  * Smoke test: two WebSocket clients create/join, exchange opaque payloads,
- * leave, and confirm the session is destroyed on the relay.
+ * leave, and confirm partner notifications work.
+ *
+ * Empty sessions are retained for RECONNECT_GRACE_MS (60s), so we no longer
+ * assert health.sessions === 0 immediately after leave.
  */
 import WebSocket from 'ws';
 
 const RELAY = process.env.RELAY_URL ?? 'ws://localhost:3001/ws';
+const HEALTH = process.env.RELAY_HEALTH_URL ?? 'http://localhost:3001/health';
 
 function onceMessage(ws) {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('timeout waiting for message')), 5000);
+    const timer = setTimeout(() => reject(new Error('timeout waiting for message')), 8000);
     ws.once('message', (data) => {
       clearTimeout(timer);
       resolve(JSON.parse(data.toString()));
@@ -26,11 +30,12 @@ function connect() {
 
 async function main() {
   const a = await connect();
-  const sessionId = 'test' + Date.now().toString(16);
+  const sessionId = Date.now().toString(16).padStart(32, '0').slice(-32);
 
   a.send(JSON.stringify({ type: 'CREATE_SESSION', payload: { sessionId } }));
   const created = await onceMessage(a);
-  if (created.type !== 'SESSION_CREATED') throw new Error(`expected SESSION_CREATED, got ${created.type}`);
+  if (created.type !== 'SESSION_CREATED')
+    throw new Error(`expected SESSION_CREATED, got ${created.type}`);
   console.log('✓ session created', created.payload.sessionId);
 
   const b = await connect();
@@ -59,6 +64,13 @@ async function main() {
   }
   console.log('✓ opaque message forwarded');
 
+  // Reject oversized / invalid frames without killing the connection
+  const errWait = onceMessage(a);
+  a.send('{not-json');
+  const badJson = await errWait;
+  if (badJson.type !== 'ERROR') throw new Error('expected ERROR for invalid JSON');
+  console.log('✓ invalid JSON rejected');
+
   const aLeft = onceMessage(a);
   b.send(JSON.stringify({ type: 'LEAVE_SESSION', payload: { sessionId } }));
   const left = await aLeft;
@@ -68,9 +80,9 @@ async function main() {
   a.send(JSON.stringify({ type: 'LEAVE_SESSION', payload: { sessionId } }));
   await new Promise((r) => setTimeout(r, 200));
 
-  const health = await fetch('http://localhost:3001/health').then((r) => r.json());
-  if (health.sessions !== 0) throw new Error(`expected 0 sessions, got ${health.sessions}`);
-  console.log('✓ session destroyed (sessions=0)');
+  const health = await fetch(HEALTH).then((r) => r.json());
+  if (health.status !== 'ok') throw new Error(`expected health ok, got ${JSON.stringify(health)}`);
+  console.log('✓ health ok (empty sessions may linger for reconnect grace)');
 
   a.close();
   b.close();

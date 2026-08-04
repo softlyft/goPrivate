@@ -1,0 +1,66 @@
+# CI quality gate — typecheck + build packages/web/relay on PRs and main.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Build packages + apps
+        run: pnpm build:packages && pnpm --filter @goprivate/relay build && pnpm --filter @goprivate/web build
+
+      - name: Unit tests with coverage
+        run: pnpm test:coverage
+
+      - name: Crypto smoke
+        run: pnpm smoke:crypto
+
+      - name: Relay smoke
+        run: |
+          pnpm --filter @goprivate/relay start &
+          RELAY_PID=$!
+          trap 'kill $RELAY_PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3001/health >/dev/null; then
+              break
+            fi
+            sleep 0.5
+          done
+          curl -sf http://127.0.0.1:3001/health
+          pnpm smoke:relay

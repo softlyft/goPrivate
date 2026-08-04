@@ -7,7 +7,7 @@ import { ConnectionStatus } from '@/components/ConnectionStatus';
 import { Header } from '@/components/Header';
 import { MessageComposer } from '@/components/MessageComposer';
 import { MessageList } from '@/components/MessageList';
-import { PinPad } from '@/components/PinPad';
+import { PinPad, PinPadViewport } from '@/components/PinPad';
 import { SessionTimer } from '@/components/SessionTimer';
 import { Button } from '@/components/ui/button';
 import { useChatSession } from '@/hooks/use-chat-session';
@@ -30,6 +30,7 @@ export function ChatPage() {
     joinSession,
     sendMessage,
     leaveSession,
+    expireSession,
     sessionId: storeSessionId,
   } = useChatSession();
   const [copied, setCopied] = useState(false);
@@ -81,14 +82,8 @@ export function ChatPage() {
     setTimeout(() => setCopied(false), 1500);
   }
 
-  function handleExpire() {
-    messageVault.lock();
-    const store = useSessionStore.getState();
-    if (store.status !== 'expired') {
-      store.setStatus('expired');
-      store.setError('This session has expired (15 minute limit).');
-    }
-    store.clearVault();
+  async function handleExpire() {
+    await expireSession();
   }
 
   async function handlePinSetup(pin: string) {
@@ -114,7 +109,7 @@ export function ChatPage() {
             </Button>
           }
         />
-        <main className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto overscroll-contain px-6" data-scroll>
+        <PinPadViewport>
           <PinPad
             title="Set reveal PIN"
             subtitle="This PIN encrypts messages on your device and unlocks older ones."
@@ -123,7 +118,7 @@ export function ChatPage() {
             onComplete={(pin) => void handlePinSetup(pin)}
             onCancel={handleCancelPinSetup}
           />
-        </main>
+        </PinPadViewport>
       </AppShell>
     );
   }

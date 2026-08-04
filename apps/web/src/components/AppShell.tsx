@@ -19,7 +19,10 @@ export function AppShell({
 
   return (
     <div
-      className={cn('fixed left-0 top-0 z-0 flex justify-center overflow-hidden bg-background', 'sm:bg-[#e8e8ea]')}
+      className={cn(
+        'fixed left-0 top-0 z-0 flex justify-center overflow-hidden bg-background',
+        'sm:bg-[#e8e8ea]',
+      )}
       style={{
         width: 'var(--app-width, 100vw)',
         height: 'var(--app-height, 100dvh)',
@@ -33,7 +36,9 @@ export function AppShell({
         )}
       >
         <AmbientCanvas />
-        <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+        <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden">
+          {children}
+        </div>
       </div>
     </div>
   );

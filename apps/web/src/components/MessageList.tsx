@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { MessageBubble, type MaskLevel } from '@/components/MessageBubble';
-import { PinPad } from '@/components/PinPad';
+import { PinPad, PinPadViewport } from '@/components/PinPad';
 import { messageVault } from '@/services/vault';
 import type { StoredMessage } from '@/store/session';
 
@@ -88,7 +88,10 @@ export function MessageList({
   }
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-4 py-4" data-scroll>
+    <div
+      className="relative flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-4 py-4"
+      data-scroll
+    >
       {messages.map((message, index) => {
         const level = maskLevelFor(index, messages.length);
         const revealed = revealedIds.has(message.id);
@@ -112,18 +115,20 @@ export function MessageList({
       <div ref={bottomRef} />
 
       {pendingRevealId && vaultReady && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/50 px-6 backdrop-blur-xl animate-fade-in">
-          <PinPad
-            title="Reveal message"
-            subtitle="Enter your reveal PIN to decrypt this message temporarily."
-            mode="verify"
-            externalError={pinError}
-            onComplete={(pin) => void handlePinSuccess(pin)}
-            onCancel={() => {
-              setPendingRevealId(null);
-              setPinError(null);
-            }}
-          />
+        <div className="absolute inset-0 z-10 flex min-h-0 flex-col bg-background/50 backdrop-blur-xl animate-fade-in">
+          <PinPadViewport>
+            <PinPad
+              title="Reveal message"
+              subtitle="Enter your reveal PIN to decrypt this message temporarily."
+              mode="verify"
+              externalError={pinError}
+              onComplete={(pin) => void handlePinSuccess(pin)}
+              onCancel={() => {
+                setPendingRevealId(null);
+                setPinError(null);
+              }}
+            />
+          </PinPadViewport>
         </div>
       )}
     </div>

@@ -227,6 +227,33 @@ export function useChatSession() {
     }
   }
 
+  /** Tear down the socket after TTL without wiping the expired UI state. */
+  async function expireSession(): Promise<void> {
+    try {
+      const client = getClient();
+      await client.leaveSession();
+    } catch {
+      try {
+        getClient().disconnect();
+      } catch {
+        // ignore
+      }
+    } finally {
+      clientSingleton = null;
+      wired = false;
+      messageVault.lock();
+      useSessionStore.setState({
+        status: 'expired',
+        error: 'This session has expired (15 minute limit).',
+        partnerPresent: false,
+        expiresAt: null,
+        vaultMeta: null,
+        vaultReady: false,
+        messages: [],
+      });
+    }
+  }
+
   return {
     ...store,
     setupVault,
@@ -234,5 +261,6 @@ export function useChatSession() {
     joinSession,
     sendMessage,
     leaveSession,
+    expireSession,
   };
 }

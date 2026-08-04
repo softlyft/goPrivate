@@ -106,12 +106,12 @@ export function PinPad({
 
   return (
     <Glass
-      className="w-full max-w-xs animate-fade-in"
-      contentClassName="flex flex-col items-center gap-6 px-5 py-7"
+      className="w-full max-w-xs shrink-0 animate-fade-in"
+      contentClassName="flex flex-col items-center gap-4 px-5 py-5 sm:gap-6 sm:py-7"
     >
-      <div className="space-y-2 text-center">
-        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-        {subtitle && <p className="text-sm leading-relaxed text-muted">{subtitle}</p>}
+      <div className="space-y-1.5 text-center sm:space-y-2">
+        <h2 className="text-base font-semibold tracking-tight sm:text-lg">{title}</h2>
+        {subtitle && <p className="text-xs leading-relaxed text-muted sm:text-sm">{subtitle}</p>}
         <p className="text-xs text-muted">{stepLabel}</p>
       </div>
 
@@ -131,7 +131,7 @@ export function PinPad({
 
       {error && <p className="text-xs text-danger">{error}</p>}
 
-      <div className="grid w-full grid-cols-3 gap-2">
+      <div className="grid w-full grid-cols-3 gap-1.5 sm:gap-2">
         {KEYS.map((key, index) => {
           if (key === '') {
             return <div key={`empty-${index}`} />;
@@ -142,7 +142,7 @@ export function PinPad({
                 key={key}
                 type="button"
                 onClick={backspace}
-                className="rounded-2xl py-3.5 text-sm text-muted transition-colors hover:bg-black/[0.05]"
+                className="rounded-2xl py-3 text-sm text-muted transition-colors hover:bg-black/[0.05] sm:py-3.5"
                 aria-label="Delete"
               >
                 ⌫
@@ -154,7 +154,7 @@ export function PinPad({
               key={key}
               type="button"
               onClick={() => pushDigit(key)}
-              className="rounded-2xl border border-white/40 bg-white/40 py-3.5 font-mono text-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-md transition-transform hover:bg-white/60 active:scale-95"
+              className="rounded-2xl border border-white/40 bg-white/40 py-3 font-mono text-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-md transition-transform hover:bg-white/60 active:scale-95 sm:py-3.5"
             >
               {key}
             </button>
@@ -179,5 +179,17 @@ export function PinPad({
         </p>
       )}
     </Glass>
+  );
+}
+
+/** Centers PinPad when space allows; scrolls from the top when content is taller than the screen. */
+export function PinPadViewport({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      data-scroll
+      className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6"
+    >
+      <div className="flex min-h-full flex-col items-center justify-center py-2">{children}</div>
+    </div>
   );
 }

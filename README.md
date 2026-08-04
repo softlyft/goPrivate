@@ -34,6 +34,17 @@ pnpm --filter @goprivate/sdk build
 pnpm dev
 ```
 
+## Scripts
+
+```bash
+pnpm typecheck   # TypeScript across all packages/apps
+pnpm lint        # ESLint (web) + tsc (packages/relay)
+pnpm format      # Prettier — writes files in place
+pnpm format:check # Prettier — validate only (CI)
+pnpm test
+pnpm test:coverage
+```
+
 - Web: http://localhost:3000
 - Relay WebSocket: `ws://localhost:3001/ws`
 - Health: http://localhost:3001/health

@@ -4,10 +4,10 @@ services:
       context: .
       dockerfile: apps/relay/Dockerfile
     ports:
-      - "3001:3001"
+      - '3001:3001'
     environment:
-      PORT: "3001"
-      HOST: "0.0.0.0"
+      PORT: '3001'
+      HOST: '0.0.0.0'
     restart: unless-stopped
 
   web:
@@ -15,7 +15,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       NEXT_PUBLIC_RELAY_URL: ws://localhost:3001/ws
     depends_on:

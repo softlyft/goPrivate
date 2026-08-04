@@ -2,6 +2,7 @@ import { createCryptoProvider, type ICryptoProvider, type KeyPair } from '@gopri
 import {
   AppMessageKind,
   ClientEvent,
+  MAX_CHAT_TEXT_CHARS,
   RelayEvent,
   type AppPlaintext,
   type ClientToRelayMessage,
@@ -33,6 +34,9 @@ function generateSessionId(): string {
 }
 
 const PING_INTERVAL_MS = 20_000;
+const SESSION_RPC_TIMEOUT_MS = 45_000;
+const CONNECT_ATTEMPTS = 4;
+const CONNECT_TIMEOUT_MS = 45_000;
 
 export class RelayClient implements IRelayClient {
   private transport: ITransport;
@@ -113,9 +117,27 @@ export class RelayClient implements IRelayClient {
     this.setStatus('connecting');
     this.transport.onMessage((data) => this.handleRawMessage(data));
     this.transport.onClose(() => this.handleTransportClose());
-    await this.transport.connect(url);
-    this.setStatus(this._sessionId ? 'connected' : 'connected');
-    this.startPing();
+
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= CONNECT_ATTEMPTS; attempt++) {
+      try {
+        await this.transport.connect(url, { timeoutMs: CONNECT_TIMEOUT_MS });
+        this.setStatus('connected');
+        this.startPing();
+        return;
+      } catch (err) {
+        lastError = err;
+        if (attempt < CONNECT_ATTEMPTS) {
+          const delay = Math.min(2_000 * 2 ** (attempt - 1), 12_000);
+          await new Promise((r) => setTimeout(r, delay));
+        }
+      }
+    }
+
+    this.setStatus('error');
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('WebSocket connection failed after retries');
   }
 
   /**
@@ -172,7 +194,7 @@ export class RelayClient implements IRelayClient {
         this.off('sessionCreated', onCreated);
         this.off('error', onError);
         reject(new Error('Timed out creating session'));
-      }, 8000);
+      }, SESSION_RPC_TIMEOUT_MS);
 
       const onCreated = (createdId: string) => {
         clearTimeout(timer);
@@ -220,7 +242,7 @@ export class RelayClient implements IRelayClient {
       const timer = setTimeout(() => {
         cleanup();
         reject(new Error('Timed out joining session'));
-      }, 8000);
+      }, SESSION_RPC_TIMEOUT_MS);
 
       const onSuccess = () => {
         cleanup();
@@ -252,6 +274,9 @@ export class RelayClient implements IRelayClient {
   async sendMessage(text: string): Promise<EncryptedMessage> {
     if (!this.sharedKey) {
       throw new Error('Secure channel is not ready');
+    }
+    if (text.length > MAX_CHAT_TEXT_CHARS) {
+      throw new Error(`Message too long (max ${MAX_CHAT_TEXT_CHARS} characters)`);
     }
 
     const plaintext: AppPlaintext = { kind: AppMessageKind.CHAT, text };

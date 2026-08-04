@@ -1,5 +1,7 @@
 import type { ITransport } from './types.js';
 
+const DEFAULT_CONNECT_TIMEOUT_MS = 45_000;
+
 export class WebSocketTransport implements ITransport {
   private socket: WebSocket | null = null;
   private generation = 0;
@@ -11,10 +13,24 @@ export class WebSocketTransport implements ITransport {
     return this.socket?.readyState ?? WebSocket.CLOSED;
   }
 
-  connect(url: string): Promise<void> {
+  connect(url: string, options?: { timeoutMs?: number }): Promise<void> {
     return new Promise((resolve, reject) => {
       const generation = ++this.generation;
       this.detachSocket();
+
+      const timeoutMs = options?.timeoutMs ?? DEFAULT_CONNECT_TIMEOUT_MS;
+      let settled = false;
+
+      const timer = setTimeout(() => {
+        if (settled || generation !== this.generation) return;
+        settled = true;
+        try {
+          socket.close();
+        } catch {
+          // ignore
+        }
+        reject(new Error('WebSocket connection timed out — relay may be waking up'));
+      }, timeoutMs);
 
       const socket = new WebSocket(url);
 
@@ -27,6 +43,9 @@ export class WebSocketTransport implements ITransport {
           }
           return;
         }
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
         this.socket = socket;
         resolve();
       };
@@ -34,6 +53,9 @@ export class WebSocketTransport implements ITransport {
       socket.onerror = (event) => {
         if (generation !== this.generation) return;
         this.errorHandler?.(event);
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
         reject(new Error('WebSocket connection failed'));
       };
 
@@ -47,7 +69,13 @@ export class WebSocketTransport implements ITransport {
       socket.onclose = () => {
         if (generation !== this.generation) return;
         this.socket = null;
-        this.closeHandler?.();
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          reject(new Error('WebSocket closed before open'));
+        } else {
+          this.closeHandler?.();
+        }
       };
     });
   }

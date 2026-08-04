@@ -58,17 +58,17 @@ export function GuidePage() {
               <div>
                 <h3 className="mb-1 text-sm font-medium text-foreground">Start a private chat</h3>
                 <p>
-                  Tap <strong className="font-medium text-foreground">Create Session</strong>, choose
-                  a 4-digit PIN, and you’ll get a link. Send that link to the one person you want to
-                  talk to.
+                  Tap <strong className="font-medium text-foreground">Create Session</strong>,
+                  choose a 4-digit PIN, and you’ll get a link. Send that link to the one person you
+                  want to talk to.
                 </p>
               </div>
               <div>
                 <h3 className="mb-1 text-sm font-medium text-foreground">Join someone’s chat</h3>
                 <p>
                   Open the link they sent you (or paste it on the home screen and tap{' '}
-                  <strong className="font-medium text-foreground">Join</strong>). You’ll set your own
-                  PIN, then you’re in.
+                  <strong className="font-medium text-foreground">Join</strong>). You’ll set your
+                  own PIN, then you’re in.
                 </p>
               </div>
               <div>
@@ -93,8 +93,8 @@ export function GuidePage() {
                 </h3>
                 <p>
                   Double-tap a hidden message and enter{' '}
-                  <strong className="font-medium text-foreground">your</strong> PIN. It shows briefly,
-                  then hides again.
+                  <strong className="font-medium text-foreground">your</strong> PIN. It shows
+                  briefly, then hides again.
                 </p>
                 <p>
                   Your PIN lives only on your phone or computer. The other person has their own PIN.
@@ -104,13 +104,14 @@ export function GuidePage() {
               <div>
                 <h3 className="mb-1 text-sm font-medium text-foreground">Watch the clock</h3>
                 <p>
-                  Every chat lasts <strong className="font-medium text-foreground">15 minutes</strong>.
-                  You’ll see a timer at the top. When it hits zero, the chat ends.
+                  Every chat lasts{' '}
+                  <strong className="font-medium text-foreground">15 minutes</strong>. You’ll see a
+                  timer at the top. When it hits zero, the chat ends.
                 </p>
                 <p>
                   You can also leave anytime with{' '}
-                  <strong className="font-medium text-foreground">Leave</strong>, or tap goPrivate to
-                  go home.
+                  <strong className="font-medium text-foreground">Leave</strong>, or tap goPrivate
+                  to go home.
                 </p>
               </div>
             </div>
@@ -136,12 +137,12 @@ export function GuidePage() {
                 When the chat ends, it’s over.
               </li>
               <li>
-                <strong className="font-medium text-foreground">No accounts.</strong> There’s nothing
-                to log into or delete later.
+                <strong className="font-medium text-foreground">No accounts.</strong> There’s
+                nothing to log into or delete later.
               </li>
               <li>
-                <strong className="font-medium text-foreground">One guest only.</strong> A session is
-                for you and one other person.
+                <strong className="font-medium text-foreground">One guest only.</strong> A session
+                is for you and one other person.
               </li>
               <li>
                 <strong className="font-medium text-foreground">Remember your PIN</strong> for that

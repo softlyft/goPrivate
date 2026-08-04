@@ -52,11 +52,11 @@ You can also leave anytime with **Leave**, or tap **goPrivate** to go home.
 
 ## How a typical chat goes
 
-1. You create a session and set your PIN  
-2. You send the link to one person  
-3. They open it and set their PIN  
-4. You both chat while the timer runs  
-5. You leave — and the conversation is gone  
+1. You create a session and set your PIN
+2. You send the link to one person
+3. They open it and set their PIN
+4. You both chat while the timer runs
+5. You leave — and the conversation is gone
 
 That’s it.
 
@@ -76,11 +76,11 @@ That’s it.
 
 goPrivate keeps things simple on purpose. It doesn’t support:
 
-- Photos, files, voice, or video  
-- Group chats  
-- Contact lists or usernames  
-- Message history after you leave  
-- Notifications after the chat is over  
+- Photos, files, voice, or video
+- Group chats
+- Contact lists or usernames
+- Message history after you leave
+- Notifications after the chat is over
 
 If you need those, a regular messaging app is a better fit. If you need a short, private, vanishing chat — you’re in the right place.
 
@@ -88,10 +88,12 @@ If you need those, a regular messaging app is a better fit. If you need a short,
 
 ## A quick privacy promise (in plain words)
 
-- Your messages are encrypted in transit so the relay can’t read them  
-- Messages are also encrypted on your device — inspecting app storage won’t show chat text  
-- We don’t ask who you are  
-- We don’t keep your chats after the session ends  
-- Your reveal PIN never leaves your device; it unlocks local decryption  
+- After both of you connect, messages are encrypted end-to-end so a normal relay can’t read them
+- Messages are also encrypted on your device — inspecting app storage won’t show chat text
+- We don’t ask who you are
+- We don’t keep your chats after the session ends
+- Your reveal PIN never leaves your device; it unlocks local decryption
+
+**Trust note:** share the link only with your partner. Encryption assumes an honest relay during the brief key handshake (same TOFU model as many ephemeral tools).
 
 Talk freely. Leave when you’re done. Nothing sticks around.

@@ -9,7 +9,19 @@
  * offline guessing; the UI also rate-limits PIN attempts.
  */
 
-const PBKDF2_ITERATIONS = 600_000;
+const PBKDF2_ITERATIONS_DEFAULT = 600_000;
+let pbkdf2Iterations = PBKDF2_ITERATIONS_DEFAULT;
+
+/** Test-only: lower PBKDF2 cost so vault unit tests stay fast. */
+export function configureVaultForTests(options: { iterations?: number }): void {
+  if (options.iterations !== undefined) {
+    pbkdf2Iterations = options.iterations;
+  }
+}
+
+export function resetVaultTestConfig(): void {
+  pbkdf2Iterations = PBKDF2_ITERATIONS_DEFAULT;
+}
 const WRAP_IV_LENGTH = 12;
 const MSG_IV_LENGTH = 12;
 
@@ -44,18 +56,14 @@ function subtle(): SubtleCrypto {
 }
 
 async function derivePinKey(pin: string, salt: ArrayBuffer): Promise<CryptoKey> {
-  const material = await subtle().importKey(
-    'raw',
-    new TextEncoder().encode(pin),
-    'PBKDF2',
-    false,
-    ['deriveKey'],
-  );
+  const material = await subtle().importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, [
+    'deriveKey',
+  ]);
   return subtle().deriveKey(
     {
       name: 'PBKDF2',
       salt,
-      iterations: PBKDF2_ITERATIONS,
+      iterations: pbkdf2Iterations,
       hash: 'SHA-256',
     },
     material,

@@ -18,7 +18,7 @@ export interface DecryptedChatMessage {
 }
 
 export interface ITransport {
-  connect(url: string): Promise<void>;
+  connect(url: string, options?: { timeoutMs?: number }): Promise<void>;
   send(data: string): void;
   onMessage(handler: (data: string) => void): void;
   onClose(handler: () => void): void;

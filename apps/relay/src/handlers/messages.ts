@@ -1,50 +1,82 @@
 import type { WebSocket } from '@fastify/websocket';
 import {
   ClientEvent,
+  MAX_RELAY_SESSIONS,
+  RECONNECT_GRACE_MS,
   RelayEvent,
-  type ClientToRelayMessage,
 } from '@goprivate/protocol';
 import type { ISessionStore, Participant, Session } from '../session/store.js';
+import { allowAction, canCreateSession } from '../services/limits.js';
 import { broadcast, sendToSocket } from '../services/messenger.js';
+import { parseClientMessage } from '../services/validate.js';
 
 function createParticipantId(): string {
   return crypto.randomUUID();
 }
 
 export function createMessageHandler(store: ISessionStore) {
-  return function handleMessage(socket: WebSocket, raw: string): void {
-    let message: ClientToRelayMessage;
-    try {
-      message = JSON.parse(raw) as ClientToRelayMessage;
-    } catch {
+  return function handleMessage(socket: WebSocket, raw: string, ip = 'unknown'): void {
+    const parsed = parseClientMessage(raw);
+    if (!parsed.ok) {
       sendToSocket(socket, {
         type: RelayEvent.ERROR,
-        payload: { code: 'INVALID_JSON', message: 'Could not parse message' },
+        payload: { code: parsed.code, message: parsed.message },
       });
       return;
     }
 
-    switch (message.type) {
-      case ClientEvent.CREATE_SESSION:
-        handleCreateSession(store, socket, message.payload?.sessionId);
-        break;
-      case ClientEvent.JOIN_SESSION:
-        handleJoinSession(store, socket, message.payload.sessionId);
-        break;
-      case ClientEvent.SEND_MESSAGE:
-        handleSendMessage(store, socket, message.payload.message);
-        break;
-      case ClientEvent.PING:
-        sendToSocket(socket, { type: RelayEvent.PONG, payload: {} });
-        break;
-      case ClientEvent.LEAVE_SESSION:
-        handleLeave(store, socket);
-        break;
-      default:
-        sendToSocket(socket, {
-          type: RelayEvent.ERROR,
-          payload: { code: 'UNKNOWN_EVENT', message: 'Unknown event type' },
-        });
+    const message = parsed.message;
+
+    try {
+      switch (message.type) {
+        case ClientEvent.CREATE_SESSION:
+          if (!allowAction(ip, 'create')) {
+            sendToSocket(socket, {
+              type: RelayEvent.ERROR,
+              payload: { code: 'RATE_LIMITED', message: 'Too many session creates' },
+            });
+            return;
+          }
+          handleCreateSession(store, socket, message.payload?.sessionId);
+          break;
+        case ClientEvent.JOIN_SESSION:
+          if (!allowAction(ip, 'join')) {
+            sendToSocket(socket, {
+              type: RelayEvent.ERROR,
+              payload: { code: 'RATE_LIMITED', message: 'Too many join attempts' },
+            });
+            return;
+          }
+          handleJoinSession(store, socket, message.payload.sessionId);
+          break;
+        case ClientEvent.SEND_MESSAGE:
+          if (!allowAction(ip, 'send')) {
+            sendToSocket(socket, {
+              type: RelayEvent.ERROR,
+              payload: { code: 'RATE_LIMITED', message: 'Too many messages' },
+            });
+            return;
+          }
+          handleSendMessage(store, socket, message.payload.message);
+          break;
+        case ClientEvent.PING:
+          sendToSocket(socket, { type: RelayEvent.PONG, payload: {} });
+          break;
+        case ClientEvent.LEAVE_SESSION:
+          handleLeave(store, socket);
+          break;
+        default:
+          sendToSocket(socket, {
+            type: RelayEvent.ERROR,
+            payload: { code: 'UNKNOWN_EVENT', message: 'Unknown event type' },
+          });
+      }
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : 'Unexpected error';
+      sendToSocket(socket, {
+        type: RelayEvent.ERROR,
+        payload: { code: 'INTERNAL_ERROR', message: detail },
+      });
     }
   };
 }
@@ -56,6 +88,7 @@ function expireIfNeeded(store: ISessionStore, session: Session): boolean {
 }
 
 export function expireSession(store: ISessionStore, session: Session): void {
+  cancelPendingDestroy(session.id);
   const sockets = session.participants.map((p) => p.socket);
   broadcast(sockets, {
     type: RelayEvent.SESSION_EXPIRED,
@@ -79,11 +112,7 @@ export function sweepExpiredSessions(store: ISessionStore): number {
   return expired.length;
 }
 
-function handleCreateSession(
-  store: ISessionStore,
-  socket: WebSocket,
-  sessionId?: string,
-): void {
+function handleCreateSession(store: ISessionStore, socket: WebSocket, sessionId?: string): void {
   const existing = store.findBySocket(socket);
   if (existing) {
     sendToSocket(socket, {
@@ -119,6 +148,17 @@ function handleCreateSession(
     sendToSocket(socket, {
       type: RelayEvent.ERROR,
       payload: { code: 'SESSION_EXISTS', message: 'Session already exists' },
+    });
+    return;
+  }
+
+  if (!canCreateSession(store.size())) {
+    sendToSocket(socket, {
+      type: RelayEvent.ERROR,
+      payload: {
+        code: 'SERVER_BUSY',
+        message: `Session capacity reached (${MAX_RELAY_SESSIONS})`,
+      },
     });
     return;
   }
@@ -163,7 +203,6 @@ function handleJoinSession(store: ISessionStore, socket: WebSocket, sessionId: s
 
   try {
     const participant: Participant = { id: createParticipantId(), socket };
-    // Empty session after disconnect: treat rejoin like occupying the free slot
     if (session.participants.length === 0) {
       session.participants.push(participant);
       sendToSocket(socket, {
@@ -187,12 +226,14 @@ function handleJoinSession(store: ISessionStore, socket: WebSocket, sessionId: s
       },
     });
   } catch (err) {
-    const code = err instanceof Error && err.message === 'SESSION_FULL' ? 'SESSION_FULL' : 'JOIN_FAILED';
+    const code =
+      err instanceof Error && err.message === 'SESSION_FULL' ? 'SESSION_FULL' : 'JOIN_FAILED';
     sendToSocket(socket, {
       type: RelayEvent.ERROR,
       payload: {
         code,
-        message: code === 'SESSION_FULL' ? 'Session already has two participants' : 'Failed to join',
+        message:
+          code === 'SESSION_FULL' ? 'Session already has two participants' : 'Failed to join',
       },
     });
   }
@@ -216,9 +257,7 @@ function handleSendMessage(
     return;
   }
 
-  const peers = found.session.participants
-    .filter((p) => p.socket !== socket)
-    .map((p) => p.socket);
+  const peers = found.session.participants.filter((p) => p.socket !== socket).map((p) => p.socket);
 
   broadcast(peers, {
     type: RelayEvent.MESSAGE,
@@ -230,8 +269,6 @@ export function handleDisconnect(store: ISessionStore, socket: WebSocket): void 
   handleLeave(store, socket);
 }
 
-/** Keep empty sessions briefly so mobile app-switch can reconnect without refresh. */
-const RECONNECT_GRACE_MS = 60_000;
 const pendingDestroy = new Map<string, ReturnType<typeof setTimeout>>();
 
 function cancelPendingDestroy(sessionId: string): void {
@@ -259,9 +296,7 @@ function handleLeave(store: ISessionStore, socket: WebSocket): void {
   if (!found) return;
 
   const { session, participant } = found;
-  const peers = session.participants
-    .filter((p) => p.id !== participant.id)
-    .map((p) => p.socket);
+  const peers = session.participants.filter((p) => p.id !== participant.id).map((p) => p.socket);
 
   const { destroyed } = store.removeParticipant(session.id, participant.id);
 
@@ -273,6 +308,5 @@ function handleLeave(store: ISessionStore, socket: WebSocket): void {
     return;
   }
 
-  // Last participant left — keep the empty session briefly for reconnect
   scheduleDestroyIfEmpty(store, session.id);
 }

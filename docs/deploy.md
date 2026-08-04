@@ -2,10 +2,10 @@
 
 ## Overview
 
-| Piece | Host | Config |
-|-------|------|--------|
-| Web (Next.js) | [Vercel](https://vercel.com) via **GitHub Actions** | `.github/workflows/deploy-vercel.yml` |
-| Relay (WebSocket) | [Render](https://render.com) | `render.yaml` |
+| Piece             | Host                                                | Config                                |
+| ----------------- | --------------------------------------------------- | ------------------------------------- |
+| Web (Next.js)     | [Vercel](https://vercel.com) via **GitHub Actions** | `.github/workflows/deploy-vercel.yml` |
+| Relay (WebSocket) | [Render](https://render.com)                        | `render.yaml`                         |
 
 Deploy the **relay first**, then the web app (the web app needs the relay’s `wss://` URL).
 
@@ -15,10 +15,10 @@ Deploy the **relay first**, then the web app (the web app needs the relay’s `w
 
 ## Relay URL format (important)
 
-| Purpose | Scheme | Example |
-|---------|--------|---------|
-| Browser / health check | `https://` | `https://goprivate-relay.onrender.com/health` |
-| App WebSocket (`NEXT_PUBLIC_RELAY_URL`) | `wss://` + `/ws` | `wss://goprivate-relay.onrender.com/ws` |
+| Purpose                                 | Scheme           | Example                                       |
+| --------------------------------------- | ---------------- | --------------------------------------------- |
+| Browser / health check                  | `https://`       | `https://goprivate-relay.onrender.com/health` |
+| App WebSocket (`NEXT_PUBLIC_RELAY_URL`) | `wss://` + `/ws` | `wss://goprivate-relay.onrender.com/ws`       |
 
 Do **not** put the HTTPS homepage URL in `NEXT_PUBLIC_RELAY_URL`. The client opens a WebSocket; it must be `wss://…/ws`.
 
@@ -62,7 +62,7 @@ wss://goprivate-relay.onrender.com/ws
 
 ### Fix “No Next.js version detected”
 
-That error means Vercel’s Root Directory is wrong (often linked from `apps/web` *and* set to `apps/web`, so it looks for `apps/web/apps/web`).
+That error means Vercel’s Root Directory is wrong (often linked from `apps/web` _and_ set to `apps/web`, so it looks for `apps/web/apps/web`).
 
 **Re-link from the monorepo root:**
 
@@ -88,17 +88,17 @@ Update GitHub secrets `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` from the new root `.
 5. Create a token: [vercel.com/account/tokens](https://vercel.com/account/tokens)
 6. Vercel project env (Production):
 
-| Name | Value |
-|------|--------|
+| Name                    | Value                                                      |
+| ----------------------- | ---------------------------------------------------------- |
 | `NEXT_PUBLIC_RELAY_URL` | `wss://goprivate-relay.onrender.com/ws` (or your hostname) |
 
 7. GitHub → **Settings → Secrets and variables → Actions**:
 
-| Secret | Value |
-|--------|--------|
-| `VERCEL_TOKEN` | Vercel token |
-| `VERCEL_ORG_ID` | `orgId` |
-| `VERCEL_PROJECT_ID` | `projectId` |
+| Secret                  | Value                          |
+| ----------------------- | ------------------------------ |
+| `VERCEL_TOKEN`          | Vercel token                   |
+| `VERCEL_ORG_ID`         | `orgId`                        |
+| `VERCEL_PROJECT_ID`     | `projectId`                    |
 | `NEXT_PUBLIC_RELAY_URL` | Same `wss://…/ws` URL as above |
 
 8. Push to `main` or run the workflow manually (**Deploy Web to Vercel**).
@@ -137,11 +137,11 @@ NEXT_PUBLIC_RELAY_URL=wss://goprivate-relay.onrender.com/ws
 
 Restart `pnpm --filter @goprivate/web dev` after changing it (Next only reads `NEXT_PUBLIC_*` on startup).
 
-| Environment | `NEXT_PUBLIC_RELAY_URL` |
-|-------------|-------------------------|
-| Local + local relay | `ws://localhost:3001/ws` |
+| Environment          | `NEXT_PUBLIC_RELAY_URL`                 |
+| -------------------- | --------------------------------------- |
+| Local + local relay  | `ws://localhost:3001/ws`                |
 | Local + Render relay | `wss://goprivate-relay.onrender.com/ws` |
-| Production (Vercel) | `wss://goprivate-relay.onrender.com/ws` |
+| Production (Vercel)  | `wss://goprivate-relay.onrender.com/ws` |
 
 ---
 
@@ -157,8 +157,8 @@ Restart `pnpm --filter @goprivate/web dev` after changing it (Next only reads `N
 - Wrong scheme or path — must be `wss://…/ws`, not `https://…` and not missing `/ws`
 - Local app still on `ws://localhost:3001/ws` while the relay isn’t running — fix `.env.local` or start the relay
 - Production build still has an old URL — update Vercel env **and** GitHub secret, then **redeploy**
-- Relay sleeping on Render free tier — wait ~30–60s and retry; confirm `https://<relay>/health` returns OK
+- Relay sleeping on Render free tier — the client retries for about a minute; confirm `https://<relay>/health` returns OK
 
-### Create hangs on “Creating…”
+### Create hangs on “Creating…” / “Waking relay”
 
-Same checklist as above; cold start is the most common cause after idle.
+Cold start is the usual cause on free Render. Wait for retries to finish, or hit `/health` once to wake the service, then try again.
