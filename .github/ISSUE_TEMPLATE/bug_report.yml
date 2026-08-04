@@ -1,6 +1,6 @@
 name: Bug report
 description: Something broken in the reference client, relay, or tooling
-labels: ["bug"]
+labels: ['bug']
 body:
   - type: dropdown
     id: area

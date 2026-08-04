@@ -53,5 +53,4 @@ User A                    Relay                     User B
 | `IRelayClient`    | sdk     | High-level session + messaging  |
 | `ISessionStore`   | relay   | Swap in-memory store if needed  |
 
-
 See also: [Threat model](../threat-model.md), [Protocol docs](../protocol/), [ADRs](../adr/).

@@ -1,6 +1,6 @@
 name: Documentation improvement
 description: Fix or expand docs, RFCs, ADRs, or governance
-labels: ["documentation"]
+labels: ['documentation']
 body:
   - type: textarea
     id: location

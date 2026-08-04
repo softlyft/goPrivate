@@ -4,9 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Glass } from '@/components/ui/glass';
 
-const SUPPORT_URL =
-  process.env.NEXT_PUBLIC_SUPPORT_URL ?? 'https://github.com/sponsors/softlyft';
-
+const SUPPORT_URL = process.env.NEXT_PUBLIC_SUPPORT_URL ?? 'https://github.com/sponsors/softlyft';
 
 export function ConversationEnded({ onHome }: { onHome: () => void }) {
   const support = (

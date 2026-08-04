@@ -58,9 +58,12 @@ export function GuidePage() {
               <div>
                 <h3 className="mb-1 text-sm font-medium text-foreground">Start a private chat</h3>
                 <p>
-                  Tap <strong className="font-medium text-foreground">Start Private Conversation</strong>,
-                  choose a 4-digit PIN, and you’ll get a link. Send that link to the one person you
-                  want to talk to.
+                  Tap{' '}
+                  <strong className="font-medium text-foreground">
+                    Start Private Conversation
+                  </strong>
+                  , choose a 4-digit PIN, and you’ll get a link. Send that link to the one person
+                  you want to talk to.
                 </p>
               </div>
               <div>

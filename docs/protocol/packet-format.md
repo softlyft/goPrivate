@@ -4,13 +4,13 @@ All client ↔ relay frames are **JSON text** over WebSocket (reference path `/w
 
 ## Client → relay (`ClientEvent`)
 
-| Type | Purpose |
-| ---- | ------- |
-| `CREATE_SESSION` | Create or reclaim a session |
-| `JOIN_SESSION` | Join an existing session |
-| `SEND_MESSAGE` | Forward an opaque message envelope to the peer |
-| `PING` | Keepalive |
-| `LEAVE_SESSION` | Leave the session |
+| Type             | Purpose                                        |
+| ---------------- | ---------------------------------------------- |
+| `CREATE_SESSION` | Create or reclaim a session                    |
+| `JOIN_SESSION`   | Join an existing session                       |
+| `SEND_MESSAGE`   | Forward an opaque message envelope to the peer |
+| `PING`           | Keepalive                                      |
+| `LEAVE_SESSION`  | Leave the session                              |
 
 ### Encrypted message envelope
 
@@ -26,15 +26,15 @@ The relay treats `encryptedPayload` as opaque after validation (length limits). 
 
 ## Relay → client (`RelayEvent`)
 
-| Type | Purpose |
-| ---- | ------- |
-| `SESSION_CREATED` | Session accepted |
-| `PARTNER_JOINED` | Second participant present |
-| `MESSAGE` | Forwarded envelope |
-| `PARTNER_LEFT` | Peer disconnected |
-| `SESSION_EXPIRED` | TTL reached |
-| `ERROR` | Structured error (`code`, `message`) |
-| `PONG` | Response to `PING` |
+| Type              | Purpose                              |
+| ----------------- | ------------------------------------ |
+| `SESSION_CREATED` | Session accepted                     |
+| `PARTNER_JOINED`  | Second participant present           |
+| `MESSAGE`         | Forwarded envelope                   |
+| `PARTNER_LEFT`    | Peer disconnected                    |
+| `SESSION_EXPIRED` | TTL reached                          |
+| `ERROR`           | Structured error (`code`, `message`) |
+| `PONG`            | Response to `PING`                   |
 
 ## Size limits (reference constants)
 

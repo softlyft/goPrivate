@@ -1,6 +1,6 @@
 name: Protocol proposal
 description: Propose a change to the goPrivate protocol
-labels: ["protocol"]
+labels: ['protocol']
 body:
   - type: textarea
     id: motivation

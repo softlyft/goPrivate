@@ -79,12 +79,12 @@ Hosted reference deploy (Vercel + Render): [`docs/deploy.md`](./docs/deploy.md).
 
 ## Documentation
 
-| Audience | Start here |
-| -------- | ---------- |
-| Users of the reference client | [User guide](./docs/user-guide.md) |
-| Implementers | [Protocol docs](./docs/protocol/) · [RFCs](./rfcs/) |
-| Operators | [Self-hosting](./docs/self-hosting.md) |
-| Contributors | [Contributing](./CONTRIBUTING.md) · [Docs index](./docs/README.md) |
+| Audience                      | Start here                                                         |
+| ----------------------------- | ------------------------------------------------------------------ |
+| Users of the reference client | [User guide](./docs/user-guide.md)                                 |
+| Implementers                  | [Protocol docs](./docs/protocol/) · [RFCs](./rfcs/)                |
+| Operators                     | [Self-hosting](./docs/self-hosting.md)                             |
+| Contributors                  | [Contributing](./CONTRIBUTING.md) · [Docs index](./docs/README.md) |
 
 ## Roadmap
 

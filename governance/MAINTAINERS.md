@@ -2,8 +2,8 @@
 
 ## Active maintainers
 
-| Name / handle | Role | Scope |
-| ------------- | ---- | ----- |
+| Name / handle          | Role                      | Scope                                                 |
+| ---------------------- | ------------------------- | ----------------------------------------------------- |
 | Softlyft (`@softlyft`) | Project maintainer (BDFL) | Protocol direction, releases, final ADR/RFC decisions |
 
 Update this table when maintainership changes.

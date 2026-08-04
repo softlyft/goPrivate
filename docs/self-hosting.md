@@ -30,18 +30,18 @@ Or run packages/apps individually — see the root [README](../README.md).
 
 ### Reference relay (`apps/relay`)
 
-| Variable | Default | Purpose |
-| -------- | ------- | ------- |
-| `PORT` | `3001` | HTTP / WebSocket listen port |
-| `HOST` | `0.0.0.0` | Bind address |
-| `NODE_ENV` | — | Set `production` in deployed environments |
+| Variable   | Default   | Purpose                                   |
+| ---------- | --------- | ----------------------------------------- |
+| `PORT`     | `3001`    | HTTP / WebSocket listen port              |
+| `HOST`     | `0.0.0.0` | Bind address                              |
+| `NODE_ENV` | —         | Set `production` in deployed environments |
 
 ### Reference client (`apps/web`)
 
-| Variable | Default | Purpose |
-| -------- | ------- | ------- |
-| `NEXT_PUBLIC_RELAY_URL` | `ws://localhost:3001/ws` | WebSocket URL (`ws://` or `wss://`, must include `/ws`) |
-| `NEXT_PUBLIC_SUPPORT_URL` | unset | Optional link for “Support goPrivate” on the conversation-ended screen |
+| Variable                  | Default                  | Purpose                                                                |
+| ------------------------- | ------------------------ | ---------------------------------------------------------------------- |
+| `NEXT_PUBLIC_RELAY_URL`   | `ws://localhost:3001/ws` | WebSocket URL (`ws://` or `wss://`, must include `/ws`)                |
+| `NEXT_PUBLIC_SUPPORT_URL` | unset                    | Optional link for “Support goPrivate” on the conversation-ended screen |
 
 `NEXT_PUBLIC_*` values are baked in at **build** time for Next.js.
 

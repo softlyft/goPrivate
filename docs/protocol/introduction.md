@@ -9,12 +9,12 @@ goPrivate is an **open protocol for ephemeral 1:1 communication**.
 
 ## Documents in this folder
 
-| Doc | Topic |
-| --- | ----- |
-| [sessions.md](./sessions.md) | Session ids, TTL, occupancy, reconnect grace |
-| [handshake.md](./handshake.md) | ECDH / TOFU public-key exchange |
-| [packet-format.md](./packet-format.md) | Client ↔ relay JSON events |
-| [message-lifecycle.md](./message-lifecycle.md) | From compose to peer decrypt |
-| [relay.md](./relay.md) | Relay responsibilities and limits |
+| Doc                                            | Topic                                        |
+| ---------------------------------------------- | -------------------------------------------- |
+| [sessions.md](./sessions.md)                   | Session ids, TTL, occupancy, reconnect grace |
+| [handshake.md](./handshake.md)                 | ECDH / TOFU public-key exchange              |
+| [packet-format.md](./packet-format.md)         | Client ↔ relay JSON events                   |
+| [message-lifecycle.md](./message-lifecycle.md) | From compose to peer decrypt                 |
+| [relay.md](./relay.md)                         | Relay responsibilities and limits            |
 
 Independent implementations should be possible from these docs without reading the TypeScript source — that is an explicit goal as the protocol stabilizes.
