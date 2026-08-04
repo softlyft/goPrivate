@@ -1,76 +1,113 @@
 # goPrivate
 
-Ephemeral end-to-end encrypted messaging. No accounts. No history. The relay never sees plaintext.
+**goPrivate is an open protocol for ephemeral communication.**
 
-## Monorepo
+It enables conversations that naturally disappear without relying on user accounts, cloud storage, or persistent message history.
+
+The official web client is the first **reference client**. The WebSocket server is the first **reference relay**. Long-term success is measured by protocol adoption — not by a single application.
+
+Licensed under [AGPLv3](./LICENSE).
+
+## Vision
+
+Private, short-lived 1:1 communication should be possible without identity platforms or durable server-side archives. Self-hosting is a first-class option. See [`governance/VISION.md`](./governance/VISION.md) and [`PROJECT_CHARTER.md`](./PROJECT_CHARTER.md).
+
+## Philosophy
+
+- Privacy before convenience
+- Protocol first, application second
+- The relay knows as little as possible
+- No vendor lock-in; no premium / enterprise split
+
+Full list: [`governance/PRINCIPLES.md`](./governance/PRINCIPLES.md).
+
+## Architecture
 
 ```
 goprivate/
   apps/
-    web/       Next.js client
-    relay/     Fastify WebSocket relay
+    web/          Reference client (Next.js)
+    relay/        Reference relay (Fastify WebSocket)
   packages/
-    protocol/  Shared event & message types
-    crypto/    Web Crypto ECDH + AES-GCM (ICryptoProvider)
-    sdk/       Browser relay client (IRelayClient / ITransport)
-  docs/
-    architecture.md
-    user-guide.md
+    protocol/     Shared events, limits, types
+    crypto/       ECDH P-256 + AES-GCM (ICryptoProvider)
+    sdk/          Relay client (IRelayClient / ITransport)
+  docs/           Architecture, protocol, ADRs, self-hosting
+  governance/     Principles, vision, roadmap, decision process
+  rfcs/           Protocol change proposals
+  security/       Pointers to threat model & disclosure
+  examples/       Samples (placeholder)
+  tools/          Dev tools (placeholder)
+  .github/        CI, templates, funding
 ```
 
-## Docs
+- [Architecture overview](./docs/architecture/overview.md)
+- [Threat model](./docs/threat-model.md)
+- [Protocol documentation](./docs/protocol/)
+- [ADRs](./docs/adr/)
 
-- [User Guide](docs/user-guide.md) — for people using the app
-- [Architecture](docs/architecture.md) — for developers
-- [Deploy (Vercel + Render)](docs/deploy.md) — free hosting
-
-## Quick start
+## Getting started
 
 ```bash
 pnpm install
-pnpm --filter @goprivate/protocol build
-pnpm --filter @goprivate/crypto build
-pnpm --filter @goprivate/sdk build
+pnpm build:packages
 pnpm dev
 ```
 
-## Scripts
+- Reference client: http://localhost:3000
+- Reference relay: `ws://localhost:3001/ws`
+- Health: http://localhost:3001/health
 
 ```bash
-pnpm typecheck   # TypeScript across all packages/apps
-pnpm lint        # ESLint (web) + tsc (packages/relay)
-pnpm format      # Prettier — writes files in place
-pnpm format:check # Prettier — validate only (CI)
+pnpm typecheck
+pnpm lint
+pnpm format          # writes with Prettier
+pnpm format:check
 pnpm test
 pnpm test:coverage
 ```
 
-- Web: http://localhost:3000
-- Relay WebSocket: `ws://localhost:3001/ws`
-- Health: http://localhost:3001/health
-
-To use the hosted Render relay from local Next.js, set in `apps/web/.env.local`:
-
-```bash
-NEXT_PUBLIC_RELAY_URL=wss://goprivate-relay.onrender.com/ws
-```
-
-See [docs/deploy.md](docs/deploy.md) for Vercel + Render setup and URL format rules (`wss://…/ws`, not `https://`).
-
-## Docker
+## Self-hosting
 
 ```bash
 docker compose up --build
 ```
 
-## MVP flow
+Full guide: [`docs/self-hosting.md`](./docs/self-hosting.md).
 
-1. Open the site and click **Create Session**
-2. Copy the share link
-3. Open the link in another browser / incognito window
-4. Exchange encrypted messages
-5. Leave — the relay destroys the in-memory session
+Hosted reference deploy (Vercel + Render): [`docs/deploy.md`](./docs/deploy.md).
 
-## Not in MVP
+## Documentation
 
-Auth, accounts, contacts, database, media, typing indicators, persistence.
+| Audience | Start here |
+| -------- | ---------- |
+| Users of the reference client | [User guide](./docs/user-guide.md) |
+| Implementers | [Protocol docs](./docs/protocol/) · [RFCs](./rfcs/) |
+| Operators | [Self-hosting](./docs/self-hosting.md) |
+| Contributors | [Contributing](./CONTRIBUTING.md) · [Docs index](./docs/README.md) |
+
+## Roadmap
+
+Browser MVP → Protocol stabilization → Security audit → Native clients → Federation → Foundation
+
+Details: [`governance/ROADMAP.md`](./governance/ROADMAP.md).
+
+## Contributing
+
+Please read [`CONTRIBUTING.md`](./CONTRIBUTING.md) and the [Code of Conduct](./CODE_OF_CONDUCT.md). Protocol changes should start as [RFCs](./rfcs/).
+
+## Community
+
+- Issues & discussions: [github.com/softlyft/goPrivate](https://github.com/softlyft/goPrivate)
+- Support pointers: [`SUPPORT.md`](./SUPPORT.md)
+- Security disclosure: [`SECURITY.md`](./SECURITY.md)
+
+## Donations
+
+The public reference relay is funded by people who believe private communication should remain free. There is **no** premium feature set and **no** enterprise edition.
+
+See [`.github/FUNDING.yml`](./.github/FUNDING.yml) (GitHub Sponsors). Optional client link: `NEXT_PUBLIC_SUPPORT_URL`.
+
+## License
+
+[GNU Affero General Public License v3.0](./LICENSE).

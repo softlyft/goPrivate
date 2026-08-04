@@ -1,0 +1,15 @@
+name: Documentation improvement
+description: Fix or expand docs, RFCs, ADRs, or governance
+labels: ["documentation"]
+body:
+  - type: textarea
+    id: location
+    attributes:
+      label: Doc location
+      placeholder: e.g. docs/protocol/handshake.md
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: What should change?
+    validations:
+      required: true

@@ -1,4 +1,4 @@
-# CI quality gate — typecheck + build packages/web/relay on PRs and main.
+# CI quality gate — packages, typecheck, lint, format, tests, smokes.
 
 name: CI
 

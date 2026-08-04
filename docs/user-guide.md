@@ -68,7 +68,7 @@ That’s it.
 - **No accounts.** There’s nothing to log into or delete later.
 - **One guest only.** A session is for you and one other person.
 - **Remember your PIN** for that chat. If you forget it, you can’t unhide older messages.
-- **Leaving closes your side.** Refreshing or closing the tab disconnects you.
+- **Leaving ends your side.** Switching apps briefly should reconnect automatically; staying away too long (or leaving deliberately) ends the conversation on this device.
 
 ---
 
@@ -81,6 +81,7 @@ goPrivate keeps things simple on purpose. It doesn’t support:
 - Contact lists or usernames
 - Message history after you leave
 - Notifications after the chat is over
+- Premium / enterprise editions of the protocol
 
 If you need those, a regular messaging app is a better fit. If you need a short, private, vanishing chat — you’re in the right place.
 

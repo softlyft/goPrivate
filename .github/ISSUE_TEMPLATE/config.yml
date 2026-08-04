@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/softlyft/goPrivate/security/advisories/new
+    about: Report security issues privately (do not file a public bug)
+  - name: Support / questions
+    url: https://github.com/softlyft/goPrivate/discussions
+    about: Ask questions in Discussions when enabled

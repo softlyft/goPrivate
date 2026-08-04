@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
+import { ConversationEnded } from '@/components/ConversationEnded';
 import { Header } from '@/components/Header';
 import { MessageComposer } from '@/components/MessageComposer';
 import { MessageList } from '@/components/MessageList';
@@ -36,6 +37,7 @@ export function ChatPage() {
   const [copied, setCopied] = useState(false);
   const [joining, setJoining] = useState(true);
   const [pinReady, setPinReady] = useState(vaultReady && messageVault.isUnlocked);
+  const [endedByLeave, setEndedByLeave] = useState(false);
   const bootstrapped = useRef(false);
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export function ChatPage() {
 
   async function handleLeave() {
     await leaveSession();
-    router.push('/');
+    setEndedByLeave(true);
   }
 
   async function handleHome() {
@@ -125,10 +127,20 @@ export function ChatPage() {
 
   const ready = status === 'ready';
   const expired = status === 'expired';
+  const conversationEnded = expired || endedByLeave;
   const showShare =
     !joining &&
-    !expired &&
+    !conversationEnded &&
     (status === 'awaiting_partner' || status === 'handshaking' || (!partnerPresent && !ready));
+
+  if (conversationEnded) {
+    return (
+      <AppShell className="animate-fade-in">
+        <Header title="goPrivate" onHomeClick={() => router.push('/')} />
+        <ConversationEnded onHome={() => router.push('/')} />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell className="animate-fade-in">

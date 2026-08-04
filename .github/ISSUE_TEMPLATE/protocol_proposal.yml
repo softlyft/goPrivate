@@ -1,0 +1,25 @@
+name: Protocol proposal
+description: Propose a change to the goPrivate protocol
+labels: ["protocol"]
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility impact
+      description: Breaking change? Migration story?
+  - type: markdown
+    attributes:
+      value: |
+        Follow up with a draft under `rfcs/` when the idea is ready for review.

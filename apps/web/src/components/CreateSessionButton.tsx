@@ -36,7 +36,7 @@ export function CreateSessionButton() {
     <>
       <div className="flex flex-col items-center gap-2">
         <Button onClick={() => setShowPin(true)} disabled={loading} className="min-w-52">
-          Create Session
+          Start Private Conversation
         </Button>
         {error && <p className="text-xs text-danger">{error}</p>}
       </div>

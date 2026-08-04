@@ -2,7 +2,8 @@
   "name": "goprivate",
   "private": true,
   "version": "0.1.0",
-  "description": "Ephemeral end-to-end encrypted messaging MVP",
+  "description": "Open protocol for ephemeral communication — reference client and relay",
+  "license": "AGPL-3.0-only",
   "scripts": {
     "dev": "pnpm build:packages && pnpm -r --parallel --filter @goprivate/relay --filter @goprivate/web dev",
     "dev:relay": "pnpm --filter @goprivate/relay dev",

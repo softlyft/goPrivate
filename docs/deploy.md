@@ -26,7 +26,7 @@ Quick checks:
 
 ```bash
 curl -sS https://goprivate-relay.onrender.com/health
-# {"status":"ok","sessions":0}
+# {"status":"ok","ok":true}
 
 # Optional: Node smoke (needs `ws` or use any WebSocket client)
 node -e "const W=require('ws');const s=new W('wss://goprivate-relay.onrender.com/ws');s.on('open',()=>{console.log('ok');s.close()});s.on('error',e=>console.error(e))"

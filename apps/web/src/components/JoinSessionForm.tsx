@@ -49,7 +49,7 @@ export function JoinSessionForm() {
             setValue(e.target.value);
             setError(null);
           }}
-          placeholder="Paste link or session ID"
+          placeholder="Paste link or conversation id"
           aria-label="Session link or ID"
         />
         <Button type="submit" variant="secondary" disabled={!value.trim()} className="shrink-0">
