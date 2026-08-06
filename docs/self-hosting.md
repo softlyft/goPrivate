@@ -42,6 +42,7 @@ Or run packages/apps individually — see the root [README](../README.md).
 | ------------------------- | ------------------------ | ---------------------------------------------------------------------- |
 | `NEXT_PUBLIC_RELAY_URL`   | `ws://localhost:3001/ws` | WebSocket URL (`ws://` or `wss://`, must include `/ws`)                |
 | `NEXT_PUBLIC_SUPPORT_URL` | unset                    | Optional link for “Support goPrivate” on the conversation-ended screen |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | unset              | Optional GA4 id (`G-…`); loads analytics on the home page only         |
 
 `NEXT_PUBLIC_*` values are baked in at **build** time for Next.js.
 
