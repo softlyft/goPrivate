@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      EXPO_PUBLIC_RELAY_URL: ${{ secrets.NEXT_PUBLIC_RELAY_URL }}
+      EXPO_PUBLIC_RELAY_URL: wss://goprivate-relay.onrender.com/ws
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,9 +66,14 @@ jobs:
       - name: Typecheck mobile
         run: pnpm --filter @goprivate/mobile typecheck
 
-      - name: Default relay URL
-        if: ${{ env.EXPO_PUBLIC_RELAY_URL == '' }}
-        run: echo "EXPO_PUBLIC_RELAY_URL=wss://goprivate-relay.onrender.com/ws" >> "$GITHUB_ENV"
+      - name: Remote relay URL
+        run: |
+          secret='${{ secrets.NEXT_PUBLIC_RELAY_URL }}'
+          if [[ "$secret" == wss://* ]]; then
+            echo "EXPO_PUBLIC_RELAY_URL=$secret" >> "$GITHUB_ENV"
+          else
+            echo "EXPO_PUBLIC_RELAY_URL=wss://goprivate-relay.onrender.com/ws" >> "$GITHUB_ENV"
+          fi
 
       - name: Prebuild Android project
         working-directory: apps/mobile
