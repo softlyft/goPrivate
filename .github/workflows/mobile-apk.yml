@@ -1,0 +1,105 @@
+# Build a sideloadable Android APK for the Expo reference client on merge to main.
+# Artifact: goprivate-android.apk on the workflow run.
+
+name: Mobile APK
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/protocol/**'
+      - 'packages/crypto/**'
+      - 'packages/sdk/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/mobile-apk.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      EXPO_PUBLIC_RELAY_URL: ${{ secrets.NEXT_PUBLIC_RELAY_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build workspace packages
+        run: pnpm build:packages
+
+      - name: Typecheck mobile
+        run: pnpm --filter @goprivate/mobile typecheck
+
+      - name: Default relay URL
+        if: ${{ env.EXPO_PUBLIC_RELAY_URL == '' }}
+        run: echo "EXPO_PUBLIC_RELAY_URL=wss://goprivate-relay.onrender.com/ws" >> "$GITHUB_ENV"
+
+      - name: Prebuild Android project
+        working_directory: apps/mobile
+        run: pnpm exec expo prebuild --platform android --clean --non-interactive
+
+      - name: Assemble release APK
+        working_directory: apps/mobile/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Locate APK
+        id: apk
+        run: |
+          apk=$(find apps/mobile/android/app/build/outputs/apk -name '*.apk' | head -n 1)
+          if [ -z "$apk" ]; then
+            echo "No APK produced" >&2
+            exit 1
+          fi
+          cp "$apk" goprivate-android.apk
+          echo "path=$apk" >> "$GITHUB_OUTPUT"
+          ls -lh goprivate-android.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: goprivate-android
+          path: goprivate-android.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Summary
+        run: |
+          {
+            echo "## Mobile APK"
+            echo ""
+            echo "- **Artifact:** \`goprivate-android\` (download from this run)"
+            echo "- **Relay:** \`${{ env.EXPO_PUBLIC_RELAY_URL }}\`"
+            echo "- **Commit:** \`${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
