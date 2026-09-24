@@ -1,5 +1,6 @@
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
+const { jsImportToTsCandidates } = require('./metro-resolve');
 
 // Find the project and workspace directories
 const projectRoot = __dirname;
@@ -20,14 +21,14 @@ config.resolver.nodeModulesPaths = [
 config.resolver.disableHierarchicalLookup = true;
 
 // Workspace packages use TypeScript ESM imports (`./foo.js` → `foo.ts`).
+// Resolve platform-specific files first — rewriting straight to `.ts` skips
+// `platform.native.ts` and the mobile app then loads Web Crypto.
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (moduleName.startsWith('.') && moduleName.endsWith('.js')) {
-    for (const ext of ['.ts', '.tsx']) {
-      try {
-        return context.resolveRequest(context, moduleName.replace(/\.js$/, ext), platform);
-      } catch {
-        // try next extension
-      }
+  for (const candidate of jsImportToTsCandidates(moduleName, platform)) {
+    try {
+      return context.resolveRequest(context, candidate, platform);
+    } catch {
+      // try next candidate
     }
   }
   return context.resolveRequest(context, moduleName, platform);

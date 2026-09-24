@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Modal, Alert, Image, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { createRelayClient } from '@goprivate/sdk';
+import { createMobileRelayClient } from '../utils/relay';
 import { PinPad } from '../components/PinPad';
 import { messageVault } from '../services/vault';
 import { useSessionStore } from '../store/session';
@@ -33,7 +33,7 @@ export default function HomeScreen() {
       const meta = await messageVault.setup(pin);
       setVaultMeta(meta);
 
-      const client = createRelayClient();
+      const client = createMobileRelayClient();
       await client.connect(getRelayUrl());
       const sessionId = await client.createSession();
       await client.disconnect();

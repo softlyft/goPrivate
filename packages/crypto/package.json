@@ -4,12 +4,20 @@
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
+  "react-native": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": {
+      "react-native": "./src/index.ts",
       "types": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./native": {
+      "types": "./src/native-crypto.ts",
+      "react-native": "./src/native-crypto.ts",
+      "import": "./src/native-crypto.ts",
+      "default": "./src/native-crypto.ts"
     }
   },
   "scripts": {

@@ -1,47 +1,28 @@
-<<<<<<< HEAD
-/**
- * Polyfills required for React Native to work with goPrivate SDK
- *
- * This file MUST be imported at the very top of the app entry point
- * before any other imports that use crypto or Buffer.
- */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-// 1. Buffer global (required by @goprivate/crypto)
-import { Buffer } from '@craftzdog/react-native-buffer';
-if (typeof (globalThis as any).Buffer === 'undefined') {
-  (globalThis as any).Buffer = Buffer;
-}
-
-// 2. Crypto global (required by react-native-quick-crypto)
-import Crypto from 'react-native-quick-crypto';
-if (typeof (globalThis as any).crypto === 'undefined') {
-  (globalThis as any).crypto = Crypto;
-}
-
-// 3. TextEncoder/TextDecoder (if needed)
-// React Native 0.64+ has these built-in, but just in case
-if (typeof (globalThis as any).TextEncoder === 'undefined') {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { TextEncoder, TextDecoder } = require('text-encoding');
-    (globalThis as any).TextEncoder = TextEncoder;
-    (globalThis as any).TextDecoder = TextDecoder;
-  } catch {
-    // text-encoding not available, that's fine
-  }
-}
-
-export {};
-=======
 import * as ExpoCrypto from 'expo-crypto';
 
 /**
- * Hermes does not provide Web Crypto. The SDK and Subtle implementations
- * call getRandomValues / randomUUID on PIN setup and session create.
+ * Hermes has no Web Crypto. Session create needs Subtle (ECDH / AES-GCM);
+ * expo-crypto only covers getRandomValues / randomUUID.
  */
-function ensureWebCrypto(): void {
+function installQuickCrypto(): boolean {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const QuickCrypto = require('react-native-quick-crypto') as {
+      install?: () => void;
+      default?: { install?: () => void };
+    };
+    const install = QuickCrypto.install ?? QuickCrypto.default?.install;
+    if (typeof install !== 'function') {
+      return false;
+    }
+    install();
+    return typeof globalThis.crypto?.subtle === 'object';
+  } catch {
+    return false;
+  }
+}
+
+function ensureRandomFallback(): void {
   const current = globalThis.crypto as Crypto | undefined;
 
   const getRandomValues = <T extends ArrayBufferView>(typedArray: T): T =>
@@ -66,5 +47,6 @@ function ensureWebCrypto(): void {
   }
 }
 
-ensureWebCrypto();
->>>>>>> origin/main
+if (!installQuickCrypto()) {
+  ensureRandomFallback();
+}
