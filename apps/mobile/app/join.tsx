@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { PinPad } from '../components/PinPad';
 import { messageVault } from '../services/vault';
 import { useSessionStore } from '../store/session';
+import { Colors } from '../constants/Colors';
 
 export default function JoinScreen() {
   const router = useRouter();
@@ -133,7 +134,7 @@ export default function JoinScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: Colors.background,
   },
   content: {
     flex: 1,
@@ -146,34 +147,40 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#000',
+    color: Colors.brandDark,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#8E8E93',
+    color: Colors.textSecondary,
   },
   form: {
     gap: 16,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.backgroundWhite,
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderRadius: 12,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: Colors.borderLight,
     minHeight: 100,
     textAlignVertical: 'top',
+    color: Colors.text,
   },
   joinButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: Colors.primary,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: 'center',
+    shadowColor: Colors.brandDark,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   joinButtonDisabled: {
     backgroundColor: '#C7C7CC',
@@ -189,19 +196,21 @@ const styles = StyleSheet.create({
   info: {
     marginTop: 32,
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.backgroundWhite,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   infoTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#000',
+    color: Colors.brandDark,
     marginBottom: 8,
   },
   infoText: {
     fontSize: 13,
     lineHeight: 20,
-    color: '#8E8E93',
+    color: Colors.textSecondary,
     fontFamily: 'monospace',
   },
   modalOverlay: {
