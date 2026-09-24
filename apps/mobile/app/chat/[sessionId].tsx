@@ -1,11 +1,22 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert, AppState } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  AppState,
+  Pressable,
+  Clipboard,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { createRelayClient, type IRelayClient } from '@goprivate/sdk';
 import { MessageList } from '../../components/MessageList';
 import { MessageComposer } from '../../components/MessageComposer';
+import { ShareButton } from '../../components/ShareButton';
 import { messageVault } from '../../services/vault';
 import { useSessionStore } from '../../store/session';
+import { Colors } from '../../constants/Colors';
 import { getRelayUrl } from '../../utils/env';
 
 export default function ChatScreen() {
@@ -17,6 +28,7 @@ export default function ChatScreen() {
 
   const messages = useSessionStore((s) => s.messages);
   const addMessage = useSessionStore((s) => s.addMessage);
+  const [copied, setCopied] = useState(false);
   const isReady = status === 'ready';
   const vaultReady = messageVault.isUnlocked;
 
@@ -97,6 +109,14 @@ export default function ChatScreen() {
     });
   }
 
+  function handleCopyLink() {
+    if (!sessionId) return;
+    const shareUrl = `https://goprivate.app/chat/${sessionId}`;
+    Clipboard.setString(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   if (error && !client) {
     return (
       <View style={styles.centerContainer}>
@@ -120,6 +140,29 @@ export default function ChatScreen() {
 
   return (
     <View style={styles.container}>
+      {isReady && sessionId && (
+        <View style={styles.shareContainer}>
+          <View style={styles.shareRow}>
+            <ShareButton sessionId={sessionId} onCopyFallback={handleCopyLink} />
+            <Pressable
+              style={({ pressed }) => [
+                styles.copyButton,
+                pressed && styles.copyButtonPressed,
+                copied && styles.copyButtonCopied,
+              ]}
+              onPress={handleCopyLink}
+            >
+              <Text style={styles.copyIcon}>{copied ? '✓' : '📋'}</Text>
+              <Text style={[styles.copyText, copied && styles.copyTextCopied]}>
+                {copied ? 'Copied!' : 'Copy Link'}
+              </Text>
+            </Pressable>
+          </View>
+          <Text style={styles.shareHint}>
+            Share this link with your contact to start a secure conversation
+          </Text>
+        </View>
+      )}
       <MessageList messages={messages} vaultReady={vaultReady} />
       <MessageComposer disabled={!isReady || !vaultReady} onSend={handleSend} />
     </View>
@@ -129,24 +172,74 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: Colors.background,
+  },
+  shareContainer: {
+    backgroundColor: Colors.backgroundWhite,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  shareRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  shareHint: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 14,
+  },
+  copyButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.backgroundWhite,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: Colors.borderLight,
+  },
+  copyButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
+  },
+  copyButtonCopied: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  copyIcon: {
+    fontSize: 18,
+  },
+  copyText: {
+    color: Colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  copyTextCopied: {
+    color: Colors.backgroundWhite,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: Colors.background,
     paddingHorizontal: 20,
   },
   statusText: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: Colors.textMuted,
     marginTop: 16,
     textAlign: 'center',
   },
   errorText: {
     fontSize: 16,
-    color: '#FF3B30',
+    color: Colors.error,
     textAlign: 'center',
   },
 });

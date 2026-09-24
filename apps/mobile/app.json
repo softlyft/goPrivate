@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.goprivate.mobile",
-      "associatedDomains": ["applinks:goprivate.app"]
+      "associatedDomains": ["applinks:goprivate.app", "applinks:www.goprivate.app"]
     },
     "android": {
       "versionCode": 1,
@@ -37,7 +37,13 @@
               "pathPrefix": "/chat"
             },
             {
-              "scheme": "goprivate"
+              "scheme": "https",
+              "host": "www.goprivate.app",
+              "pathPrefix": "/chat"
+            },
+            {
+              "scheme": "goprivate",
+              "host": "*"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
