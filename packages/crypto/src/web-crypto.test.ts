@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createCryptoProvider } from './index.js';
+import { isReactNative } from './runtime.js';
 
 describe('@goprivate/crypto', () => {
   const crypto = createCryptoProvider();
@@ -78,5 +79,27 @@ describe('@goprivate/crypto', () => {
     const fp2 = await crypto.generateFingerprint(pk2);
 
     expect(fp1).not.toBe(fp2);
+  });
+
+  it('does not treat Node as React Native', () => {
+    expect(isReactNative()).toBe(false);
+  });
+
+  it('refuses to construct the web provider on React Native', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { product: 'ReactNative' },
+    });
+    try {
+      expect(isReactNative()).toBe(true);
+      expect(() => createCryptoProvider()).toThrow(/React Native/);
+    } finally {
+      if (descriptor) {
+        Object.defineProperty(globalThis, 'navigator', descriptor);
+      } else {
+        Reflect.deleteProperty(globalThis, 'navigator');
+      }
+    }
   });
 });

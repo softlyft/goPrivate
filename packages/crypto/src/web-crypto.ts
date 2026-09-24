@@ -1,3 +1,4 @@
+import { isReactNative } from './runtime.js';
 import type { ICryptoProvider, KeyPair } from './types.js';
 
 const ECDH_PARAMS: EcKeyGenParams = { name: 'ECDH', namedCurve: 'P-256' };
@@ -22,6 +23,11 @@ function fromBase64(base64: string): ArrayBuffer {
 }
 
 function getSubtle(): SubtleCrypto {
+  if (isReactNative()) {
+    throw new Error(
+      'Web Crypto cannot run on React Native. Use createNativeCryptoProvider().',
+    );
+  }
   if (typeof globalThis.crypto?.subtle === 'undefined') {
     throw new Error('Web Crypto API is not available in this environment');
   }
@@ -95,5 +101,10 @@ export class WebCryptoProvider implements ICryptoProvider {
 }
 
 export function createCryptoProvider(): ICryptoProvider {
+  if (isReactNative()) {
+    throw new Error(
+      'Web Crypto cannot run on React Native. Use createNativeCryptoProvider().',
+    );
+  }
   return new WebCryptoProvider();
 }

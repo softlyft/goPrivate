@@ -1,10 +1,28 @@
 import * as ExpoCrypto from 'expo-crypto';
 
 /**
- * Hermes does not provide Web Crypto. The SDK and Subtle implementations
- * call getRandomValues / randomUUID on PIN setup and session create.
+ * Hermes has no Web Crypto. Session create needs Subtle (ECDH / AES-GCM);
+ * expo-crypto only covers getRandomValues / randomUUID.
  */
-function ensureWebCrypto(): void {
+function installQuickCrypto(): boolean {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const QuickCrypto = require('react-native-quick-crypto') as {
+      install?: () => void;
+      default?: { install?: () => void };
+    };
+    const install = QuickCrypto.install ?? QuickCrypto.default?.install;
+    if (typeof install !== 'function') {
+      return false;
+    }
+    install();
+    return typeof globalThis.crypto?.subtle === 'object';
+  } catch {
+    return false;
+  }
+}
+
+function ensureRandomFallback(): void {
   const current = globalThis.crypto as Crypto | undefined;
 
   const getRandomValues = <T extends ArrayBufferView>(typedArray: T): T =>
@@ -29,4 +47,6 @@ function ensureWebCrypto(): void {
   }
 }
 
-ensureWebCrypto();
+if (!installQuickCrypto()) {
+  ensureRandomFallback();
+}
