@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { StoredMessage } from '@/store/session';
 import { messageVault } from '@/services/vault';
+import { sanitizeMessageText } from '@/utils/sanitize';
 import { cn } from '@/utils/cn';
 
 export type MaskLevel = 'clear' | 'soft' | 'masked';
@@ -26,7 +27,7 @@ function DecryptedBody({
     void messageVault
       .decrypt(encryptedText)
       .then((plain) => {
-        if (!cancelled) setText(plain);
+        if (!cancelled) setText(sanitizeMessageText(plain));
       })
       .catch(() => {
         if (!cancelled) setText('Unable to decrypt');

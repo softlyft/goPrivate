@@ -15,6 +15,8 @@
     "@goprivate/sdk": "workspace:*",
     "@swc/helpers": "^0.5.15",
     "clsx": "^2.1.1",
+    "dompurify": "^3.4.16",
+    "isomorphic-dompurify": "^4.3.0",
     "lucide-react": "^0.484.0",
     "next": "15.5.22",
     "react": "19.1.0",
@@ -25,6 +27,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/dompurify": "^3.2.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
