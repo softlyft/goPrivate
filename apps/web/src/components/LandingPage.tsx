@@ -57,7 +57,7 @@ export function LandingPage() {
             </div>
 
             <p className="text-[11px] leading-relaxed text-muted">
-              Set a 4-digit PIN to reveal older masked messages on your device.
+              Set a 6-digit PIN to reveal older masked messages on your device.
             </p>
 
             <Link

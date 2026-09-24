@@ -22,7 +22,7 @@ This document is descriptive, not marketing. It states what the goPrivate protoc
 | Malicious browser extensions                | Same as above                                                                               |
 | Shoulder surfing                            | PIN pad and on-screen text are visible                                                      |
 | Malicious relay during key exchange (TOFU)  | Public keys are exchanged before a shared secret exists; an active MITM relay can swap keys |
-| Offline brute-force of a 4-digit reveal PIN | Small PIN space; mitigated by PBKDF2 cost and session lifetime, not eliminated              |
+| Offline brute-force of a 6-digit reveal PIN | 1 million PIN combinations; mitigated by PBKDF2 cost and session lifetime, significantly harder than 4-digit |
 
 ## Honest summary
 

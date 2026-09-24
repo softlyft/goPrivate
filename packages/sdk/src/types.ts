@@ -36,6 +36,8 @@ export interface RelayClientEvents {
   message: (message: DecryptedChatMessage) => void;
   error: (code: string, message: string) => void;
   raw: (event: RelayToClientMessage) => void;
+  /** Emitted when key exchange completes and fingerprints are available for verification */
+  fingerprintsReady: (local: string, peer: string) => void;
 }
 
 export interface IRelayClient {
@@ -54,4 +56,8 @@ export interface IRelayClient {
   readonly expiresAt: number | null;
   /** True when the underlying WebSocket is OPEN. */
   readonly connected: boolean;
+  /** Get the local public key fingerprint (null until key pair is generated) */
+  getLocalFingerprint(): Promise<string | null>;
+  /** Get the peer's public key fingerprint (null until key exchange completes) */
+  getPeerFingerprint(): Promise<string | null>;
 }

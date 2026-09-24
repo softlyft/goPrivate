@@ -20,4 +20,6 @@ export interface ICryptoProvider {
   deriveSharedSecret(privateKey: CryptoKey, peerPublicKey: CryptoKey): Promise<CryptoKey>;
   encrypt(plaintext: string, sharedKey: CryptoKey): Promise<string>;
   decrypt(ciphertext: string, sharedKey: CryptoKey): Promise<string>;
+  /** Generate a human-readable fingerprint from a public key for verification */
+  generateFingerprint(publicKeyBase64: string): Promise<string>;
 }

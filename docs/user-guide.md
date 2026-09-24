@@ -22,7 +22,7 @@ It’s for **two people**. Not groups. Not broadcasting.
 
 ### Start a private chat
 
-Tap **Create Session**, choose a 4-digit PIN, and you’ll get a link. Send that link to the one person you want to talk to.
+Tap **Create Session**, choose a 6-digit PIN, and you’ll get a link. Send that link to the one person you want to talk to.
 
 ### Join someone’s chat
 
