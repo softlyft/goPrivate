@@ -143,9 +143,9 @@ Restart `pnpm --filter @goprivate/web dev` after changing it (Next only reads `N
 
 | Environment          | `NEXT_PUBLIC_RELAY_URL`                 |
 | -------------------- | --------------------------------------- |
-| Local + local relay  | `ws://localhost:3001/ws`                |
-| Local + Render relay | `wss://goprivate-relay.onrender.com/ws` |
-| Production (Vercel)  | `wss://goprivate-relay.onrender.com/ws` |
+| Local + local relay  | `ws://localhost:3001/ws` (or omit `.env.local`) |
+| Local + Render relay | `wss://goprivate-relay.onrender.com/ws`         |
+| Production (Vercel)  | `wss://goprivate-relay.onrender.com/ws`         |
 
 ---
 
@@ -162,6 +162,7 @@ Restart `pnpm --filter @goprivate/web dev` after changing it (Next only reads `N
 - Local app still on `ws://localhost:3001/ws` while the relay isn’t running — fix `.env.local` or start the relay
 - Production build still has an old URL — update Vercel env **and** GitHub secret, then **redeploy**
 - Relay sleeping on Render free tier — the client retries for about a minute; confirm `https://<relay>/health` returns OK
+- Hosted relay must allow the page origin. The reference relay always allows `localhost` / `127.0.0.1` (any port) plus `https://goprivate.app`. Redeploy the relay after pulling that CORS change.
 
 ### Create hangs on “Creating…” / “Waking relay”
 
@@ -171,8 +172,10 @@ Cold start is the usual cause on free Render. Wait for retries to finish, or hit
 
 ## 5. Android APK (GitHub Actions)
 
-**Mobile APK** (`.github/workflows/mobile-apk.yml`) is manual only. Run it from **Actions → Mobile APK → Run workflow**.
+**Mobile APK** (`.github/workflows/mobile-apk.yml`) is **manual only** — it does not run on merge to `main`. Start it from **Actions → Mobile APK → Run workflow**.
 
-Download `goprivate-android` from the workflow artifacts. The APK always uses a remote `wss://` relay (`wss://goprivate-relay.onrender.com/ws`, or `NEXT_PUBLIC_RELAY_URL` when that secret is `wss://`).
+Download `goprivate-android` from the workflow artifacts. The APK always uses a remote `wss://` relay (`wss://goprivate-relay.onrender.com/ws`, or `NEXT_PUBLIC_RELAY_URL` when that secret is `wss://`). That is the same URL production web should use, so APK and browser users can share a session.
 
-EAS (`apps/mobile/eas.json`) is optional for cloud APKs (`preview` profile → `.apk`). Local CI does not require an Expo token.
+EAS (`apps/mobile/eas.json`) is optional for cloud APKs (`preview` profile → `.apk`). The GitHub APK job does not need an Expo token.
+
+See [`apps/mobile/README.md`](../apps/mobile/README.md).

@@ -21,9 +21,11 @@
 
 ## Reference implementations
 
-- [User guide (reference client)](./user-guide.md)
+- [User guide (web + mobile)](./user-guide.md)
+- [Mobile client](../apps/mobile/README.md)
 - [Self-hosting](./self-hosting.md)
 - [Hosted deploy (Vercel + Render)](./deploy.md)
+- [Deep linking](./mobile/DEEP_LINKING.md)
 
 ## Governance & community
 
