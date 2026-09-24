@@ -8,7 +8,7 @@ describe('messageVault', () => {
   });
 
   it('sets up, encrypts, and decrypts', async () => {
-    const meta = await messageVault.setup('1234');
+    const meta = await messageVault.setup('123456');
     expect(meta.salt).toBeTruthy();
     expect(meta.wrappedKey).toBeTruthy();
     expect(messageVault.isUnlocked).toBe(true);
@@ -19,32 +19,32 @@ describe('messageVault', () => {
   });
 
   it('rejects invalid PIN shapes on setup', async () => {
-    await expect(messageVault.setup('12')).rejects.toThrow(/4 digits/i);
+    await expect(messageVault.setup('12')).rejects.toThrow(/6 digits/i);
   });
 
   it('unlocks with correct PIN and rejects wrong PIN', async () => {
-    const meta = await messageVault.setup('4321');
+    const meta = await messageVault.setup('432100');
     messageVault.lock();
     expect(messageVault.isUnlocked).toBe(false);
 
-    expect(await messageVault.unlock('0000', meta)).toBe(false);
-    expect(await messageVault.unlock('4321', meta)).toBe(true);
+    expect(await messageVault.unlock('000000', meta)).toBe(false);
+    expect(await messageVault.unlock('432100', meta)).toBe(true);
     expect(messageVault.isUnlocked).toBe(true);
   });
 
   it('verifies PIN without requiring unlock state change failure path', async () => {
-    await messageVault.setup('9999');
-    expect(await messageVault.verifyPin('9999')).toBe(true);
-    expect(await messageVault.verifyPin('1111')).toBe(false);
+    await messageVault.setup('999999');
+    expect(await messageVault.verifyPin('999999')).toBe(true);
+    expect(await messageVault.verifyPin('111111')).toBe(false);
   });
 
   it('locks after too many failed unlock attempts', async () => {
-    const meta = await messageVault.setup('5555');
+    const meta = await messageVault.setup('555555');
     messageVault.lock();
     for (let i = 0; i < 5; i++) {
-      expect(await messageVault.unlock('0000', meta)).toBe(false);
+      expect(await messageVault.unlock('000000', meta)).toBe(false);
     }
-    await expect(messageVault.unlock('5555', meta)).rejects.toThrow(/too many attempts/i);
+    await expect(messageVault.unlock('555555', meta)).rejects.toThrow(/too many attempts/i);
   });
 
   it('throws when encrypting while locked', async () => {
@@ -53,7 +53,7 @@ describe('messageVault', () => {
 
   it('exposes meta helpers', async () => {
     expect(messageVault.hasVault).toBe(false);
-    await messageVault.setup('7777');
+    await messageVault.setup('777777');
     expect(messageVault.hasVault).toBe(true);
     expect(messageVault.getMeta()?.salt).toBeTruthy();
     resetVaultTestConfig();

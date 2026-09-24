@@ -62,7 +62,7 @@ export function GuidePage() {
                   <strong className="font-medium text-foreground">
                     Start Private Conversation
                   </strong>
-                  , choose a 4-digit PIN, and you’ll get a link. Send that link to the one person
+                  , choose a 6-digit PIN, and you’ll get a link. Send that link to the one person
                   you want to talk to.
                 </p>
               </div>

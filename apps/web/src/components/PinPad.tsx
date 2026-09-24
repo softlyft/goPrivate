@@ -43,7 +43,7 @@ export function PinPad({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key >= '0' && e.key <= '9') {
-        activeSetter((prev) => (prev.length < 4 ? prev + e.key : prev));
+        activeSetter((prev) => (prev.length < 6 ? prev + e.key : prev));
       } else if (e.key === 'Backspace') {
         activeSetter((prev) => prev.slice(0, -1));
       }
@@ -54,7 +54,7 @@ export function PinPad({
 
   function pushDigit(digit: string) {
     setError(null);
-    activeSetter((prev) => (prev.length < 4 ? prev + digit : prev));
+    activeSetter((prev) => (prev.length < 6 ? prev + digit : prev));
   }
 
   function backspace() {
@@ -74,7 +74,7 @@ export function PinPad({
   }
 
   function submit() {
-    if (activeValue.length !== 4) return;
+    if (activeValue.length !== 6) return;
 
     if (mode === 'verify') {
       onComplete(activeValue);
@@ -101,7 +101,7 @@ export function PinPad({
     mode === 'verify'
       ? 'Enter your reveal PIN'
       : step === 'enter'
-        ? 'Choose a 4-digit PIN'
+        ? 'Choose a 6-digit PIN'
         : 'Confirm your PIN';
 
   return (
@@ -115,12 +115,12 @@ export function PinPad({
         <p className="text-xs text-muted">{stepLabel}</p>
       </div>
 
-      <div className={cn('flex gap-3', shake && 'animate-pin-shake')} aria-label="PIN digits">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className={cn('flex gap-2.5', shake && 'animate-pin-shake')} aria-label="PIN digits">
+        {Array.from({ length: 6 }).map((_, i) => (
           <span
             key={i}
             className={cn(
-              'h-3.5 w-3.5 rounded-full border transition-all duration-200',
+              'h-3 w-3 rounded-full border transition-all duration-200',
               i < activeValue.length
                 ? 'scale-110 border-foreground bg-foreground shadow-[0_0_0_3px_rgba(0,0,0,0.08)]'
                 : 'border-black/15 bg-white/40',
@@ -163,7 +163,7 @@ export function PinPad({
       </div>
 
       <div className="flex w-full flex-col gap-2">
-        <Button onClick={submit} disabled={activeValue.length !== 4} className="w-full">
+        <Button onClick={submit} disabled={activeValue.length !== 6} className="w-full">
           {mode === 'verify' ? 'Reveal' : step === 'confirm' ? confirmLabel : 'Next'}
         </Button>
         {onCancel && (
