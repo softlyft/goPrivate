@@ -1,8 +1,25 @@
+import { Buffer } from 'buffer';
 import * as ExpoCrypto from 'expo-crypto';
-import Crypto from 'react-native-quick-crypto';
 import type { ICryptoProvider, KeyPair } from './types.js';
 
-const subtle = Crypto.subtle;
+// Expo Go does not ship this native module; a development build is required.
+let subtle: SubtleCrypto | undefined;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Crypto = require('react-native-quick-crypto') as typeof import('react-native-quick-crypto');
+  subtle = Crypto.subtle;
+} catch {
+  subtle = undefined;
+}
+
+function requireSubtle(): SubtleCrypto {
+  if (!subtle) {
+    throw new Error(
+      'Native crypto is not available in Expo Go. Use a development build (npx expo run:android).',
+    );
+  }
+  return subtle;
+}
 
 function toBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -21,7 +38,7 @@ function fromBase64(base64: string): ArrayBuffer {
  */
 export class NativeCryptoProvider implements ICryptoProvider {
   async generateKeyPair(): Promise<KeyPair> {
-    const keyPair = await (subtle.generateKey as any)(
+    const keyPair = await (requireSubtle().generateKey as any)(
       {
         name: 'ECDH',
         namedCurve: 'P-256',
@@ -33,23 +50,23 @@ export class NativeCryptoProvider implements ICryptoProvider {
   }
 
   async exportPublicKey(publicKey: CryptoKey): Promise<string> {
-    const spki = await (subtle.exportKey as any)('spki', publicKey);
+    const spki = await (requireSubtle().exportKey as any)('spki', publicKey);
     return toBase64(spki as ArrayBuffer);
   }
 
   async importPublicKey(spkiBase64: string): Promise<CryptoKey> {
     const spki = fromBase64(spkiBase64);
-    return (subtle.importKey as any)('spki', spki, { name: 'ECDH', namedCurve: 'P-256' }, true, []);
+    return (requireSubtle().importKey as any)('spki', spki, { name: 'ECDH', namedCurve: 'P-256' }, true, []);
   }
 
   async deriveSharedSecret(privateKey: CryptoKey, peerPublicKey: CryptoKey): Promise<CryptoKey> {
-    const derivedBits = await (subtle.deriveBits as any)(
+    const derivedBits = await (requireSubtle().deriveBits as any)(
       { name: 'ECDH', public: peerPublicKey },
       privateKey,
       256,
     );
 
-    return (subtle.importKey as any)(
+    return (requireSubtle().importKey as any)(
       'raw',
       Buffer.from(derivedBits),
       { name: 'AES-GCM', length: 256 },
@@ -61,7 +78,7 @@ export class NativeCryptoProvider implements ICryptoProvider {
   async encrypt(plaintext: string, sharedKey: CryptoKey): Promise<string> {
     const iv = ExpoCrypto.getRandomBytes(12);
     const encoded = new TextEncoder().encode(plaintext);
-    const ciphertext = await (subtle.encrypt as any)(
+    const ciphertext = await (requireSubtle().encrypt as any)(
       { name: 'AES-GCM', iv: Buffer.from(iv) },
       sharedKey,
       Buffer.from(encoded),
@@ -78,7 +95,7 @@ export class NativeCryptoProvider implements ICryptoProvider {
     const iv = packed.slice(0, 12);
     const data = packed.slice(12);
 
-    const decrypted = await (subtle.decrypt as any)(
+    const decrypted = await (requireSubtle().decrypt as any)(
       { name: 'AES-GCM', iv: Buffer.from(iv) },
       sharedKey,
       Buffer.from(data),

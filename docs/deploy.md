@@ -166,3 +166,13 @@ Restart `pnpm --filter @goprivate/web dev` after changing it (Next only reads `N
 ### Create hangs on “Creating…” / “Waking relay”
 
 Cold start is the usual cause on free Render. Wait for retries to finish, or hit `/health` once to wake the service, then try again.
+
+---
+
+## 5. Android APK (GitHub Actions)
+
+Merges to `main` that change `apps/mobile` or the shared packages trigger **Mobile APK** (`.github/workflows/mobile-apk.yml`). You can also run it from **Actions → Mobile APK → Run workflow**.
+
+Download `goprivate-android` from the workflow artifacts. The relay URL is taken from the `NEXT_PUBLIC_RELAY_URL` secret when set.
+
+EAS (`apps/mobile/eas.json`) is optional for cloud APKs (`preview` profile → `.apk`). Local CI does not require an Expo token.

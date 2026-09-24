@@ -19,4 +19,18 @@ config.resolver.nodeModulesPaths = [
 // 3. Force Metro to resolve (sub)dependencies only from the `nodeModulesPaths`
 config.resolver.disableHierarchicalLookup = true;
 
+// Workspace packages use TypeScript ESM imports (`./foo.js` → `foo.ts`).
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName.startsWith('.') && moduleName.endsWith('.js')) {
+    for (const ext of ['.ts', '.tsx']) {
+      try {
+        return context.resolveRequest(context, moduleName.replace(/\.js$/, ext), platform);
+      } catch {
+        // try next extension
+      }
+    }
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
 module.exports = config;

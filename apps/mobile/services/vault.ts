@@ -10,10 +10,26 @@
 
 import * as SecureStore from 'expo-secure-store';
 import * as ExpoCrypto from 'expo-crypto';
-import Crypto from 'react-native-quick-crypto';
-import { Buffer } from '@craftzdog/react-native-buffer';
+import { Buffer } from 'buffer';
 
-const subtle = Crypto.subtle;
+// Expo Go does not include this native module; a development build is required for crypto.
+let subtle: SubtleCrypto | undefined;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Crypto = require('react-native-quick-crypto') as typeof import('react-native-quick-crypto');
+  subtle = Crypto.subtle;
+} catch {
+  subtle = undefined;
+}
+
+function requireSubtle(): SubtleCrypto {
+  if (!subtle) {
+    throw new Error(
+      'Native crypto is not available in Expo Go. Use a development build (npx expo run:android).',
+    );
+  }
+  return subtle;
+}
 
 const PBKDF2_ITERATIONS_DEFAULT = 600_000;
 let pbkdf2Iterations = PBKDF2_ITERATIONS_DEFAULT;
@@ -48,14 +64,14 @@ function fromBase64(base64: string): ArrayBuffer {
 }
 
 async function derivePinKey(pin: string, salt: ArrayBuffer): Promise<any> {
-  const material = await (subtle.importKey as any)(
+  const material = await (requireSubtle().importKey as any)(
     'raw',
     new TextEncoder().encode(pin),
     'PBKDF2',
     false,
     ['deriveKey'],
   );
-  const derivedBits = await (subtle.deriveBits as any)(
+  const derivedBits = await (requireSubtle().deriveBits as any)(
     {
       name: 'PBKDF2',
       salt: Buffer.from(salt),
@@ -65,7 +81,7 @@ async function derivePinKey(pin: string, salt: ArrayBuffer): Promise<any> {
     material,
     256,
   );
-  return (subtle.importKey as any)(
+  return (requireSubtle().importKey as any)(
     'raw',
     Buffer.from(derivedBits),
     { name: 'AES-GCM', length: 256 },
@@ -75,9 +91,9 @@ async function derivePinKey(pin: string, salt: ArrayBuffer): Promise<any> {
 }
 
 async function wrapVaultKey(vaultKey: any, pinKey: any): Promise<string> {
-  const raw = await (subtle.exportKey as any)('raw', vaultKey);
+  const raw = await (requireSubtle().exportKey as any)('raw', vaultKey);
   const iv = ExpoCrypto.getRandomBytes(WRAP_IV_LENGTH);
-  const sealed = await (subtle.encrypt as any)(
+  const sealed = await (requireSubtle().encrypt as any)(
     { name: 'AES-GCM', iv: Buffer.from(iv) },
     pinKey,
     Buffer.from(raw),
@@ -92,12 +108,12 @@ async function unwrapVaultKey(wrappedKey: string, pinKey: any): Promise<any> {
   const packed = new Uint8Array(fromBase64(wrappedKey));
   const iv = packed.slice(0, WRAP_IV_LENGTH);
   const data = packed.slice(WRAP_IV_LENGTH);
-  const raw = await (subtle.decrypt as any)(
+  const raw = await (requireSubtle().decrypt as any)(
     { name: 'AES-GCM', iv: Buffer.from(iv) },
     pinKey,
     Buffer.from(data),
   );
-  return (subtle.importKey as any)('raw', raw, { name: 'AES-GCM', length: 256 }, true, [
+  return (requireSubtle().importKey as any)('raw', raw, { name: 'AES-GCM', length: 256 }, true, [
     'encrypt',
     'decrypt',
   ]);
@@ -128,7 +144,7 @@ class MessageVault {
     const salt = ExpoCrypto.getRandomBytes(16);
     const saltBuffer = salt.buffer as ArrayBuffer;
     const pinKey = await derivePinKey(pin, saltBuffer);
-    const vaultKey = await (subtle.generateKey as any)({ name: 'AES-GCM', length: 256 }, true, [
+    const vaultKey = await (requireSubtle().generateKey as any)({ name: 'AES-GCM', length: 256 }, true, [
       'encrypt',
       'decrypt',
     ]);
@@ -213,7 +229,7 @@ class MessageVault {
     if (!this.vaultKey) throw new Error('Vault is locked');
     const iv = ExpoCrypto.getRandomBytes(MSG_IV_LENGTH);
     const encoded = new TextEncoder().encode(plaintext);
-    const ciphertext = await (subtle.encrypt as any)(
+    const ciphertext = await (requireSubtle().encrypt as any)(
       { name: 'AES-GCM', iv: Buffer.from(iv) },
       this.vaultKey,
       Buffer.from(encoded),
@@ -229,7 +245,7 @@ class MessageVault {
     const packed = new Uint8Array(fromBase64(ciphertext));
     const iv = packed.slice(0, MSG_IV_LENGTH);
     const data = packed.slice(MSG_IV_LENGTH);
-    const decrypted = await (subtle.decrypt as any)(
+    const decrypted = await (requireSubtle().decrypt as any)(
       { name: 'AES-GCM', iv: Buffer.from(iv) },
       this.vaultKey,
       Buffer.from(data),

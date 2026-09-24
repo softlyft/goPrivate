@@ -39,6 +39,30 @@ pnpm web
 # Scan QR code from `pnpm start`
 ```
 
+## Android APK (CI)
+
+Merges to `main` that touch the mobile app or shared packages run **Mobile APK**. The workflow:
+
+1. Builds `@goprivate/protocol`, `crypto`, and `sdk`
+2. Runs `expo prebuild` for Android
+3. Assembles a release APK (`assembleRelease`)
+4. Uploads `goprivate-android` as a GitHub Actions artifact (30-day retention)
+
+Download it from the Actions run. The APK is signed with the Expo/React Native **debug keystore** so it can be sideloaded; it is not a Play Store upload. For a stable signing key later, use EAS credentials (`eas.json` `preview` profile builds an APK).
+
+Optional GitHub secret (same as web):
+
+| Secret | Purpose |
+| ------ | ------- |
+| `NEXT_PUBLIC_RELAY_URL` | Baked in as `EXPO_PUBLIC_RELAY_URL` for the APK. Defaults to `wss://goprivate-relay.onrender.com/ws` |
+
+Optional cloud build (needs an Expo account and `eas init` for a `projectId`):
+
+```bash
+cd apps/mobile
+npx eas-cli@latest build -p android --profile preview
+```
+
 ## Architecture
 
 ### Shared Packages
