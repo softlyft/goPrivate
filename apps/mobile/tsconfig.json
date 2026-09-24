@@ -6,6 +6,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@goprivate/protocol": ["../../packages/protocol/src/index.ts"],
+      "@goprivate/crypto/native": ["../../packages/crypto/src/native-crypto.ts"],
       "@goprivate/crypto": ["../../packages/crypto/src/index.ts"],
       "@goprivate/sdk": ["../../packages/sdk/src/index.ts"]
     }

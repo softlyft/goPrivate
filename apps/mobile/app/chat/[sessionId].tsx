@@ -10,7 +10,8 @@ import {
   Clipboard,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { createRelayClient, type IRelayClient } from '@goprivate/sdk';
+import type { IRelayClient } from '@goprivate/sdk';
+import { createMobileRelayClient } from '../../utils/relay';
 import { MessageList } from '../../components/MessageList';
 import { MessageComposer } from '../../components/MessageComposer';
 import { ShareButton } from '../../components/ShareButton';
@@ -38,7 +39,7 @@ export default function ChatScreen() {
       return;
     }
 
-    const relayClient = createRelayClient();
+    const relayClient = createMobileRelayClient();
 
     relayClient.on('status', (newStatus) => {
       setStatus(newStatus);
