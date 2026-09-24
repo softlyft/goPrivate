@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import type { StoredMessage } from '../store/session';
 import { messageVault } from '../services/vault';
 import { sanitizeMessageText } from '../utils/sanitize';
+import { Colors } from '../constants/Colors';
 
 export type MaskLevel = 'clear' | 'soft' | 'masked';
 
@@ -113,8 +114,13 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   bubbleSelf: {
-    backgroundColor: '#007AFF',
+    backgroundColor: Colors.bubbleSelf,
     borderBottomRightRadius: 4,
+    shadowColor: Colors.brandDark,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   bubbleSoft: {
     opacity: 0.7,
@@ -125,12 +131,12 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 15,
     lineHeight: 20,
-    color: '#000',
+    color: Colors.bubbleText,
   },
   loading: {
     fontSize: 15,
     lineHeight: 20,
-    color: '#000',
+    color: Colors.bubbleText,
     opacity: 0.4,
   },
 });

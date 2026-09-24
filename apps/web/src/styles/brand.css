@@ -1,0 +1,41 @@
+/**
+ * goPrivate Brand Colors
+ * Extracted from official logo
+ */
+
+:root {
+  /* Brand Colors */
+  --brand-green: #169e6b;
+  --brand-green-light: #1fb77f;
+  --brand-green-dark: #128558;
+  --brand-dark: #1a4d3d;
+  --brand-dark-hover: #153d30;
+
+  /* UI Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --text-primary: #1a4d3d;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+
+  /* Accent Colors */
+  --accent-green: var(--brand-green);
+  --accent-dark: var(--brand-dark);
+
+  /* Interactive Elements */
+  --button-primary-bg: var(--brand-green);
+  --button-primary-hover: var(--brand-green-light);
+  --button-primary-text: #ffffff;
+  --button-secondary-bg: transparent;
+  --button-secondary-border: var(--brand-green);
+  --button-secondary-text: var(--brand-green);
+
+  /* Borders */
+  --border-color: #e2e8f0;
+  --border-focus: var(--brand-green);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(26, 77, 61, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(26, 77, 61, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(26, 77, 61, 0.1);
+}

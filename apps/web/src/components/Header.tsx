@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Glass } from '@/components/ui/glass';
 import { cn } from '@/utils/cn';
 
 export function Header({
-  title = 'goPrivate',
+  title,
   center,
   right,
   onHomeClick,
@@ -22,18 +23,38 @@ export function Header({
       className="shrink-0 rounded-none border-b border-black/[0.06] !shadow-none"
       contentClassName="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 sm:gap-4 sm:px-4"
     >
-      <h1 className="justify-self-start truncate text-sm font-semibold tracking-tight">
+      <h1 className="justify-self-start flex items-center gap-2">
         {onHomeClick ? (
           <button
             type="button"
             onClick={onHomeClick}
-            className="transition-opacity hover:opacity-70"
+            className="flex items-center gap-2 transition-opacity hover:opacity-70"
           >
-            {title}
+            <Image
+              src="/logo.jpg"
+              alt="goPrivate"
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-lg"
+            />
+            <span className="text-sm font-semibold tracking-tight">
+              <span style={{ color: '#169e6b' }}>go</span>
+              <span style={{ color: '#1a4d3d' }}>Private</span>
+            </span>
           </button>
         ) : (
-          <Link href="/" className="transition-opacity hover:opacity-70">
-            {title}
+          <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-70">
+            <Image
+              src="/logo.jpg"
+              alt="goPrivate"
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-lg"
+            />
+            <span className="text-sm font-semibold tracking-tight">
+              <span style={{ color: '#169e6b' }}>go</span>
+              <span style={{ color: '#1a4d3d' }}>Private</span>
+            </span>
           </Link>
         )}
       </h1>

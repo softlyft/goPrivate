@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { AppShell } from '@/components/AppShell';
 import { CreateSessionButton } from '@/components/CreateSessionButton';
 import { Header } from '@/components/Header';
@@ -29,15 +30,28 @@ export function LandingPage() {
             className="w-full max-w-sm"
             contentClassName="flex flex-col items-center gap-7 px-6 py-8 text-center sm:gap-8 sm:px-8 sm:py-10"
           >
-            <div className="space-y-3">
-              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted">
-                Ephemeral · Encrypted
-              </p>
-              <h2 className="text-[2.35rem] font-semibold leading-[1.05] tracking-[-0.04em] text-foreground sm:text-5xl">
-                goPrivate
-              </h2>
+            <div className="space-y-4">
+              <div className="flex justify-center">
+                <Image
+                  src="/logo.jpg"
+                  alt="goPrivate"
+                  width={112}
+                  height={112}
+                  className="h-24 w-auto rounded-2xl shadow-lg sm:h-28"
+                  priority
+                />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-[2.35rem] font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl">
+                  <span style={{ color: '#169e6b' }}>go</span>
+                  <span style={{ color: '#1a4d3d' }}>Private</span>
+                </h2>
+                <p className="text-[11px] font-medium text-muted">
+                  Private conversations. No trace.
+                </p>
+              </div>
               <p className="text-sm leading-relaxed text-muted sm:text-[15px]">
-                Private chat that vanishes when you leave.
+                Ephemeral chat that vanishes when you leave.
                 <br />
                 No accounts. No history. End-to-end encrypted.
               </p>

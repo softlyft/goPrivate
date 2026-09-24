@@ -6,7 +6,7 @@
  *
  * Current limitations:
  * - Next.js requires 'unsafe-inline' for React hydration scripts
- * - Next.js requires 'unsafe-eval' in development mode
+ * - Next.js requires 'unsafe-eval' in development mode only (removed in production)
  * - Production CSS inlining requires 'unsafe-inline' for styles
  *
  * Future improvements:
@@ -20,12 +20,17 @@
  * Allows localhost WebSocket in development, restricts to known domains in production.
  */
 export function getCSPDirectives(isDevelopment = false): string {
+  // Scripts: Next.js requires unsafe-eval ONLY in development
+  // Production removes unsafe-eval for better XSS protection
+  const scriptSrc = isDevelopment
+    ? "'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com"
+    : "'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com";
+
   const directives = [
     "default-src 'self'",
 
-    // Scripts: Next.js requires unsafe-inline and unsafe-eval
-    // Analytics scripts are explicitly allowed
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com",
+    // Scripts: Conditional unsafe-eval (dev only)
+    `script-src ${scriptSrc}`,
 
     // Styles: Next.js inlines critical CSS
     "style-src 'self' 'unsafe-inline'",

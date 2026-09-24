@@ -6,9 +6,27 @@ import {
   RelayEvent,
 } from '@goprivate/protocol';
 import type { ISessionStore, Participant, Session } from '../session/store.js';
-import { allowAction, canCreateSession } from '../services/limits.js';
+import { allowAction, canCreateSession, canCreateSessionFromIP } from '../services/limits.js';
 import { broadcast, sendToSocket } from '../services/messenger.js';
 import { parseClientMessage } from '../services/validate.js';
+
+// Helper to obfuscate IP for logging (GDPR-friendly)
+function obfuscateIP(ip: string): string {
+  const parts = ip.split('.');
+  if (parts.length === 4) {
+    return `${parts[0]}.${parts[1]}.xxx.xxx`;
+  }
+  return 'xxx.xxx.xxx.xxx';
+}
+
+// Helper to obfuscate session ID for logging
+function obfuscateSessionId(id: string): string {
+  if (id.length <= 8) return '****';
+  return `${id.substring(0, 4)}...${id.substring(id.length - 4)}`;
+}
+
+// Logger instance (passed from index.ts ideally, but we'll use console for now)
+const logger = console;
 
 function createParticipantId(): string {
   return crypto.randomUUID();
@@ -31,26 +49,55 @@ export function createMessageHandler(store: ISessionStore) {
       switch (message.type) {
         case ClientEvent.CREATE_SESSION:
           if (!allowAction(ip, 'create')) {
+            logger.warn({
+              event: 'rate_limit_exceeded',
+              action: 'create',
+              ip: obfuscateIP(ip),
+            });
             sendToSocket(socket, {
               type: RelayEvent.ERROR,
               payload: { code: 'RATE_LIMITED', message: 'Too many session creates' },
             });
             return;
           }
-          handleCreateSession(store, socket, message.payload?.sessionId);
+          if (!canCreateSessionFromIP(ip)) {
+            logger.warn({
+              event: 'per_ip_session_limit_exceeded',
+              ip: obfuscateIP(ip),
+            });
+            sendToSocket(socket, {
+              type: RelayEvent.ERROR,
+              payload: {
+                code: 'RATE_LIMITED',
+                message: 'Too many sessions from your IP. Try again later.',
+              },
+            });
+            return;
+          }
+          handleCreateSession(store, socket, message.payload?.sessionId, ip);
           break;
         case ClientEvent.JOIN_SESSION:
           if (!allowAction(ip, 'join')) {
+            logger.warn({
+              event: 'rate_limit_exceeded',
+              action: 'join',
+              ip: obfuscateIP(ip),
+            });
             sendToSocket(socket, {
               type: RelayEvent.ERROR,
               payload: { code: 'RATE_LIMITED', message: 'Too many join attempts' },
             });
             return;
           }
-          handleJoinSession(store, socket, message.payload.sessionId);
+          handleJoinSession(store, socket, message.payload.sessionId, ip);
           break;
         case ClientEvent.SEND_MESSAGE:
           if (!allowAction(ip, 'send')) {
+            logger.warn({
+              event: 'rate_limit_exceeded',
+              action: 'send',
+              ip: obfuscateIP(ip),
+            });
             sendToSocket(socket, {
               type: RelayEvent.ERROR,
               payload: { code: 'RATE_LIMITED', message: 'Too many messages' },
@@ -112,7 +159,12 @@ export function sweepExpiredSessions(store: ISessionStore): number {
   return expired.length;
 }
 
-function handleCreateSession(store: ISessionStore, socket: WebSocket, sessionId?: string): void {
+function handleCreateSession(
+  store: ISessionStore,
+  socket: WebSocket,
+  sessionId: string | undefined,
+  ip: string,
+): void {
   const existing = store.findBySocket(socket);
   if (existing) {
     sendToSocket(socket, {
@@ -166,13 +218,26 @@ function handleCreateSession(store: ISessionStore, socket: WebSocket, sessionId?
   const participant: Participant = { id: createParticipantId(), socket };
   const session = store.create(id, participant);
 
+  // Security logging: Session created
+  logger.info({
+    event: 'session_created',
+    sessionId: obfuscateSessionId(id),
+    ip: obfuscateIP(ip),
+    timestamp: Date.now(),
+  });
+
   sendToSocket(socket, {
     type: RelayEvent.SESSION_CREATED,
     payload: { sessionId: id, expiresAt: session.expiresAt },
   });
 }
 
-function handleJoinSession(store: ISessionStore, socket: WebSocket, sessionId: string): void {
+function handleJoinSession(
+  store: ISessionStore,
+  socket: WebSocket,
+  sessionId: string,
+  ip: string,
+): void {
   const existing = store.findBySocket(socket);
   if (existing) {
     sendToSocket(socket, {
@@ -184,6 +249,13 @@ function handleJoinSession(store: ISessionStore, socket: WebSocket, sessionId: s
 
   const session = store.get(sessionId);
   if (!session) {
+    // Security logging: Failed join (session not found)
+    logger.info({
+      event: 'join_failed_not_found',
+      sessionId: obfuscateSessionId(sessionId),
+      ip: obfuscateIP(ip),
+      timestamp: Date.now(),
+    });
     sendToSocket(socket, {
       type: RelayEvent.ERROR,
       payload: { code: 'SESSION_NOT_FOUND', message: 'Session does not exist' },
@@ -216,6 +288,15 @@ function handleJoinSession(store: ISessionStore, socket: WebSocket, sessionId: s
 
     const updated = store.get(sessionId)!;
     const sockets = updated.participants.map((p) => p.socket);
+
+    // Security logging: Partner joined
+    logger.info({
+      event: 'partner_joined',
+      sessionId: obfuscateSessionId(sessionId),
+      participantCount: updated.participants.length,
+      ip: obfuscateIP(ip),
+      timestamp: Date.now(),
+    });
 
     broadcast(sockets, {
       type: RelayEvent.PARTNER_JOINED,
