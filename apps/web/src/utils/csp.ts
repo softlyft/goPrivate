@@ -63,7 +63,7 @@ export function getCSPDirectives(isDevelopment = false): string {
     "media-src 'none'",
 
     // Upgrade insecure requests (HTTP -> HTTPS)
-    "upgrade-insecure-requests",
+    'upgrade-insecure-requests',
   ];
 
   return directives.join('; ');

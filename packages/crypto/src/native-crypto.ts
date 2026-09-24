@@ -16,7 +16,7 @@ function fromBase64(base64: string): ArrayBuffer {
 
 /**
  * React Native crypto provider using react-native-quick-crypto.
- * 
+ *
  * Implements ECDH P-256 key exchange and AES-GCM encryption compatible with Web Crypto API.
  */
 export class NativeCryptoProvider implements ICryptoProvider {
@@ -39,13 +39,7 @@ export class NativeCryptoProvider implements ICryptoProvider {
 
   async importPublicKey(spkiBase64: string): Promise<CryptoKey> {
     const spki = fromBase64(spkiBase64);
-    return (subtle.importKey as any)(
-      'spki',
-      spki,
-      { name: 'ECDH', namedCurve: 'P-256' },
-      true,
-      [],
-    );
+    return (subtle.importKey as any)('spki', spki, { name: 'ECDH', namedCurve: 'P-256' }, true, []);
   }
 
   async deriveSharedSecret(privateKey: CryptoKey, peerPublicKey: CryptoKey): Promise<CryptoKey> {
@@ -54,7 +48,7 @@ export class NativeCryptoProvider implements ICryptoProvider {
       privateKey,
       256,
     );
-    
+
     return (subtle.importKey as any)(
       'raw',
       Buffer.from(derivedBits),
@@ -72,7 +66,7 @@ export class NativeCryptoProvider implements ICryptoProvider {
       sharedKey,
       Buffer.from(encoded),
     );
-    
+
     const packed = new Uint8Array(iv.length + ciphertext.byteLength);
     packed.set(new Uint8Array(iv), 0);
     packed.set(new Uint8Array(ciphertext), iv.length);
@@ -83,7 +77,7 @@ export class NativeCryptoProvider implements ICryptoProvider {
     const packed = new Uint8Array(fromBase64(ciphertext));
     const iv = packed.slice(0, 12);
     const data = packed.slice(12);
-    
+
     const decrypted = await (subtle.decrypt as any)(
       { name: 'AES-GCM', iv: Buffer.from(iv) },
       sharedKey,
@@ -97,9 +91,9 @@ export class NativeCryptoProvider implements ICryptoProvider {
     const hashArray = await ExpoCrypto.digestStringAsync(
       ExpoCrypto.CryptoDigestAlgorithm.SHA256,
       toBase64(keyBytes),
-      { encoding: ExpoCrypto.CryptoEncoding.BASE64 }
+      { encoding: ExpoCrypto.CryptoEncoding.BASE64 },
     );
-    
+
     const hashBytes = fromBase64(hashArray);
     const hashHex = Array.from(new Uint8Array(hashBytes))
       .map((b) => b.toString(16).padStart(2, '0'))

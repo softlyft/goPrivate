@@ -11,6 +11,7 @@
 import * as SecureStore from 'expo-secure-store';
 import * as ExpoCrypto from 'expo-crypto';
 import Crypto from 'react-native-quick-crypto';
+import { Buffer } from '@craftzdog/react-native-buffer';
 
 const subtle = Crypto.subtle;
 
@@ -54,7 +55,7 @@ async function derivePinKey(pin: string, salt: ArrayBuffer): Promise<any> {
     false,
     ['deriveKey'],
   );
-  return (subtle.deriveKey as any)(
+  const derivedBits = await (subtle.deriveBits as any)(
     {
       name: 'PBKDF2',
       salt: Buffer.from(salt),
@@ -62,6 +63,11 @@ async function derivePinKey(pin: string, salt: ArrayBuffer): Promise<any> {
       hash: 'SHA-256',
     },
     material,
+    256,
+  );
+  return (subtle.importKey as any)(
+    'raw',
+    Buffer.from(derivedBits),
     { name: 'AES-GCM', length: 256 },
     false,
     ['encrypt', 'decrypt'],
@@ -71,7 +77,11 @@ async function derivePinKey(pin: string, salt: ArrayBuffer): Promise<any> {
 async function wrapVaultKey(vaultKey: any, pinKey: any): Promise<string> {
   const raw = await (subtle.exportKey as any)('raw', vaultKey);
   const iv = ExpoCrypto.getRandomBytes(WRAP_IV_LENGTH);
-  const sealed = await (subtle.encrypt as any)({ name: 'AES-GCM', iv: Buffer.from(iv) }, pinKey, Buffer.from(raw));
+  const sealed = await (subtle.encrypt as any)(
+    { name: 'AES-GCM', iv: Buffer.from(iv) },
+    pinKey,
+    Buffer.from(raw),
+  );
   const packed = new Uint8Array(iv.length + sealed.byteLength);
   packed.set(new Uint8Array(iv), 0);
   packed.set(new Uint8Array(sealed), iv.length);
@@ -82,7 +92,11 @@ async function unwrapVaultKey(wrappedKey: string, pinKey: any): Promise<any> {
   const packed = new Uint8Array(fromBase64(wrappedKey));
   const iv = packed.slice(0, WRAP_IV_LENGTH);
   const data = packed.slice(WRAP_IV_LENGTH);
-  const raw = await (subtle.decrypt as any)({ name: 'AES-GCM', iv: Buffer.from(iv) }, pinKey, Buffer.from(data));
+  const raw = await (subtle.decrypt as any)(
+    { name: 'AES-GCM', iv: Buffer.from(iv) },
+    pinKey,
+    Buffer.from(data),
+  );
   return (subtle.importKey as any)('raw', raw, { name: 'AES-GCM', length: 256 }, true, [
     'encrypt',
     'decrypt',
@@ -112,14 +126,15 @@ class MessageVault {
       throw new Error('PIN must be 6 digits');
     }
     const salt = ExpoCrypto.getRandomBytes(16);
-    const pinKey = await derivePinKey(pin, salt.buffer);
+    const saltBuffer = salt.buffer as ArrayBuffer;
+    const pinKey = await derivePinKey(pin, saltBuffer);
     const vaultKey = await (subtle.generateKey as any)({ name: 'AES-GCM', length: 256 }, true, [
       'encrypt',
       'decrypt',
     ]);
     const wrappedKey = await wrapVaultKey(vaultKey, pinKey);
     this.vaultKey = vaultKey;
-    this.meta = { salt: toBase64(salt.buffer), wrappedKey };
+    this.meta = { salt: toBase64(saltBuffer), wrappedKey };
     this.failedAttempts = 0;
     this.lockUntil = 0;
 
@@ -145,6 +160,7 @@ class MessageVault {
     if (!/^\d{6}$/.test(pin)) return false;
 
     try {
+      if (!useMeta) return false;
       const pinKey = await derivePinKey(pin, fromBase64(useMeta.salt));
       const vaultKey = await unwrapVaultKey(useMeta.wrappedKey, pinKey);
       this.vaultKey = vaultKey;

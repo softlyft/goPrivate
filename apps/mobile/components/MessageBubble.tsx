@@ -67,10 +67,7 @@ export function MessageBubble({
 
   return (
     <View
-      style={[
-        styles.container,
-        message.fromPeer ? styles.containerPeer : styles.containerSelf,
-      ]}
+      style={[styles.container, message.fromPeer ? styles.containerPeer : styles.containerSelf]}
     >
       <Pressable
         disabled={!masked || !onRequestReveal}
