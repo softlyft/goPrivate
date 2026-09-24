@@ -11,11 +11,8 @@ export default function ChatScreen() {
         <Text style={styles.sessionId}>Session: {sessionId}</Text>
         <Text style={styles.placeholder}>
           Phase 1: Foundation Setup{'\n\n'}
-          Next steps:{'\n'}
-          • Implement PIN pad{'\n'}
-          • Port Zustand stores{'\n'}
-          • Add WebSocket connection{'\n'}
-          • Implement vault
+          Next steps:{'\n'}• Implement PIN pad{'\n'}• Port Zustand stores{'\n'}• Add WebSocket
+          connection{'\n'}• Implement vault
         </Text>
       </View>
     </View>

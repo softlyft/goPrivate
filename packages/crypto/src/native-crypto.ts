@@ -36,7 +36,7 @@ function fromBase64(base64: string): ArrayBuffer {
 
 /**
  * React Native crypto provider using expo-crypto.
- * 
+ *
  * Note: This is a simplified implementation for Phase 1.
  * For production, you should use react-native-quick-crypto or @noble/ciphers
  * for full ECDH P-256 support.
@@ -45,7 +45,9 @@ export class NativeCryptoProvider implements ICryptoProvider {
   async generateKeyPair(): Promise<KeyPair> {
     // TODO: Implement with react-native-quick-crypto
     // For now, throw to catch during development
-    throw new Error('Native ECDH key generation not yet implemented. Use react-native-quick-crypto.');
+    throw new Error(
+      'Native ECDH key generation not yet implemented. Use react-native-quick-crypto.',
+    );
   }
 
   async exportPublicKey(_publicKey: CryptoKey): Promise<string> {
@@ -74,9 +76,9 @@ export class NativeCryptoProvider implements ICryptoProvider {
     const hashArray = await ExpoCrypto.digestStringAsync(
       ExpoCrypto.CryptoDigestAlgorithm.SHA256,
       toBase64(keyBytes),
-      { encoding: ExpoCrypto.CryptoEncoding.BASE64 }
+      { encoding: ExpoCrypto.CryptoEncoding.BASE64 },
     );
-    
+
     // Convert to hex and format
     const hashBytes = fromBase64(hashArray);
     const hashHex = Array.from(new Uint8Array(hashBytes))

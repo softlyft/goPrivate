@@ -195,23 +195,24 @@ export function GuidePage() {
               The public home page may load{' '}
               <strong className="font-medium text-foreground">Google Analytics</strong> so we can
               see roughly how many people visit goPrivate. That helps us know whether the free
-              public relay is worth keeping online — and whether community support is enough to
-              fund it.
+              public relay is worth keeping online — and whether community support is enough to fund
+              it.
             </p>
             <p className="font-medium text-foreground">What we look at</p>
             <ul className="list-disc space-y-1.5 pl-5">
               <li>That someone opened the home page (a visit / page view)</li>
-              <li>Basic technical context Google provides with that visit (e.g. rough location,
-                device type)</li>
+              <li>
+                Basic technical context Google provides with that visit (e.g. rough location, device
+                type)
+              </li>
             </ul>
             <p className="font-medium text-foreground">What we do not capture with analytics</p>
             <ul className="list-disc space-y-1.5 pl-5">
               <li>Chat messages, PINs, or conversation contents</li>
               <li>Who you are — there is no account and we do not tie analytics to a profile</li>
               <li>
-                Analytics scripts are{' '}
-                <strong className="font-medium text-foreground">not</strong> loaded on chat pages —
-                only on the home page
+                Analytics scripts are <strong className="font-medium text-foreground">not</strong>{' '}
+                loaded on chat pages — only on the home page
               </li>
             </ul>
             <p>

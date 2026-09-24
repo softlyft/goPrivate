@@ -14,10 +14,7 @@ export default function HomeScreen() {
           No accounts. No history. End-to-end encrypted.
         </Text>
 
-        <Pressable
-          style={styles.primaryButton}
-          onPress={() => router.push('/chat/create')}
-        >
+        <Pressable style={styles.primaryButton} onPress={() => router.push('/chat/create')}>
           <Text style={styles.primaryButtonText}>Start Private Conversation</Text>
         </Pressable>
 
@@ -27,10 +24,7 @@ export default function HomeScreen() {
           <View style={styles.dividerLine} />
         </View>
 
-        <Pressable
-          style={styles.secondaryButton}
-          onPress={() => router.push('/join')}
-        >
+        <Pressable style={styles.secondaryButton} onPress={() => router.push('/join')}>
           <Text style={styles.secondaryButtonText}>Join with Link</Text>
         </Pressable>
 
