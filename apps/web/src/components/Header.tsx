@@ -6,7 +6,6 @@ import { Glass } from '@/components/ui/glass';
 import { cn } from '@/utils/cn';
 
 export function Header({
-  title,
   center,
   right,
   onHomeClick,

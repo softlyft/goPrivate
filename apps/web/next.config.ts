@@ -1,7 +1,10 @@
+import { createRequire } from 'module';
 import type { NextConfig } from 'next';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getSecurityHeaders } from './src/utils/csp.ts';
+
+const require = createRequire(import.meta.url);
+const { getSecurityHeaders } = require('./src/utils/csp.ts') as typeof import('./src/utils/csp');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, '../..');

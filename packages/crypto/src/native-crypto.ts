@@ -3,11 +3,21 @@ import * as ExpoCrypto from 'expo-crypto';
 import type { ICryptoProvider, KeyPair } from './types.js';
 
 // Expo Go does not ship this native module; a development build is required.
+type QuickCryptoLike = {
+  subtle?: SubtleCrypto;
+  webcrypto?: { subtle?: SubtleCrypto };
+  default?: {
+    subtle?: SubtleCrypto;
+    webcrypto?: { subtle?: SubtleCrypto };
+  };
+};
+
 let subtle: SubtleCrypto | undefined;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Crypto = require('react-native-quick-crypto') as typeof import('react-native-quick-crypto');
-  subtle = Crypto.subtle;
+  const Crypto = require('react-native-quick-crypto') as QuickCryptoLike;
+  const qc = Crypto.default ?? Crypto;
+  subtle = qc.subtle ?? qc.webcrypto?.subtle;
 } catch {
   subtle = undefined;
 }
@@ -56,7 +66,13 @@ export class NativeCryptoProvider implements ICryptoProvider {
 
   async importPublicKey(spkiBase64: string): Promise<CryptoKey> {
     const spki = fromBase64(spkiBase64);
-    return (requireSubtle().importKey as any)('spki', spki, { name: 'ECDH', namedCurve: 'P-256' }, true, []);
+    return (requireSubtle().importKey as any)(
+      'spki',
+      spki,
+      { name: 'ECDH', namedCurve: 'P-256' },
+      true,
+      [],
+    );
   }
 
   async deriveSharedSecret(privateKey: CryptoKey, peerPublicKey: CryptoKey): Promise<CryptoKey> {
