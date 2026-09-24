@@ -2,10 +2,10 @@
  * Local message vault — encrypts chat text at rest in the browser.
  *
  * - Random AES-256-GCM vault key (held only in this module, not Zustand)
- * - Vault key wrapped with a key derived from the 4-digit PIN (PBKDF2)
+ * - Vault key wrapped with a key derived from the 6-digit PIN (PBKDF2)
  * - Zustand / DevTools only ever see ciphertext + public vault metadata
  *
- * Note: a 4-digit PIN has a small search space. High PBKDF2 iterations slow
+ * Note: a 6-digit PIN has 1 million possible combinations. High PBKDF2 iterations slow
  * offline guessing; the UI also rate-limits PIN attempts.
  */
 
@@ -114,8 +114,8 @@ class MessageVault {
 
   /** Create a new vault from a PIN. Keeps the vault unlocked in this module. */
   async setup(pin: string): Promise<VaultMeta> {
-    if (!/^\d{4}$/.test(pin)) {
-      throw new Error('PIN must be 4 digits');
+    if (!/^\d{6}$/.test(pin)) {
+      throw new Error('PIN must be 6 digits');
     }
     const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
     const pinKey = await derivePinKey(pin, salt.buffer);
@@ -138,7 +138,7 @@ class MessageVault {
     }
     const useMeta = meta ?? this.meta;
     if (!useMeta) return false;
-    if (!/^\d{4}$/.test(pin)) return false;
+    if (!/^\d{6}$/.test(pin)) return false;
 
     try {
       const pinKey = await derivePinKey(pin, fromBase64(useMeta.salt));

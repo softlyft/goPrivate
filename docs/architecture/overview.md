@@ -15,7 +15,7 @@
 | Compromised / malicious relay during key exchange | **No**     | Public keys are exchanged as plaintext JSON inside `encryptedPayload` before a shared secret exists (TOFU). A malicious relay can MITM ECDH. |
 | Other users / session squatting                   | Partial    | Two-party cap + session id entropy; share the link only with your partner                                                                    |
 | Casual device inspection of app storage           | Yes        | Messages at rest are vault-encrypted; PIN wraps the vault key                                                                                |
-| Offline brute-force of a 4-digit PIN              | Weak       | PIN space is small; mitigated by high PBKDF2 iterations and in-memory session lifetime                                                       |
+| Offline brute-force of a 6-digit PIN              | Moderate   | 1 million PIN combinations; mitigated by high PBKDF2 iterations and in-memory session lifetime                                               |
 | Shoulder surfing the PIN pad                      | No         | UX tradeoff                                                                                                                                  |
 
 **Honest summary for users:** trust the share link and an honest relay. The service cannot read your messages if it only forwards ciphertext, but a hostile relay operator could swap keys during handshake. Device PIN protects masked local history during the session, not against a determined offline attacker if vault material were retained.
