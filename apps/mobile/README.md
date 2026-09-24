@@ -52,9 +52,9 @@ Download it from the Actions run. The APK is signed with the Expo/React Native *
 
 Optional GitHub secret (same as web):
 
-| Secret                  | Purpose                                                                                              |
-| ----------------------- | ---------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_RELAY_URL` | Baked in as `EXPO_PUBLIC_RELAY_URL` for the APK. Defaults to `wss://goprivate-relay.onrender.com/ws` |
+| Secret                  | Purpose                                                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_RELAY_URL` | Used for the APK only when it is a `wss://` URL. Otherwise the APK is baked with `wss://goprivate-relay.onrender.com/ws` |
 
 Optional cloud build (needs an Expo account and `eas init` for a `projectId`):
 
