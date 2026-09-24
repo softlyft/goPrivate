@@ -98,3 +98,22 @@ If you need those, a regular messaging app is a better fit. If you need a short,
 **Trust note:** share the link only with your partner. Encryption assumes an honest relay during the brief key handshake (same TOFU model as many ephemeral tools).
 
 Talk freely. Leave when you’re done. Nothing sticks around.
+
+---
+
+## Home page analytics
+
+The public home page may load **Google Analytics** so we can see roughly how many people visit goPrivate. That helps us know whether the free public relay is worth keeping online — and whether community support is enough to fund it.
+
+**What we look at**
+
+- That someone opened the home page (a visit / page view)
+- Basic technical context Google provides with that visit (e.g. rough location, device type)
+
+**What we do not capture with analytics**
+
+- Chat messages, PINs, or conversation contents
+- Who you are — there is no account and we do not tie analytics to a profile
+- Analytics scripts are **not** loaded on chat pages — only on the home page
+
+IP addresses sent to Google are anonymized where supported. If analytics is not configured for a deployment, nothing is sent.

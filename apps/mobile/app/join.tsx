@@ -16,9 +16,7 @@ export default function JoinScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Join Session</Text>
-        <Text style={styles.subtitle}>
-          Paste the session link or ID you received
-        </Text>
+        <Text style={styles.subtitle}>Paste the session link or ID you received</Text>
 
         <TextInput
           style={styles.input}

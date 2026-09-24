@@ -27,6 +27,7 @@ Content-Security-Policy:
 ### Development
 
 Same as production but with more permissive `connect-src`:
+
 ```
 connect-src 'self' ws://localhost:* wss://localhost:* https:
 ```
@@ -35,25 +36,27 @@ connect-src 'self' ws://localhost:* wss://localhost:* https:
 
 In addition to CSP, goPrivate sets these security headers:
 
-| Header | Value | Purpose |
-|--------|-------|---------|
-| `X-Content-Type-Options` | `nosniff` | Prevent MIME sniffing attacks |
-| `X-Frame-Options` | `DENY` | Prevent clickjacking |
-| `X-XSS-Protection` | `1; mode=block` | Enable browser XSS filter (legacy browsers) |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` | Limit referrer information leakage |
-| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), interest-cohort=()` | Block sensitive APIs and FLoC |
-| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` | Enforce HTTPS (production only) |
+| Header                      | Value                                                          | Purpose                                     |
+| --------------------------- | -------------------------------------------------------------- | ------------------------------------------- |
+| `X-Content-Type-Options`    | `nosniff`                                                      | Prevent MIME sniffing attacks               |
+| `X-Frame-Options`           | `DENY`                                                         | Prevent clickjacking                        |
+| `X-XSS-Protection`          | `1; mode=block`                                                | Enable browser XSS filter (legacy browsers) |
+| `Referrer-Policy`           | `strict-origin-when-cross-origin`                              | Limit referrer information leakage          |
+| `Permissions-Policy`        | `camera=(), microphone=(), geolocation=(), interest-cohort=()` | Block sensitive APIs and FLoC               |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload`                 | Enforce HTTPS (production only)             |
 
 ## Known Limitations
 
 ### `'unsafe-inline'` and `'unsafe-eval'`
 
 **Why they're present:**
+
 - Next.js requires `'unsafe-inline'` for React hydration scripts
 - Next.js requires `'unsafe-eval'` in development mode
 - Production CSS inlining requires `'unsafe-inline'` for styles
 
 **Mitigation:**
+
 - Input sanitization with DOMPurify (see [XSS Protection](/docs/security/xss.md))
 - End-to-end encryption means relay cannot inject malicious content
 - Vault encryption protects messages at rest
@@ -78,6 +81,7 @@ In addition to CSP, goPrivate sets these security headers:
 ## Testing
 
 CSP configuration is tested in `apps/web/src/utils/csp.test.ts`:
+
 - ✅ Production vs. development differences
 - ✅ All security-critical directives
 - ✅ HSTS only in production
@@ -89,18 +93,20 @@ When self-hosting, update `connect-src` to include your relay domain:
 
 ```typescript
 // apps/web/src/utils/csp.ts
-"connect-src 'self' wss://your-relay-domain.com https://analytics.example.com"
+"connect-src 'self' wss://your-relay-domain.com https://analytics.example.com";
 ```
 
 ## Monitoring
 
 **Browser console errors** indicate CSP violations:
+
 ```
 Refused to load the script 'https://evil.com/script.js' because it violates
 the following Content Security Policy directive: "script-src 'self'"
 ```
 
 **Production monitoring**: Consider implementing CSP reporting:
+
 ```
 Content-Security-Policy-Report-Only: ...; report-uri /api/csp-report
 ```

@@ -101,10 +101,7 @@ export function PinPad({
         {Array.from({ length: 6 }).map((_, i) => (
           <View
             key={i}
-            style={[
-              styles.dot,
-              i < activeValue.length ? styles.dotFilled : styles.dotEmpty,
-            ]}
+            style={[styles.dot, i < activeValue.length ? styles.dotFilled : styles.dotEmpty]}
           />
         ))}
       </View>
@@ -118,11 +115,7 @@ export function PinPad({
           }
           if (key === '⌫') {
             return (
-              <Pressable
-                key={key}
-                style={styles.key}
-                onPress={backspace}
-              >
+              <Pressable key={key} style={styles.key} onPress={backspace}>
                 <Text style={styles.keyTextSecondary}>⌫</Text>
               </Pressable>
             );

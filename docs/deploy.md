@@ -88,19 +88,19 @@ Update GitHub secrets `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` from the new root `.
 5. Create a token: [vercel.com/account/tokens](https://vercel.com/account/tokens)
 6. Vercel project env (Production):
 
-| Name                    | Value                                                      |
-| ----------------------- | ---------------------------------------------------------- |
-| `NEXT_PUBLIC_RELAY_URL` | `wss://goprivate-relay.onrender.com/ws` (or your hostname) |
+| Name                            | Value                                                                 |
+| ------------------------------- | --------------------------------------------------------------------- |
+| `NEXT_PUBLIC_RELAY_URL`         | `wss://goprivate-relay.onrender.com/ws` (or your hostname)            |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | GA4 Measurement ID (`G-…`) — home page visit analytics only; optional |
 
 7. GitHub → **Settings → Secrets and variables → Actions**:
 
-| Secret                  | Value                          |
-| ----------------------- | ------------------------------ |
-| `VERCEL_TOKEN`          | Vercel token                   |
-| `VERCEL_ORG_ID`         | `orgId`                        |
-| `VERCEL_PROJECT_ID`     | `projectId`                    |
-| `NEXT_PUBLIC_RELAY_URL` | Same `wss://…/ws` URL as above |
+| Secret                          | Value                                |
+| ------------------------------- | ------------------------------------ |
+| `VERCEL_TOKEN`                  | Vercel token                         |
+| `VERCEL_ORG_ID`                 | `orgId`                              |
+| `VERCEL_PROJECT_ID`             | `projectId`                          |
+| `NEXT_PUBLIC_RELAY_URL`         | Same `wss://…/ws` URL as above       |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | GA4 Measurement ID (`G-…`), optional |
 
 Home-page analytics only fire when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set (Vercel env **and** the GitHub Actions secret, then redeploy).
