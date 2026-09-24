@@ -5,6 +5,7 @@ import { MAX_WS_MESSAGE_BYTES } from '@goprivate/protocol';
 import { sweepExpiredSessions } from './handlers/messages.js';
 import { InMemorySessionStore } from './session/store.js';
 import { sweepRateLimits } from './services/limits.js';
+import { isAllowedOrigin } from './services/origins.js';
 import { registerWebsocket } from './websocket/index.js';
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -16,45 +17,14 @@ async function main() {
   const store = new InMemorySessionStore();
   const connectionCounter = { current: 0 };
 
-  // CORS: Allow specific origins only
-  // In production, restrict to known domains
-  // In development, allow localhost and local network IPs
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
-    'https://goprivate.app',
-    'https://www.goprivate.app',
-    ...(process.env.NODE_ENV === 'development'
-      ? [
-          'http://localhost:3000',
-          'http://localhost:3001',
-          /^http:\/\/192\.168\.\d+\.\d+:\d+$/,
-          /^http:\/\/10\.\d+\.\d+\.\d+:\d+$/,
-        ]
-      : []),
-  ];
-
   await app.register(cors, {
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, etc.)
-      if (!origin) {
+      if (isAllowedOrigin(origin)) {
         callback(null, true);
         return;
       }
-
-      // Check if origin is in allowed list
-      const isAllowed = allowedOrigins.some((allowed) => {
-        if (typeof allowed === 'string') {
-          return origin === allowed;
-        }
-        // RegExp for development IPs
-        return allowed.test(origin);
-      });
-
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        app.log.warn({ origin }, 'CORS: Origin not allowed');
-        callback(new Error('Not allowed by CORS'), false);
-      }
+      app.log.warn({ origin }, 'CORS: Origin not allowed');
+      callback(null, false);
     },
     credentials: false,
   });

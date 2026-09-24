@@ -17,11 +17,13 @@ describe('getCSPDirectives', () => {
     expect(csp).not.toContain('ws://localhost');
   });
 
-  it('allows localhost WebSocket in development', () => {
+  it('allows localhost and hosted relays in development', () => {
     const csp = getCSPDirectives(true);
 
     expect(csp).toContain('ws://localhost:*');
     expect(csp).toContain('wss://localhost:*');
+    expect(csp).toContain('wss://*.onrender.com');
+    expect(csp).not.toContain('upgrade-insecure-requests');
   });
 
   it('includes security-critical directives', () => {
