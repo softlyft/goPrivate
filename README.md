@@ -28,16 +28,17 @@ goprivate/
   apps/
     web/          Reference client (Next.js)
     relay/        Reference relay (Fastify WebSocket)
+    mobile/       Reference mobile client (Expo / React Native)
   packages/
-    protocol/     Shared events, limits, types
-    crypto/       ECDH P-256 + AES-GCM (ICryptoProvider)
+    protocol/     Shared events, limits, types (SESSION_TTL_MS = 30 minutes)
+    crypto/       ECDH P-256 + AES-GCM (web + native providers)
     sdk/          Relay client (IRelayClient / ITransport)
   docs/           Architecture, protocol, ADRs, self-hosting
   governance/     Principles, vision, roadmap, decision process
   rfcs/           Protocol change proposals
   security/       Pointers to threat model & disclosure
   examples/       Samples (placeholder)
-  tools/          Dev tools (placeholder)
+  tools/          Icon generation and other scripts
   .github/        CI, templates, funding
 ```
 
@@ -48,15 +49,28 @@ goprivate/
 
 ## Getting started
 
+Requires **Node.js 20+** (CI uses 22) and **pnpm 10.34.5**.
+
 ```bash
 pnpm install
 pnpm build:packages
 pnpm dev
 ```
 
-- Reference client: http://localhost:3000
+- Reference web client: http://localhost:3000
 - Reference relay: `ws://localhost:3001/ws`
 - Health: http://localhost:3001/health
+
+`pnpm dev` starts the **web** client and **relay** only. For the mobile reference client:
+
+```bash
+cd apps/mobile
+pnpm start
+```
+
+Session create/join on Android needs a **development build** or the CI APK (`npx expo run:android` / **Actions → Mobile APK**). Expo Go does not include `react-native-quick-crypto`.
+
+A session lasts **30 minutes** from creation (see `SESSION_TTL_MS` in `@goprivate/protocol`). Web and a release APK can talk to each other when both use the same hosted `wss://…/ws` relay.
 
 ```bash
 pnpm typecheck
@@ -77,14 +91,16 @@ Full guide: [`docs/self-hosting.md`](./docs/self-hosting.md).
 
 Hosted reference deploy (Vercel + Render): [`docs/deploy.md`](./docs/deploy.md).
 
+Sideloadable Android APK: run **Mobile APK** from GitHub Actions (manual only). Details in [`apps/mobile/README.md`](./apps/mobile/README.md).
+
 ## Documentation
 
-| Audience                      | Start here                                                         |
-| ----------------------------- | ------------------------------------------------------------------ |
-| Users of the reference client | [User guide](./docs/user-guide.md)                                 |
-| Implementers                  | [Protocol docs](./docs/protocol/) · [RFCs](./rfcs/)                |
-| Operators                     | [Self-hosting](./docs/self-hosting.md)                             |
-| Contributors                  | [Contributing](./CONTRIBUTING.md) · [Docs index](./docs/README.md) |
+| Audience                       | Start here                                                                 |
+| ------------------------------ | -------------------------------------------------------------------------- |
+| Users of the reference clients | [User guide](./docs/user-guide.md) · [Mobile](./apps/mobile/README.md)     |
+| Implementers                   | [Protocol docs](./docs/protocol/) · [RFCs](./rfcs/)                       |
+| Operators                      | [Self-hosting](./docs/self-hosting.md) · [Deploy](./docs/deploy.md)       |
+| Contributors                   | [Contributing](./CONTRIBUTING.md) · [Docs index](./docs/README.md)        |
 
 ## Roadmap
 

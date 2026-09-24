@@ -18,10 +18,11 @@ pnpm format
 pnpm dev
 ```
 
-- Reference client: http://localhost:3000
+- Reference web client: http://localhost:3000
 - Reference relay: `ws://localhost:3001/ws`
+- Mobile: `cd apps/mobile && pnpm start` (use `npx expo run:android` for session crypto; Expo Go is not enough)
 
-See [`docs/self-hosting.md`](./docs/self-hosting.md) and the root README.
+See [`docs/self-hosting.md`](./docs/self-hosting.md), [`apps/mobile/README.md`](./apps/mobile/README.md), and the root README.
 
 ## Tests
 

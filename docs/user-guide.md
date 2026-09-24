@@ -14,7 +14,7 @@ Use goPrivate when you want to talk privately without leaving a trail:
 - A quick check-in that shouldn’t live in a normal chat app
 - Talking on a shared or borrowed phone with extra caution
 
-It’s for **two people**. Not groups. Not broadcasting.
+It’s for **two people**. Not groups. Not broadcasting. The web site and the Android app can talk to each other when both use the same hosted relay.
 
 ---
 
@@ -22,7 +22,7 @@ It’s for **two people**. Not groups. Not broadcasting.
 
 ### Start a private chat
 
-Tap **Create Session**, choose a 6-digit PIN, and you’ll get a link. Send that link to the one person you want to talk to.
+Tap **Start Private Conversation**, choose a 6-digit PIN, and you’ll get a link. Send that link to the one person you want to talk to. You can do this in the browser or in the Android app.
 
 ### Join someone’s chat
 

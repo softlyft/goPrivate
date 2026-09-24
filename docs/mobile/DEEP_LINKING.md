@@ -69,7 +69,7 @@ goprivate://[sessionId]
 
 ```json
 "ios": {
-  "bundleIdentifier": "app.goprivate.mobile",
+  "bundleIdentifier": "com.goprivate.mobile",
   "associatedDomains": [
     "applinks:goprivate.app",
     "applinks:www.goprivate.app"
@@ -90,7 +90,7 @@ goprivate://[sessionId]
 
 ```json
 {
-  "appID": "YOUR_TEAM_ID.app.goprivate.mobile"
+  "appID": "YOUR_TEAM_ID.com.goprivate.mobile"
 }
 ```
 
@@ -114,7 +114,7 @@ goprivate://[sessionId]
 
 ```json
 "android": {
-  "package": "app.goprivate.mobile",
+  "package": "com.goprivate.mobile",
   "intentFilters": [
     {
       "action": "VIEW",
@@ -235,13 +235,13 @@ xcrun simctl openurl booted "goprivate://chat/test123"
 1. **Using ADB:**
 
 ```bash
-adb shell am start -W -a android.intent.action.VIEW -d "https://goprivate.app/chat/test123" app.goprivate.mobile
+adb shell am start -W -a android.intent.action.VIEW -d "https://goprivate.app/chat/test123" com.goprivate.mobile
 ```
 
 2. **Using Custom Scheme:**
 
 ```bash
-adb shell am start -W -a android.intent.action.VIEW -d "goprivate://chat/test123" app.goprivate.mobile
+adb shell am start -W -a android.intent.action.VIEW -d "goprivate://chat/test123" com.goprivate.mobile
 ```
 
 3. **Using Chrome:**
