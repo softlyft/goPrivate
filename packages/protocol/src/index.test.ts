@@ -21,7 +21,7 @@ describe('@goprivate/protocol', () => {
   });
 
   it('defines production limits', () => {
-    expect(SESSION_TTL_MS).toBe(15 * 60 * 1000);
+    expect(SESSION_TTL_MS).toBe(30 * 60 * 1000);
     expect(MAX_CHAT_TEXT_CHARS).toBe(4000);
     expect(MAX_RELAY_SESSIONS).toBeGreaterThan(0);
     expect(MAX_RELAY_CONNECTIONS).toBeGreaterThan(MAX_RELAY_SESSIONS);

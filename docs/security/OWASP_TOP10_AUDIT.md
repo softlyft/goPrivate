@@ -205,7 +205,7 @@ try {
 
 ✅ **EXCELLENT**: Ephemeral Sessions
 
-- Sessions expire after 15 minutes (5 minute idle + 10 minute active)
+- Sessions expire after 30 minutes (wall-clock TTL from creation)
 - No persistent storage of messages
 - Automatic cleanup of expired sessions
 
@@ -435,7 +435,7 @@ Multiple path traversal and file read vulnerabilities:
 
 - Secure session ID generation (crypto.randomUUID())
 - Session IDs validated on every operation
-- Automatic session expiry (15 minutes)
+- Automatic session expiry (30 minutes)
 
 ✅ **PASS**: PIN Protection for Vault
 

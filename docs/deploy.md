@@ -171,7 +171,7 @@ Cold start is the usual cause on free Render. Wait for retries to finish, or hit
 
 ## 5. Android APK (GitHub Actions)
 
-Merges to `main` that change `apps/mobile` or the shared packages trigger **Mobile APK** (`.github/workflows/mobile-apk.yml`). You can also run it from **Actions → Mobile APK → Run workflow**.
+**Mobile APK** (`.github/workflows/mobile-apk.yml`) is manual only. Run it from **Actions → Mobile APK → Run workflow**.
 
 Download `goprivate-android` from the workflow artifacts. The APK always uses a remote `wss://` relay (`wss://goprivate-relay.onrender.com/ws`, or `NEXT_PUBLIC_RELAY_URL` when that secret is `wss://`).
 

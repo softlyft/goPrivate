@@ -44,7 +44,7 @@ Your PIN lives only on your phone or computer. It wraps the local encryption key
 
 ### Watch the clock
 
-Every chat lasts **15 minutes**. You’ll see a timer at the top. When it hits zero, the chat ends.
+Every chat lasts **30 minutes**. You’ll see a timer at the top. When it hits zero, the chat ends.
 
 You can also leave anytime with **Leave**, or tap **goPrivate** to go home.
 
