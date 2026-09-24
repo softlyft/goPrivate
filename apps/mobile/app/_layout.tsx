@@ -1,7 +1,50 @@
-import { Stack } from 'expo-router';
+import '../polyfills';
+import { useEffect } from 'react';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Linking from 'expo-linking';
+import { parseDeepLink } from '../utils/deeplink';
+import { chatHref } from '../utils/session-link';
 
 export default function RootLayout() {
+  const router = useRouter();
+
+  // Handle deep links when app is already open
+  useEffect(() => {
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      console.log('Deep link received:', url);
+      const { sessionId } = parseDeepLink(url);
+
+      if (sessionId) {
+        router.push(chatHref(sessionId));
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [router]);
+
+  // Handle initial deep link when app is opened from closed state
+  useEffect(() => {
+    async function handleInitialURL() {
+      const initialUrl = await Linking.getInitialURL();
+
+      if (initialUrl) {
+        console.log('Initial URL:', initialUrl);
+        const { sessionId } = parseDeepLink(initialUrl);
+
+        if (sessionId) {
+          setTimeout(() => {
+            router.push(chatHref(sessionId));
+          }, 100);
+        }
+      }
+    }
+
+    handleInitialURL();
+  }, []);
+
   return (
     <>
       <StatusBar style="auto" />
@@ -14,6 +57,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="join" />
         <Stack.Screen name="chat/[sessionId]" />
+        <Stack.Screen name="+not-found" />
       </Stack>
     </>
   );

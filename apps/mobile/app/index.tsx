@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Modal, Alert, Image } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal, Alert, Image, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createRelayClient } from '@goprivate/sdk';
 import { PinPad } from '../components/PinPad';
@@ -7,9 +7,12 @@ import { messageVault } from '../services/vault';
 import { useSessionStore } from '../store/session';
 import { Colors } from '../constants/Colors';
 import { getRelayUrl } from '../utils/env';
+import { chatHref } from '../utils/session-link';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [pinError, setPinError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -36,7 +39,7 @@ export default function HomeScreen() {
       await client.disconnect();
 
       setShowPinSetup(false);
-      router.push(`/chat/${sessionId}`);
+      router.push(chatHref(sessionId));
     } catch (err) {
       setPinError(err instanceof Error ? err.message : 'Failed to create session');
       await messageVault.clearVault();
@@ -66,7 +69,7 @@ export default function HomeScreen() {
             <Text style={styles.tagline}>Private conversations. No trace.</Text>
           </View>
           <Text style={styles.subtitle}>
-            Ephemeral, end-to-end encrypted conversations that vanish in 5 minutes.
+            Ephemeral, end-to-end encrypted conversations that vanish in 30 minutes.
           </Text>
         </View>
 
@@ -106,8 +109,8 @@ export default function HomeScreen() {
           }
         }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={[styles.modalOverlay, isTablet && styles.modalOverlayTablet]}>
+          <View style={[styles.modalContent, isTablet && styles.modalContentTablet]}>
             <PinPad
               title="Set your reveal PIN"
               subtitle="Choose a 6-digit PIN to protect your messages"
@@ -232,6 +235,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  modalOverlayTablet: {
+    justifyContent: 'center',
+    padding: 24,
   },
   modalContent: {
     backgroundColor: '#fff',
@@ -239,6 +247,13 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: 20,
     minHeight: '50%',
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalContentTablet: {
+    maxWidth: 440,
+    minHeight: undefined,
+    borderRadius: 24,
   },
   creatingText: {
     textAlign: 'center',

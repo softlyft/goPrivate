@@ -5,7 +5,8 @@
 - Relay forwards opaque encrypted packets only (after handshake)
 - No database, Redis, or user storage
 - Sessions live in memory and die when empty (with a short reconnect grace)
-- Crypto uses browser Web Crypto API (ECDH P-256 → AES-GCM)
+- Crypto uses Web Crypto in the browser and `react-native-quick-crypto` on native (ECDH P-256 → AES-GCM)
+- Sessions last 30 minutes from creation (`SESSION_TTL_MS`)
 
 ## Threat model
 
@@ -48,7 +49,7 @@ User A                    Relay                     User B
 
 | Interface         | Package | Purpose                         |
 | ----------------- | ------- | ------------------------------- |
-| `ICryptoProvider` | crypto  | Swap Web Crypto for other impls |
+| `ICryptoProvider` | crypto  | Web (`platform.ts`) or native (`native-crypto.ts`) |
 | `ITransport`      | sdk     | Swap WebSocket transport        |
 | `IRelayClient`    | sdk     | High-level session + messaging  |
 | `ISessionStore`   | relay   | Swap in-memory store if needed  |

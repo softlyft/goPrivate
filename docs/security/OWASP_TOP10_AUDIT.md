@@ -5,6 +5,8 @@
 **Scope**: Full codebase (web, mobile, relay, packages)  
 **Standard**: OWASP Top 10 (2021)
 
+> **Code catch-up:** Production CSP no longer includes `unsafe-eval` (dev only). Session TTL is **30 minutes**. Treat remaining findings as a snapshot, not live inventory.
+
 ## Executive Summary
 
 This document provides a comprehensive security audit of the goPrivate project against the OWASP Top 10 2021 standard. The audit covers all components: web client, mobile client, relay server, and shared packages.
@@ -205,7 +207,7 @@ try {
 
 ✅ **EXCELLENT**: Ephemeral Sessions
 
-- Sessions expire after 15 minutes (5 minute idle + 10 minute active)
+- Sessions expire after 30 minutes (wall-clock TTL from creation)
 - No persistent storage of messages
 - Automatic cleanup of expired sessions
 
@@ -435,7 +437,7 @@ Multiple path traversal and file read vulnerabilities:
 
 - Secure session ID generation (crypto.randomUUID())
 - Session IDs validated on every operation
-- Automatic session expiry (15 minutes)
+- Automatic session expiry (30 minutes)
 
 ✅ **PASS**: PIN Protection for Vault
 

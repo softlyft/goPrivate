@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Modal } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, Modal, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { PinPad } from '../components/PinPad';
 import { messageVault } from '../services/vault';
 import { useSessionStore } from '../store/session';
 import { Colors } from '../constants/Colors';
+import { chatHref, extractSessionId } from '../utils/session-link';
 
 export default function JoinScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
   const [sessionId, setSessionId] = useState('');
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [pinError, setPinError] = useState<string | null>(null);
@@ -30,33 +33,20 @@ export default function JoinScreen() {
       const meta = await messageVault.setup(pin);
       setVaultMeta(meta);
 
+      const id = extractSessionId(sessionId);
+      if (!id) {
+        throw new Error('Enter a valid session link or ID');
+      }
       setShowPinSetup(false);
-      router.push(`/chat/${sessionId.trim()}`);
+      router.push(chatHref(id));
     } catch (err) {
       setPinError(err instanceof Error ? err.message : 'Failed to set up PIN');
       await messageVault.clearVault();
     }
   }
 
-  function extractSessionId(input: string): string {
-    const trimmed = input.trim();
-
-    const urlMatch = trimmed.match(/goprivate\.app\/(?:chat\/)?([a-zA-Z0-9_-]+)/);
-    if (urlMatch) {
-      return urlMatch[1]!;
-    }
-
-    const customSchemeMatch = trimmed.match(/goprivate:\/\/(?:chat\/)?([a-zA-Z0-9_-]+)/);
-    if (customSchemeMatch) {
-      return customSchemeMatch[1]!;
-    }
-
-    return trimmed;
-  }
-
   function handleTextChange(text: string) {
-    const extracted = extractSessionId(text);
-    setSessionId(extracted);
+    setSessionId(extractSessionId(text) ?? text.trim());
   }
 
   return (
@@ -111,8 +101,8 @@ export default function JoinScreen() {
           setPinError(null);
         }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={[styles.modalOverlay, isTablet && styles.modalOverlayTablet]}>
+          <View style={[styles.modalContent, isTablet && styles.modalContentTablet]}>
             <PinPad
               title="Set your reveal PIN"
               subtitle="Choose a 6-digit PIN to protect your messages"
@@ -217,6 +207,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  modalOverlayTablet: {
+    justifyContent: 'center',
+    padding: 24,
   },
   modalContent: {
     backgroundColor: '#fff',
@@ -224,5 +219,12 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: 20,
     minHeight: '50%',
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalContentTablet: {
+    maxWidth: 440,
+    minHeight: undefined,
+    borderRadius: 24,
   },
 });

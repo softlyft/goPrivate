@@ -108,7 +108,7 @@ export function GuidePage() {
                 <h3 className="mb-1 text-sm font-medium text-foreground">Watch the clock</h3>
                 <p>
                   Every chat lasts{' '}
-                  <strong className="font-medium text-foreground">15 minutes</strong>. You’ll see a
+                  <strong className="font-medium text-foreground">30 minutes</strong>. You’ll see a
                   timer at the top. When it hits zero, the chat ends.
                 </p>
                 <p>

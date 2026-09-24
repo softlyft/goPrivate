@@ -1,5 +1,7 @@
 # Phase 2 Complete: Full Mobile App Functionality
 
+> Historical write-up of PR #9. For current setup and APK/relay behavior see [`apps/mobile/README.md`](../../apps/mobile/README.md). Session TTL is now **30 minutes**.
+
 **Status**: ✅ Complete  
 **PR**: [#9](https://github.com/softlyft/goPrivate/pull/9)  
 **Date**: September 24, 2026
@@ -373,7 +375,7 @@ These are deferred to Phase 3 (polish and enhancements).
 | Create session         | ✅  | ✅     | Identical flow               |
 | Join session           | ✅  | ✅     | Mobile adds link parsing     |
 | Leave session          | ✅  | ✅     | Clean disconnect             |
-| Session expiry         | ✅  | ✅     | 15 minute TTL                |
+| Session expiry         | ✅  | ✅     | 30 minute TTL                |
 | **Cryptography**       |     |        |                              |
 | ECDH P-256             | ✅  | ✅     | Same algorithm               |
 | AES-GCM 256            | ✅  | ✅     | Same algorithm               |

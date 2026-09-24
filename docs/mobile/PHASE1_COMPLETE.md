@@ -1,5 +1,7 @@
 # Mobile App - Phase 1 Complete ✅
 
+> Historical snapshot of the Phase 1 scaffold. Current mobile behavior is in [`apps/mobile/README.md`](../../apps/mobile/README.md) (native crypto, vault, chat, manual APK).
+
 ## Overview
 
 Phase 1 foundation for goPrivate React Native mobile app is complete. The app structure is set up, core packages are integrated, and the basic navigation flow is working.
