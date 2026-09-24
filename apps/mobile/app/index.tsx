@@ -66,7 +66,7 @@ export default function HomeScreen() {
             <Text style={styles.tagline}>Private conversations. No trace.</Text>
           </View>
           <Text style={styles.subtitle}>
-            Ephemeral, end-to-end encrypted conversations that vanish in 5 minutes.
+            Ephemeral, end-to-end encrypted conversations that vanish in 30 minutes.
           </Text>
         </View>
 

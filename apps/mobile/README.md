@@ -41,7 +41,7 @@ pnpm web
 
 ## Android APK (CI)
 
-Merges to `main` that touch the mobile app or shared packages run **Mobile APK**. The workflow:
+Run **Mobile APK** from **Actions → Mobile APK → Run workflow**. The workflow:
 
 1. Builds `@goprivate/protocol`, `crypto`, and `sdk`
 2. Runs `expo prebuild` for Android

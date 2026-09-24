@@ -1,5 +1,5 @@
-/** Session lifetime from creation (15 minutes) */
-export const SESSION_TTL_MS = 15 * 60 * 1000;
+/** Session lifetime from creation (30 minutes) */
+export const SESSION_TTL_MS = 30 * 60 * 1000;
 
 /** Keep empty sessions briefly so mobile app-switch can reconnect. */
 export const RECONNECT_GRACE_MS = 60_000;

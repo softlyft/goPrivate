@@ -1,20 +1,9 @@
-# Build a sideloadable Android APK for the Expo reference client on merge to main.
-# Artifact: goprivate-android.apk on the workflow run.
+# Build a sideloadable Android APK for the Expo reference client.
+# Run from Actions → Mobile APK → Run workflow. Artifact: goprivate-android.apk.
 
 name: Mobile APK
 
 on:
-  push:
-    branches: [main, master]
-    paths:
-      - 'apps/mobile/**'
-      - 'packages/protocol/**'
-      - 'packages/crypto/**'
-      - 'packages/sdk/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.github/workflows/mobile-apk.yml'
   workflow_dispatch:
 
 concurrency:

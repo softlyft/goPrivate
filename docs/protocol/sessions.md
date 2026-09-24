@@ -12,7 +12,7 @@
 
 ## Lifetime
 
-- `SESSION_TTL_MS` — wall-clock lifetime from creation (15 minutes in the reference protocol constants)
+- `SESSION_TTL_MS` — wall-clock lifetime from creation (30 minutes in the reference protocol constants)
 - When TTL elapses, the relay emits `SESSION_EXPIRED` and destroys the session
 
 ## Disconnect and reconnect

@@ -79,7 +79,7 @@ async function derivePinKey(pin: string, salt: ArrayBuffer): Promise<any> {
     new TextEncoder().encode(pin),
     'PBKDF2',
     false,
-    ['deriveKey'],
+    ['deriveBits'],
   );
   const derivedBits = await (requireSubtle().deriveBits as any)(
     {

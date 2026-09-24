@@ -68,7 +68,7 @@ function wireClient(client: IRelayClient): void {
   client.on('sessionExpired', () => {
     messageVault.lock();
     useSessionStore.getState().setStatus('expired');
-    useSessionStore.getState().setError('This session has expired (15 minute limit).');
+    useSessionStore.getState().setError('This session has expired (30 minute limit).');
     useSessionStore.getState().setExpiresAt(null);
     useSessionStore.getState().clearVault();
   });
@@ -244,7 +244,7 @@ export function useChatSession() {
       messageVault.lock();
       useSessionStore.setState({
         status: 'expired',
-        error: 'This session has expired (15 minute limit).',
+        error: 'This session has expired (30 minute limit).',
         partnerPresent: false,
         expiresAt: null,
         vaultMeta: null,

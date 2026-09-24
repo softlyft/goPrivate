@@ -161,7 +161,7 @@ export function ChatPage() {
       {showShare && (
         <div className="border-b border-black/[0.06] bg-white/35 px-4 py-3 backdrop-blur-xl">
           <p className="text-sm text-muted">
-            Share this link with one person. Sessions end after 15 minutes or when everyone leaves.
+            Share this link with one person. Sessions end after 30 minutes or when everyone leaves.
           </p>
           <div className="mt-2 flex items-center gap-2">
             <code className="flex-1 truncate rounded-full border border-black/8 bg-white/60 px-3 py-1.5 font-mono text-xs shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
