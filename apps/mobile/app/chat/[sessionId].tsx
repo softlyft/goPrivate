@@ -14,6 +14,7 @@ export default function ChatScreen() {
   const [client, setClient] = useState<IRelayClient | null>(null);
   const [status, setStatus] = useState<string>('connecting');
   const [error, setError] = useState<string | null>(null);
+  const [isJoining, setIsJoining] = useState(false);
 
   const messages = useSessionStore((s) => s.messages);
   const addMessage = useSessionStore((s) => s.addMessage);
@@ -27,13 +28,26 @@ export default function ChatScreen() {
     }
 
     const relayClient = createRelayClient();
+    let joinTimeout: ReturnType<typeof setTimeout> | null = null;
 
     relayClient.on('status', (newStatus) => {
       setStatus(newStatus);
+      if (newStatus === 'ready') {
+        setIsJoining(false);
+        if (joinTimeout) {
+          clearTimeout(joinTimeout);
+          joinTimeout = null;
+        }
+      }
     });
 
     relayClient.on('error', (_code, message) => {
       setError(message);
+      setIsJoining(false);
+      if (joinTimeout) {
+        clearTimeout(joinTimeout);
+        joinTimeout = null;
+      }
       Alert.alert('Connection Error', message);
     });
 
@@ -58,12 +72,57 @@ export default function ChatScreen() {
 
     setClient(relayClient);
 
-    void relayClient.connect(getRelayUrl()).then(() => relayClient.joinSession(sessionId));
+    async function connectAndJoin() {
+      try {
+        await relayClient.connect(getRelayUrl());
+        setIsJoining(true);
+
+        // Set a 30-second timeout for joining
+        joinTimeout = setTimeout(() => {
+          if (status !== 'ready') {
+            setError('Session not found or host is offline');
+            setIsJoining(false);
+            Alert.alert(
+              'Unable to Join',
+              'The session may have expired or the host is not online yet. Please ask them to share a new link.',
+              [{ text: 'Go Back', onPress: () => router.back() }],
+            );
+          }
+        }, 30000);
+
+        await relayClient.joinSession(sessionId);
+        setIsJoining(false);
+        if (joinTimeout) {
+          clearTimeout(joinTimeout);
+          joinTimeout = null;
+        }
+      } catch (err) {
+        setIsJoining(false);
+        if (joinTimeout) {
+          clearTimeout(joinTimeout);
+          joinTimeout = null;
+        }
+        const message = err instanceof Error ? err.message : 'Failed to join session';
+        setError(message);
+        Alert.alert(
+          'Connection Failed',
+          message.includes('SESSION_NOT_FOUND')
+            ? 'This session does not exist or has expired.'
+            : message,
+          [{ text: 'Go Back', onPress: () => router.back() }],
+        );
+      }
+    }
+
+    void connectAndJoin();
 
     return () => {
+      if (joinTimeout) {
+        clearTimeout(joinTimeout);
+      }
       void relayClient.disconnect();
     };
-  }, [sessionId, addMessage]);
+  }, [sessionId, addMessage, router, status]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
@@ -108,12 +167,18 @@ export default function ChatScreen() {
   if (!isReady) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={Colors.primary} />
         <Text style={styles.statusText}>
           {status === 'connecting' && 'Connecting to relay...'}
+          {status === 'connected' && isJoining && 'Waiting for host...'}
           {status === 'handshaking' && 'Establishing secure channel...'}
           {status === 'disconnected' && 'Disconnected'}
         </Text>
+        {status === 'connected' && isJoining && (
+          <Text style={styles.hintText}>
+            The person who created this session needs to be online
+          </Text>
+        )}
       </View>
     );
   }
@@ -143,6 +208,13 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     marginTop: 16,
     textAlign: 'center',
+  },
+  hintText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginTop: 8,
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
   errorText: {
     fontSize: 16,
