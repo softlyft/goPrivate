@@ -55,4 +55,28 @@ describe('@goprivate/crypto', () => {
     const ciphertext = await crypto.encrypt('secret', aliceToBob);
     await expect(crypto.decrypt(ciphertext, eveKey)).rejects.toThrow();
   });
+
+  it('generates consistent fingerprints for same public key', async () => {
+    const keyPair = await crypto.generateKeyPair();
+    const publicKeyBase64 = await crypto.exportPublicKey(keyPair.publicKey);
+
+    const fp1 = await crypto.generateFingerprint(publicKeyBase64);
+    const fp2 = await crypto.generateFingerprint(publicKeyBase64);
+
+    expect(fp1).toBe(fp2);
+    expect(fp1).toMatch(/^[0-9a-f]{4}( [0-9a-f]{4}){7}$/);
+  });
+
+  it('generates different fingerprints for different keys', async () => {
+    const kp1 = await crypto.generateKeyPair();
+    const kp2 = await crypto.generateKeyPair();
+
+    const pk1 = await crypto.exportPublicKey(kp1.publicKey);
+    const pk2 = await crypto.exportPublicKey(kp2.publicKey);
+
+    const fp1 = await crypto.generateFingerprint(pk1);
+    const fp2 = await crypto.generateFingerprint(pk2);
+
+    expect(fp1).not.toBe(fp2);
+  });
 });
