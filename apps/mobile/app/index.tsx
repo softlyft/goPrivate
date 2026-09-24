@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Modal, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createRelayClient } from '@goprivate/sdk';
 import { PinPad } from '../components/PinPad';
 import { messageVault } from '../services/vault';
 import { useSessionStore } from '../store/session';
+import { Colors } from '../constants/Colors';
 
 const RELAY_URL = __DEV__ ? 'ws://10.0.2.2:8080' : 'wss://relay.goprivate.app';
 
@@ -70,7 +71,18 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>goPrivate</Text>
+          <Image
+            source={require('../assets/images/logo.jpg')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>
+              <Text style={styles.titleGreen}>go</Text>
+              <Text style={styles.titleDark}>Private</Text>
+            </Text>
+            <Text style={styles.tagline}>Private conversations. No trace.</Text>
+          </View>
           <Text style={styles.subtitle}>
             Ephemeral, end-to-end encrypted conversations that vanish in 5 minutes.
           </Text>
@@ -138,7 +150,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: Colors.background,
   },
   content: {
     flex: 1,
@@ -149,16 +161,41 @@ const styles = StyleSheet.create({
     marginTop: 60,
     alignItems: 'center',
   },
+  logo: {
+    width: 120,
+    height: 120,
+    borderRadius: 24,
+    marginBottom: 16,
+    shadowColor: Colors.brandDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   title: {
     fontSize: 48,
     fontWeight: '700',
-    color: '#000',
-    marginBottom: 16,
+    marginBottom: 4,
+  },
+  titleGreen: {
+    color: Colors.brandGreen,
+  },
+  titleDark: {
+    color: Colors.brandDark,
+  },
+  tagline: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    fontWeight: '500',
   },
   subtitle: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#8E8E93',
+    color: Colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 20,
   },
@@ -166,11 +203,16 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   primaryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: Colors.primary,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: 'center',
+    shadowColor: Colors.brandDark,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   primaryButtonText: {
     color: '#fff',
@@ -178,16 +220,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   secondaryButton: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.backgroundWhite,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#007AFF',
+    borderWidth: 2,
+    borderColor: Colors.primary,
   },
   secondaryButtonText: {
-    color: '#007AFF',
+    color: Colors.primary,
     fontSize: 17,
     fontWeight: '600',
   },
@@ -201,7 +243,7 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 14,
     lineHeight: 24,
-    color: '#8E8E93',
+    color: Colors.textMuted,
     textAlign: 'center',
   },
   modalOverlay: {
@@ -219,7 +261,7 @@ const styles = StyleSheet.create({
   creatingText: {
     textAlign: 'center',
     marginTop: 16,
-    color: '#8E8E93',
+    color: Colors.textMuted,
     fontSize: 14,
   },
 });

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { MAX_CHAT_TEXT_CHARS } from '@goprivate/protocol';
 import { sanitizeMessageText } from '../utils/sanitize';
+import { Colors } from '../constants/Colors';
 
 export function MessageComposer({
   disabled,
@@ -94,9 +95,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 12,
     paddingBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.backgroundWhite,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+    borderTopColor: Colors.border,
   },
   inputRow: {
     flexDirection: 'row',
@@ -106,17 +107,23 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: Colors.background,
     borderRadius: 20,
     fontSize: 15,
+    color: Colors.text,
   },
   sendButton: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#007AFF',
+    backgroundColor: Colors.primary,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: Colors.brandDark,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   sendButtonDisabled: {
     backgroundColor: '#C7C7CC',
@@ -131,7 +138,7 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: 11,
-    color: '#FF3B30',
+    color: Colors.error,
     marginTop: 8,
     paddingHorizontal: 4,
   },
