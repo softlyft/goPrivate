@@ -5,6 +5,7 @@ import { MAX_CHAT_TEXT_CHARS } from '@goprivate/protocol';
 import { Button } from '@/components/ui/button';
 import { Glass } from '@/components/ui/glass';
 import { Input } from '@/components/ui/input';
+import { sanitizeMessageText } from '@/utils/sanitize';
 
 export function MessageComposer({
   disabled,
@@ -25,7 +26,7 @@ export function MessageComposer({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const value = text.trim();
+    const value = sanitizeMessageText(text.trim());
     if (!value || disabled || sending) return;
     if (value.length > MAX_CHAT_TEXT_CHARS) {
       setLocalError(`Max ${MAX_CHAT_TEXT_CHARS} characters`);
