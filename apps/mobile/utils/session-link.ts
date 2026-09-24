@@ -43,12 +43,15 @@ function sessionIdFromUrl(raw: string): string | null {
   return custom?.[1] && SESSION_ID_PATTERN.test(custom[1]) ? custom[1] : null;
 }
 
-export function chatHref(sessionId: string): {
+export function chatHref(
+  sessionId: string,
+  options?: { host?: boolean },
+): {
   pathname: '/chat/[sessionId]';
-  params: { sessionId: string };
+  params: { sessionId: string; host?: string };
 } {
   return {
     pathname: '/chat/[sessionId]',
-    params: { sessionId },
+    params: options?.host ? { sessionId, host: '1' } : { sessionId },
   };
 }

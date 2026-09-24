@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, Modal, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { PinPad } from '../components/PinPad';
 import { messageVault } from '../services/vault';
 import { useSessionStore } from '../store/session';
@@ -14,15 +15,19 @@ export default function JoinScreen() {
   const [sessionId, setSessionId] = useState('');
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [pinError, setPinError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const setVaultMeta = useSessionStore((s) => s.setVaultMeta);
   const clearMessages = useSessionStore((s) => s.clearMessages);
 
   function handleJoin() {
-    const trimmedId = sessionId.trim();
-    if (!trimmedId) {
+    const id = extractSessionId(sessionId);
+    if (!id) {
+      setJoinError('Enter a valid session link or ID');
       return;
     }
 
+    setSessionId(id);
+    setJoinError(null);
     clearMessages();
     setShowPinSetup(true);
   }
@@ -46,13 +51,17 @@ export default function JoinScreen() {
   }
 
   function handleTextChange(text: string) {
+    setJoinError(null);
     setSessionId(extractSessionId(text) ?? text.trim());
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={12}>
+            <Text style={styles.backText}>Back</Text>
+          </Pressable>
           <Text style={styles.title}>Join Session</Text>
           <Text style={styles.subtitle}>Paste the session link or ID shared by your contact</Text>
         </View>
@@ -69,6 +78,7 @@ export default function JoinScreen() {
             multiline
             numberOfLines={3}
           />
+          {joinError ? <Text style={styles.joinError}>{joinError}</Text> : null}
 
           <Pressable
             style={({ pressed }) => [
@@ -117,7 +127,7 @@ export default function JoinScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -131,8 +141,14 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   header: {
-    marginTop: 20,
+    marginTop: 8,
     marginBottom: 32,
+  },
+  backText: {
+    fontSize: 16,
+    color: Colors.primary,
+    fontWeight: '600',
+    marginBottom: 16,
   },
   title: {
     fontSize: 32,
@@ -159,6 +175,10 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: 'top',
     color: Colors.text,
+  },
+  joinError: {
+    fontSize: 13,
+    color: Colors.error,
   },
   joinButton: {
     backgroundColor: Colors.primary,

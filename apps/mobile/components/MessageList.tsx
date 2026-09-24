@@ -79,7 +79,7 @@ export function MessageList({
   if (messages.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Messages appear here once the channel is ready.</Text>
+        <Text style={styles.emptyText}>Share the invite, then wait for your contact to join.</Text>
       </View>
     );
   }

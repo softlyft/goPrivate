@@ -1,4 +1,4 @@
-import { Pressable, Text, StyleSheet, Share, Alert, Platform } from 'react-native';
+import { Pressable, Text, StyleSheet, Share, Alert } from 'react-native';
 import { Colors } from '../constants/Colors';
 
 interface ShareButtonProps {
@@ -8,24 +8,14 @@ interface ShareButtonProps {
 
 export function ShareButton({ sessionId, onCopyFallback }: ShareButtonProps) {
   const shareUrl = `https://goprivate.app/chat/${sessionId}`;
+  const appUrl = `goprivate://chat/${sessionId}`;
 
-  const shareMessage = Platform.select({
-    ios: `You've been invited to a private conversation on goPrivate.
+  const shareMessage = `You've been invited to a private conversation on goPrivate.
 
-Join now for secure, end-to-end encrypted messaging that leaves no trace.
+Web: ${shareUrl}
+App: ${appUrl}
 
-${shareUrl}
-
-This session expires in 15 minutes.`,
-    android: `You've been invited to a private conversation on goPrivate.
-
-Join now for secure, end-to-end encrypted messaging that leaves no trace.
-
-${shareUrl}
-
-This session expires in 15 minutes.`,
-    default: `You've been invited to a private conversation. Click to join: ${shareUrl}`,
-  });
+This session expires in 30 minutes.`;
 
   async function handleShare() {
     try {
@@ -41,14 +31,8 @@ This session expires in 15 minutes.`,
         },
       );
 
-      if (result.action === Share.sharedAction) {
-        if (result.activityType) {
-          console.log('Shared via:', result.activityType);
-        } else {
-          console.log('Shared successfully');
-        }
-      } else if (result.action === Share.dismissedAction) {
-        console.log('Share dismissed');
+      if (result.action === Share.sharedAction || result.action === Share.dismissedAction) {
+        return;
       }
     } catch (error) {
       console.error('Share error:', error);
