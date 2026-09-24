@@ -13,11 +13,21 @@ import * as ExpoCrypto from 'expo-crypto';
 import { Buffer } from 'buffer';
 
 // Expo Go does not include this native module; a development build is required for crypto.
+type QuickCryptoLike = {
+  subtle?: SubtleCrypto;
+  webcrypto?: { subtle?: SubtleCrypto };
+  default?: {
+    subtle?: SubtleCrypto;
+    webcrypto?: { subtle?: SubtleCrypto };
+  };
+};
+
 let subtle: SubtleCrypto | undefined;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Crypto = require('react-native-quick-crypto') as typeof import('react-native-quick-crypto');
-  subtle = Crypto.subtle;
+  const Crypto = require('react-native-quick-crypto') as QuickCryptoLike;
+  const qc = Crypto.default ?? Crypto;
+  subtle = qc.subtle ?? qc.webcrypto?.subtle;
 } catch {
   subtle = undefined;
 }
@@ -144,10 +154,11 @@ class MessageVault {
     const salt = ExpoCrypto.getRandomBytes(16);
     const saltBuffer = salt.buffer as ArrayBuffer;
     const pinKey = await derivePinKey(pin, saltBuffer);
-    const vaultKey = await (requireSubtle().generateKey as any)({ name: 'AES-GCM', length: 256 }, true, [
-      'encrypt',
-      'decrypt',
-    ]);
+    const vaultKey = await (requireSubtle().generateKey as any)(
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt', 'decrypt'],
+    );
     const wrappedKey = await wrapVaultKey(vaultKey, pinKey);
     this.vaultKey = vaultKey;
     this.meta = { salt: toBase64(saltBuffer), wrappedKey };

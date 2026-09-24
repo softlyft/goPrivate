@@ -46,8 +46,8 @@ Or run packages/apps individually — see the root [README](../README.md).
 
 ### Reference mobile client (`apps/mobile`)
 
-| Variable                | Default in `app.json` extra.relayUrl | Purpose                                      |
-| ----------------------- | ------------------------------------ | -------------------------------------------- |
+| Variable                | Default in `app.json` extra.relayUrl    | Purpose                                    |
+| ----------------------- | --------------------------------------- | ------------------------------------------ |
 | `EXPO_PUBLIC_RELAY_URL` | `wss://goprivate-relay.onrender.com/ws` | Relay URL baked into the APK at build time |
 
 `NEXT_PUBLIC_*` values are baked in at **build** time for Next.js. `EXPO_PUBLIC_*` is baked in at APK build time.

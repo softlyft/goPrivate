@@ -4,25 +4,12 @@
     "strict": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@goprivate/protocol": [
-        "../../packages/protocol/src/index.ts"
-      ],
-      "@goprivate/crypto": [
-        "../../packages/crypto/src/index.ts"
-      ],
-      "@goprivate/sdk": [
-        "../../packages/sdk/src/index.ts"
-      ]
+      "@/*": ["./src/*"],
+      "@goprivate/protocol": ["../../packages/protocol/src/index.ts"],
+      "@goprivate/crypto": ["../../packages/crypto/src/index.ts"],
+      "@goprivate/sdk": ["../../packages/sdk/src/index.ts"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
 }
