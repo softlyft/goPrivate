@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Modal, Alert, Image, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal, Image, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { createMobileRelayClient } from '../utils/relay';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { PinPad } from '../components/PinPad';
 import { messageVault } from '../services/vault';
 import { useSessionStore } from '../store/session';
 import { Colors } from '../constants/Colors';
-import { getRelayUrl } from '../utils/env';
+import { generateSessionId } from '../utils/session-id';
 import { chatHref } from '../utils/session-link';
 
 export default function HomeScreen() {
@@ -32,16 +32,10 @@ export default function HomeScreen() {
     try {
       const meta = await messageVault.setup(pin);
       setVaultMeta(meta);
-
-      const client = createMobileRelayClient();
-      await client.connect(getRelayUrl());
-      const sessionId = await client.createSession();
-      await client.disconnect();
-
       setShowPinSetup(false);
-      router.push(chatHref(sessionId));
+      router.push(chatHref(generateSessionId(), { host: true }));
     } catch (err) {
-      setPinError(err instanceof Error ? err.message : 'Failed to create session');
+      setPinError(err instanceof Error ? err.message : 'Failed to set up PIN');
       await messageVault.clearVault();
     } finally {
       setIsCreating(false);
@@ -53,7 +47,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
           <Image
@@ -124,11 +118,11 @@ export default function HomeScreen() {
                 }
               }}
             />
-            {isCreating && <Text style={styles.creatingText}>Creating session...</Text>}
+            {isCreating && <Text style={styles.creatingText}>Setting up…</Text>}
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -143,7 +137,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   header: {
-    marginTop: 60,
+    marginTop: 24,
     alignItems: 'center',
   },
   logo: {

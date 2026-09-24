@@ -1,12 +1,13 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
 
 export default function NotFoundScreen() {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.emoji}>🔍</Text>
       <Text style={styles.title}>Page Not Found</Text>
       <Text style={styles.message}>
@@ -18,7 +19,7 @@ export default function NotFoundScreen() {
       >
         <Text style={styles.buttonText}>Go Home</Text>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 

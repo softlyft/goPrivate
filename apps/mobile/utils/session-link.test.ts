@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractSessionId } from './session-link.js';
+import { chatHref, extractSessionId } from './session-link.js';
 
 const id = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
@@ -23,5 +23,13 @@ describe('extractSessionId', () => {
   it('rejects short or non-hex values', () => {
     expect(extractSessionId('abc123')).toBeNull();
     expect(extractSessionId('https://goprivate.app/guide')).toBeNull();
+  });
+
+  it('marks host chats so the screen creates instead of joining', () => {
+    expect(chatHref(id, { host: true })).toEqual({
+      pathname: '/chat/[sessionId]',
+      params: { sessionId: id, host: '1' },
+    });
+    expect(chatHref(id).params.host).toBeUndefined();
   });
 });

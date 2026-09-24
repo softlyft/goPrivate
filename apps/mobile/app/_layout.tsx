@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Linking from 'expo-linking';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { parseDeepLink } from '../utils/deeplink';
 import { chatHref } from '../utils/session-link';
 
@@ -12,7 +13,6 @@ export default function RootLayout() {
   // Handle deep links when app is already open
   useEffect(() => {
     const subscription = Linking.addEventListener('url', ({ url }) => {
-      console.log('Deep link received:', url);
       const { sessionId } = parseDeepLink(url);
 
       if (sessionId) {
@@ -31,7 +31,6 @@ export default function RootLayout() {
       const initialUrl = await Linking.getInitialURL();
 
       if (initialUrl) {
-        console.log('Initial URL:', initialUrl);
         const { sessionId } = parseDeepLink(initialUrl);
 
         if (sessionId) {
@@ -46,7 +45,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="auto" />
       <Stack
         screenOptions={{
@@ -59,6 +58,6 @@ export default function RootLayout() {
         <Stack.Screen name="chat/[sessionId]" />
         <Stack.Screen name="+not-found" />
       </Stack>
-    </>
+    </SafeAreaProvider>
   );
 }

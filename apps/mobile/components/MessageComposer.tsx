@@ -1,13 +1,5 @@
 import { useState, useRef } from 'react';
-import {
-  View,
-  TextInput,
-  Pressable,
-  Text,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, TextInput, Pressable, Text, StyleSheet } from 'react-native';
 import { MAX_CHAT_TEXT_CHARS } from '@goprivate/protocol';
 import { sanitizeMessageText } from '../utils/sanitize';
 import { Colors } from '../constants/Colors';
@@ -48,11 +40,7 @@ export function MessageComposer({
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={100}
-    >
-      <View style={styles.container}>
+    <View style={styles.container}>
         <View style={styles.inputRow}>
           <TextInput
             ref={inputRef}
@@ -85,8 +73,7 @@ export function MessageComposer({
           </Pressable>
         </View>
         {localError && <Text style={styles.error}>{localError}</Text>}
-      </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
