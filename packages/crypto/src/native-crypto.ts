@@ -1,71 +1,95 @@
 import * as ExpoCrypto from 'expo-crypto';
+import Crypto from 'react-native-quick-crypto';
 import type { ICryptoProvider, KeyPair } from './types.js';
 
-// React Native doesn't have Web Crypto API, so we need platform-specific implementation
-// Using expo-crypto for random bytes and hashing
-// For now, this is a placeholder - full ECDH implementation would need react-native-quick-crypto
+const subtle = Crypto.subtle;
 
 function toBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]!);
-  }
-  // In React Native, btoa might not be available, use Buffer or base64 library
-  if (typeof btoa !== 'undefined') {
-    return btoa(binary);
-  }
-  // Fallback for RN
   return Buffer.from(bytes).toString('base64');
 }
 
 function fromBase64(base64: string): ArrayBuffer {
-  // In React Native, atob might not be available
-  if (typeof atob !== 'undefined') {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes.buffer;
-  }
-  // Fallback for RN
   const buffer = Buffer.from(base64, 'base64');
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 }
 
 /**
- * React Native crypto provider using expo-crypto.
+ * React Native crypto provider using react-native-quick-crypto.
  * 
- * Note: This is a simplified implementation for Phase 1.
- * For production, you should use react-native-quick-crypto or @noble/ciphers
- * for full ECDH P-256 support.
+ * Implements ECDH P-256 key exchange and AES-GCM encryption compatible with Web Crypto API.
  */
 export class NativeCryptoProvider implements ICryptoProvider {
   async generateKeyPair(): Promise<KeyPair> {
-    // TODO: Implement with react-native-quick-crypto
-    // For now, throw to catch during development
-    throw new Error('Native ECDH key generation not yet implemented. Use react-native-quick-crypto.');
+    const keyPair = await (subtle.generateKey as any)(
+      {
+        name: 'ECDH',
+        namedCurve: 'P-256',
+      },
+      true,
+      ['deriveKey', 'deriveBits'],
+    );
+    return keyPair as KeyPair;
   }
 
-  async exportPublicKey(_publicKey: CryptoKey): Promise<string> {
-    throw new Error('Native key export not yet implemented.');
+  async exportPublicKey(publicKey: CryptoKey): Promise<string> {
+    const spki = await (subtle.exportKey as any)('spki', publicKey);
+    return toBase64(spki as ArrayBuffer);
   }
 
-  async importPublicKey(_spkiBase64: string): Promise<CryptoKey> {
-    throw new Error('Native key import not yet implemented.');
+  async importPublicKey(spkiBase64: string): Promise<CryptoKey> {
+    const spki = fromBase64(spkiBase64);
+    return (subtle.importKey as any)(
+      'spki',
+      spki,
+      { name: 'ECDH', namedCurve: 'P-256' },
+      true,
+      [],
+    );
   }
 
-  async deriveSharedSecret(_privateKey: CryptoKey, _peerPublicKey: CryptoKey): Promise<CryptoKey> {
-    throw new Error('Native key derivation not yet implemented.');
+  async deriveSharedSecret(privateKey: CryptoKey, peerPublicKey: CryptoKey): Promise<CryptoKey> {
+    const derivedBits = await (subtle.deriveBits as any)(
+      { name: 'ECDH', public: peerPublicKey },
+      privateKey,
+      256,
+    );
+    
+    return (subtle.importKey as any)(
+      'raw',
+      Buffer.from(derivedBits),
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt'],
+    );
   }
 
-  async encrypt(_plaintext: string, _sharedKey: CryptoKey): Promise<string> {
-    throw new Error('Native encryption not yet implemented.');
+  async encrypt(plaintext: string, sharedKey: CryptoKey): Promise<string> {
+    const iv = ExpoCrypto.getRandomBytes(12);
+    const encoded = new TextEncoder().encode(plaintext);
+    const ciphertext = await (subtle.encrypt as any)(
+      { name: 'AES-GCM', iv: Buffer.from(iv) },
+      sharedKey,
+      Buffer.from(encoded),
+    );
+    
+    const packed = new Uint8Array(iv.length + ciphertext.byteLength);
+    packed.set(new Uint8Array(iv), 0);
+    packed.set(new Uint8Array(ciphertext), iv.length);
+    return toBase64(packed.buffer);
   }
 
-  async decrypt(_ciphertext: string, _sharedKey: CryptoKey): Promise<string> {
-    throw new Error('Native decryption not yet implemented.');
+  async decrypt(ciphertext: string, sharedKey: CryptoKey): Promise<string> {
+    const packed = new Uint8Array(fromBase64(ciphertext));
+    const iv = packed.slice(0, 12);
+    const data = packed.slice(12);
+    
+    const decrypted = await (subtle.decrypt as any)(
+      { name: 'AES-GCM', iv: Buffer.from(iv) },
+      sharedKey,
+      Buffer.from(data),
+    );
+    return new TextDecoder().decode(decrypted);
   }
 
   async generateFingerprint(publicKeyBase64: string): Promise<string> {
