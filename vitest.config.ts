@@ -20,6 +20,7 @@ export default defineConfig({
       'packages/**/src/**/*.test.ts',
       'apps/relay/src/**/*.test.ts',
       'apps/web/src/**/*.test.ts',
+      'apps/mobile/**/*.test.ts',
     ],
     coverage: {
       provider: 'v8',

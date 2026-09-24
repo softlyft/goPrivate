@@ -165,9 +165,11 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     maxWidth: 400,
     width: '100%',
+    alignSelf: 'center',
   },
   header: {
     alignItems: 'center',
+    width: '100%',
     marginBottom: 32,
   },
   title: {
@@ -175,6 +177,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#111827',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,
@@ -185,6 +188,7 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontSize: 12,
     color: '#9CA3AF',
+    textAlign: 'center',
   },
   dots: {
     flexDirection: 'row',
