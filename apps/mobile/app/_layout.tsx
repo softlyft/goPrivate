@@ -1,8 +1,10 @@
+import '../polyfills';
 import { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Linking from 'expo-linking';
 import { parseDeepLink } from '../utils/deeplink';
+import { chatHref } from '../utils/session-link';
 
 export default function RootLayout() {
   const router = useRouter();
@@ -11,11 +13,10 @@ export default function RootLayout() {
   useEffect(() => {
     const subscription = Linking.addEventListener('url', ({ url }) => {
       console.log('Deep link received:', url);
-      const { path, sessionId } = parseDeepLink(url);
+      const { sessionId } = parseDeepLink(url);
 
-      if (sessionId && path) {
-        console.log('Navigating to:', path);
-        router.push(path);
+      if (sessionId) {
+        router.push(chatHref(sessionId));
       }
     });
 
@@ -31,13 +32,11 @@ export default function RootLayout() {
 
       if (initialUrl) {
         console.log('Initial URL:', initialUrl);
-        const { path, sessionId } = parseDeepLink(initialUrl);
+        const { sessionId } = parseDeepLink(initialUrl);
 
-        if (sessionId && path) {
-          console.log('Initial navigation to:', path);
-          // Small delay to ensure navigation stack is ready
+        if (sessionId) {
           setTimeout(() => {
-            router.push(path);
+            router.push(chatHref(sessionId));
           }, 100);
         }
       }
