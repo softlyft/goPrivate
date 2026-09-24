@@ -93,7 +93,6 @@ export class NativeCryptoProvider implements ICryptoProvider {
   }
 
   async generateFingerprint(publicKeyBase64: string): Promise<string> {
-    // This we can implement with expo-crypto's digest function
     const keyBytes = fromBase64(publicKeyBase64);
     const hashArray = await ExpoCrypto.digestStringAsync(
       ExpoCrypto.CryptoDigestAlgorithm.SHA256,
@@ -101,13 +100,11 @@ export class NativeCryptoProvider implements ICryptoProvider {
       { encoding: ExpoCrypto.CryptoEncoding.BASE64 }
     );
     
-    // Convert to hex and format
     const hashBytes = fromBase64(hashArray);
     const hashHex = Array.from(new Uint8Array(hashBytes))
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
 
-    // Format as 8 groups of 4 characters
     const groups = hashHex.match(/.{1,4}/g) || [];
     return groups.slice(0, 8).join(' ');
   }
