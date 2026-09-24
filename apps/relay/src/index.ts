@@ -16,11 +16,60 @@ async function main() {
   const store = new InMemorySessionStore();
   const connectionCounter = { current: 0 };
 
-  await app.register(cors, { origin: true });
+  // CORS: Allow specific origins only
+  // In production, restrict to known domains
+  // In development, allow localhost and local network IPs
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+    'https://goprivate.app',
+    'https://www.goprivate.app',
+    ...(process.env.NODE_ENV === 'development'
+      ? [
+          'http://localhost:3000',
+          'http://localhost:3001',
+          /^http:\/\/192\.168\.\d+\.\d+:\d+$/,
+          /^http:\/\/10\.\d+\.\d+\.\d+:\d+$/,
+        ]
+      : []),
+  ];
+
+  await app.register(cors, {
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      // Check if origin is in allowed list
+      const isAllowed = allowedOrigins.some((allowed) => {
+        if (typeof allowed === 'string') {
+          return origin === allowed;
+        }
+        // RegExp for development IPs
+        return allowed.test(origin);
+      });
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        app.log.warn({ origin }, 'CORS: Origin not allowed');
+        callback(new Error('Not allowed by CORS'), false);
+      }
+    },
+    credentials: false,
+  });
   await app.register(websocket, {
     options: {
       maxPayload: MAX_WS_MESSAGE_BYTES,
     },
+  });
+
+  // Security headers middleware
+  app.addHook('onSend', async (_request, reply) => {
+    reply.header('X-Content-Type-Options', 'nosniff');
+    reply.header('X-Frame-Options', 'DENY');
+    reply.header('X-XSS-Protection', '1; mode=block');
+    reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
   });
 
   app.get('/health', async () => ({
