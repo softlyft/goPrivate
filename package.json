@@ -34,7 +34,9 @@
   },
   "pnpm": {
     "overrides": {
-      "jsdom": "24.1.3"
+      "jsdom": "24.1.3",
+      "react": "19.2.3",
+      "react-dom": "19.2.3"
     }
   }
 }
