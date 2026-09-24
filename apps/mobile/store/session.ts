@@ -37,6 +37,7 @@ interface SessionState {
   setVaultReady: (ready: boolean) => void;
   reset: () => void;
   clearVault: () => void;
+  clearMessages: () => void;
 }
 
 const initial = {
@@ -73,4 +74,5 @@ export const useSessionStore = create<SessionState>((set) => ({
       vaultReady: state.vaultReady,
     })),
   clearVault: () => set({ vaultMeta: null, vaultReady: false }),
+  clearMessages: () => set({ messages: [] }),
 }));
