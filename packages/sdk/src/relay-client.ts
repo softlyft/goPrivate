@@ -53,6 +53,8 @@ export class RelayClient implements IRelayClient {
   private sharedKey: CryptoKey | null = null;
   private peerPublicKeyReceived = false;
   private localPublicKeySent = false;
+  private localPublicKey: string | null = null;
+  private peerPublicKey: string | null = null;
   private handlers: HandlerMap = {
     status: new Set(),
     sessionCreated: new Set(),
@@ -62,6 +64,7 @@ export class RelayClient implements IRelayClient {
     message: new Set(),
     error: new Set(),
     raw: new Set(),
+    fingerprintsReady: new Set(),
   };
 
   constructor(options?: { transport?: ITransport; crypto?: ICryptoProvider }) {
@@ -364,6 +367,18 @@ export class RelayClient implements IRelayClient {
     this.sharedKey = null;
     this.peerPublicKeyReceived = false;
     this.localPublicKeySent = false;
+    this.localPublicKey = null;
+    this.peerPublicKey = null;
+  }
+
+  async getLocalFingerprint(): Promise<string | null> {
+    if (!this.localPublicKey) return null;
+    return this.crypto.generateFingerprint(this.localPublicKey);
+  }
+
+  async getPeerFingerprint(): Promise<string | null> {
+    if (!this.peerPublicKey) return null;
+    return this.crypto.generateFingerprint(this.peerPublicKey);
   }
 
   private send(message: ClientToRelayMessage): void {
@@ -438,6 +453,8 @@ export class RelayClient implements IRelayClient {
     if (!this.keyPair || this.localPublicKeySent) return;
 
     const publicKey = await this.crypto.exportPublicKey(this.keyPair.publicKey);
+    this.localPublicKey = publicKey;
+
     const handshake: PublicKeyHandshake = {
       kind: AppMessageKind.PUBLIC_KEY,
       publicKey,
@@ -491,6 +508,7 @@ export class RelayClient implements IRelayClient {
   private async handlePeerPublicKey(peerPublicKeyBase64: string): Promise<void> {
     if (!this.keyPair || this.peerPublicKeyReceived) return;
 
+    this.peerPublicKey = peerPublicKeyBase64;
     const peerPublicKey = await this.crypto.importPublicKey(peerPublicKeyBase64);
     this.sharedKey = await this.crypto.deriveSharedSecret(this.keyPair.privateKey, peerPublicKey);
     this.peerPublicKeyReceived = true;
@@ -500,6 +518,13 @@ export class RelayClient implements IRelayClient {
     }
 
     this.setStatus('ready');
+
+    // Emit fingerprints once both keys are available
+    if (this.localPublicKey && this.peerPublicKey) {
+      const localFp = await this.crypto.generateFingerprint(this.localPublicKey);
+      const peerFp = await this.crypto.generateFingerprint(this.peerPublicKey);
+      this.emit('fingerprintsReady', localFp, peerFp);
+    }
   }
 }
 

@@ -79,6 +79,19 @@ export class WebCryptoProvider implements ICryptoProvider {
     const decrypted = await getSubtle().decrypt({ name: 'AES-GCM', iv }, sharedKey, data);
     return new TextDecoder().decode(decrypted);
   }
+
+  async generateFingerprint(publicKeyBase64: string): Promise<string> {
+    // SHA-256 hash of the public key, formatted as groups of 4 hex chars
+    const keyBytes = fromBase64(publicKeyBase64);
+    const hashBuffer = await getSubtle().digest('SHA-256', keyBytes);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+
+    // Format as 8 groups of 4 characters for readability
+    // Example: 1a2b 3c4d 5e6f 7890 abcd ef12 3456 7890
+    const groups = hashHex.match(/.{1,4}/g) || [];
+    return groups.slice(0, 8).join(' ');
+  }
 }
 
 export function createCryptoProvider(): ICryptoProvider {
