@@ -6,8 +6,7 @@ import { MessageList } from '../../components/MessageList';
 import { MessageComposer } from '../../components/MessageComposer';
 import { messageVault } from '../../services/vault';
 import { useSessionStore } from '../../store/session';
-
-const RELAY_URL = __DEV__ ? 'ws://10.0.2.2:8080' : 'wss://relay.goprivate.app';
+import { getRelayUrl } from '../../utils/env';
 
 export default function ChatScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
@@ -59,7 +58,7 @@ export default function ChatScreen() {
 
     setClient(relayClient);
 
-    void relayClient.joinSession(sessionId);
+    void relayClient.connect(getRelayUrl()).then(() => relayClient.joinSession(sessionId));
 
     return () => {
       void relayClient.disconnect();
@@ -69,7 +68,7 @@ export default function ChatScreen() {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active' && client && status === 'disconnected') {
-        void client.joinSession(sessionId!);
+        void client.reconnect();
       }
     });
 

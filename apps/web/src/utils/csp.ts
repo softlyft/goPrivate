@@ -43,8 +43,8 @@ export function getCSPDirectives(isDevelopment = false): string {
 
     // Connections: Allow self, WebSocket to relay, and analytics
     isDevelopment
-      ? // Development: Allow localhost WebSocket and HTTPS connections
-        "connect-src 'self' ws://localhost:* wss://localhost:* https:"
+      ? // Localhost plus hosted relays so .env.local can target either
+        "connect-src 'self' ws://localhost:* ws://127.0.0.1:* wss://localhost:* wss://127.0.0.1:* wss://*.onrender.com wss://*.render.com wss://*.vercel.app https:"
       : // Production: Restrict to known relay hosts and analytics
         "connect-src 'self' wss://*.vercel.app wss://*.render.com wss://*.onrender.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com",
 
@@ -67,8 +67,8 @@ export function getCSPDirectives(isDevelopment = false): string {
     // No audio/video
     "media-src 'none'",
 
-    // Upgrade insecure requests (HTTP -> HTTPS)
-    'upgrade-insecure-requests',
+    // HTTPS upgrade would rewrite ws://localhost to wss:// and break local relay
+    ...(isDevelopment ? [] : ['upgrade-insecure-requests']),
   ];
 
   return directives.join('; ');

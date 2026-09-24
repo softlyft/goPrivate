@@ -6,8 +6,7 @@ import { PinPad } from '../components/PinPad';
 import { messageVault } from '../services/vault';
 import { useSessionStore } from '../store/session';
 import { Colors } from '../constants/Colors';
-
-const RELAY_URL = __DEV__ ? 'ws://10.0.2.2:8080' : 'wss://relay.goprivate.app';
+import { getRelayUrl } from '../utils/env';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -32,25 +31,8 @@ export default function HomeScreen() {
       setVaultMeta(meta);
 
       const client = createRelayClient();
-
-      const sessionId = await new Promise<string>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Connection timeout'));
-        }, 30000);
-
-        client.on('sessionCreated', (sid) => {
-          clearTimeout(timeout);
-          resolve(sid);
-        });
-
-        client.on('error', (_code, message) => {
-          clearTimeout(timeout);
-          reject(new Error(message));
-        });
-
-        void client.createSession();
-      });
-
+      await client.connect(getRelayUrl());
+      const sessionId = await client.createSession();
       await client.disconnect();
 
       setShowPinSetup(false);
