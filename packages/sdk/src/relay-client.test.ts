@@ -189,6 +189,66 @@ describe('RelayClient', () => {
     expect(client.status).toBe('disconnected');
   });
 
+  it('queues ciphertext until handshake instead of emitting NOT_READY', async () => {
+    await client.connect('ws://relay/ws');
+    const pending = client.joinSession('ffffffffffffffffffffffffffffffff');
+    await waitForClientEvent(transport, ClientEvent.JOIN_SESSION);
+    transport.emitJson({
+      type: RelayEvent.PARTNER_JOINED,
+      payload: {
+        sessionId: 'ffffffffffffffffffffffffffffffff',
+        participantCount: 2,
+        expiresAt: Date.now() + 60_000,
+      },
+    });
+    await pending;
+
+    const errors: string[] = [];
+    client.on('error', (code) => errors.push(code));
+    transport.emitJson({
+      type: RelayEvent.MESSAGE,
+      payload: {
+        message: { id: 'early', encryptedPayload: 'not-json-ciphertext', timestamp: Date.now() },
+      },
+    });
+    await vi.waitFor(() => {
+      expect(client.status).toBe('handshaking');
+    });
+    expect(errors).toEqual([]);
+  });
+
+  it('reports HANDSHAKE_FAILED when the peer public key cannot be imported', async () => {
+    await client.connect('ws://relay/ws');
+    const pending = client.joinSession('11111111111111111111111111111111');
+    await waitForClientEvent(transport, ClientEvent.JOIN_SESSION);
+    transport.emitJson({
+      type: RelayEvent.PARTNER_JOINED,
+      payload: {
+        sessionId: '11111111111111111111111111111111',
+        participantCount: 2,
+        expiresAt: Date.now() + 60_000,
+      },
+    });
+    await pending;
+
+    const errors: string[] = [];
+    client.on('error', (code) => errors.push(code));
+    transport.emitJson({
+      type: RelayEvent.MESSAGE,
+      payload: {
+        message: {
+          id: 'pk-bad',
+          encryptedPayload: JSON.stringify({
+            kind: AppMessageKind.PUBLIC_KEY,
+            publicKey: '%%%not-a-key%%%',
+          }),
+          timestamp: Date.now(),
+        },
+      },
+    });
+    await vi.waitFor(() => expect(errors).toContain('HANDSHAKE_FAILED'));
+  });
+
   it('emits parse errors for invalid relay JSON', async () => {
     await client.connect('ws://relay/ws');
     const errors: string[] = [];
@@ -329,7 +389,7 @@ describe('RelayClient', () => {
     });
   });
 
-  it('rejects reconnect without prior session and emits not-ready', async () => {
+  it('rejects reconnect without prior session and queues early ciphertext', async () => {
     await expect(client.reconnect()).rejects.toThrow(/nothing to reconnect/i);
     await client.connect('ws://relay/ws');
     const errors: string[] = [];
@@ -340,7 +400,10 @@ describe('RelayClient', () => {
         message: { id: 'early', encryptedPayload: 'ciphertext', timestamp: Date.now() },
       },
     });
-    await vi.waitFor(() => expect(errors).toContain('NOT_READY'));
+    await vi.waitFor(() => {
+      expect(client.status).toBe('connected');
+    });
+    expect(errors).toEqual([]);
   });
 
   it('supports off() for event handlers', async () => {

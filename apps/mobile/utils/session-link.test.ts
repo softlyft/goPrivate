@@ -9,6 +9,7 @@ describe('extractSessionId', () => {
   });
 
   it('accepts production, www, vercel, and localhost chat urls', () => {
+    expect(extractSessionId(`https://goprivate.vercel.app/chat/${id}`)).toBe(id);
     expect(extractSessionId(`https://goprivate.app/chat/${id}`)).toBe(id);
     expect(extractSessionId(`https://www.goprivate.app/chat/${id}`)).toBe(id);
     expect(extractSessionId(`https://go-private.vercel.app/chat/${id}`)).toBe(id);

@@ -7,6 +7,7 @@ describe('isAllowedOrigin', () => {
   });
 
   it('allows production site origins', () => {
+    expect(isAllowedOrigin('https://goprivate.vercel.app', { nodeEnv: 'production' })).toBe(true);
     expect(isAllowedOrigin('https://goprivate.app', { nodeEnv: 'production' })).toBe(true);
     expect(isAllowedOrigin('https://www.goprivate.app', { nodeEnv: 'production' })).toBe(true);
   });
