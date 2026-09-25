@@ -96,7 +96,7 @@ export default function JoinScreen() {
         <View style={styles.info}>
           <Text style={styles.infoTitle}>Accepted formats:</Text>
           <Text style={styles.infoText}>
-            • Full URL: https://goprivate.app/chat/abc123{'\n'}• Custom scheme:
+            • Full URL: https://goprivate.vercel.app/chat/abc123{'\n'}• Custom scheme:
             goprivate://chat/abc123{'\n'}• Session ID only: abc123
           </Text>
         </View>

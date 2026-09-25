@@ -1,4 +1,5 @@
 import * as Linking from 'expo-linking';
+import { webChatUrl } from './public-url';
 import { extractSessionId } from './session-link';
 
 export function parseDeepLink(url: string): { sessionId: string | null; path: string } {
@@ -23,7 +24,7 @@ export function createDeepLink(sessionId: string): {
   custom: string;
 } {
   return {
-    https: `https://goprivate.app/chat/${sessionId}`,
+    https: webChatUrl(sessionId),
     custom: `goprivate://chat/${sessionId}`,
   };
 }

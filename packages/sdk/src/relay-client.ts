@@ -72,6 +72,8 @@ export class RelayClient implements IRelayClient {
   private localPublicKeySent = false;
   private localPublicKey: string | null = null;
   private peerPublicKey: string | null = null;
+  private inboundQueue: EncryptedMessage[] = [];
+  private handshakeLock: Promise<void> = Promise.resolve();
   private handlers: HandlerMap = {
     status: new Set(),
     sessionCreated: new Set(),
@@ -386,6 +388,16 @@ export class RelayClient implements IRelayClient {
     this.localPublicKeySent = false;
     this.localPublicKey = null;
     this.peerPublicKey = null;
+    this.inboundQueue = [];
+  }
+
+  private withHandshakeLock<T>(fn: () => Promise<T>): Promise<T> {
+    const run = this.handshakeLock.then(fn, fn);
+    this.handshakeLock = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
   }
 
   async getLocalFingerprint(): Promise<string | null> {
@@ -441,6 +453,7 @@ export class RelayClient implements IRelayClient {
         this.sharedKey = null;
         this.peerPublicKeyReceived = false;
         this.localPublicKeySent = false;
+        this.inboundQueue = [];
         this.setStatus('awaiting_partner');
         break;
 
@@ -467,6 +480,10 @@ export class RelayClient implements IRelayClient {
   }
 
   private async sendPublicKey(): Promise<void> {
+    await this.withHandshakeLock(() => this.sendPublicKeyNow());
+  }
+
+  private async sendPublicKeyNow(): Promise<void> {
     if (!this.keyPair || this.localPublicKeySent) return;
 
     const publicKey = await this.crypto.exportPublicKey(this.keyPair.publicKey);
@@ -487,19 +504,58 @@ export class RelayClient implements IRelayClient {
     this.localPublicKeySent = true;
   }
 
-  private async handleIncomingMessage(message: EncryptedMessage): Promise<void> {
+  private parsePublicKeyHandshake(payload: string): PublicKeyHandshake | null {
     try {
-      const parsed = JSON.parse(message.encryptedPayload) as AppPlaintext;
-      if (parsed.kind === AppMessageKind.PUBLIC_KEY) {
-        await this.handlePeerPublicKey(parsed.publicKey);
+      const parsed: unknown = JSON.parse(payload);
+      if (typeof parsed !== 'object' || parsed === null) return null;
+      const record = parsed as { kind?: unknown; publicKey?: unknown };
+      if (record.kind !== AppMessageKind.PUBLIC_KEY || typeof record.publicKey !== 'string') {
+        return null;
+      }
+      if (record.publicKey.length === 0) return null;
+      return { kind: AppMessageKind.PUBLIC_KEY, publicKey: record.publicKey };
+    } catch {
+      return null;
+    }
+  }
+
+  private async handleIncomingMessage(message: EncryptedMessage): Promise<void> {
+    await this.withHandshakeLock(async () => {
+      const handshake = this.parsePublicKeyHandshake(message.encryptedPayload);
+      if (handshake) {
+        try {
+          await this.handlePeerPublicKey(handshake.publicKey);
+          await this.flushInboundQueue();
+        } catch (err) {
+          this.emit(
+            'error',
+            'HANDSHAKE_FAILED',
+            err instanceof Error ? err.message : 'Handshake failed',
+          );
+        }
         return;
       }
-    } catch {
-      // Not JSON — treat as encrypted chat ciphertext
-    }
 
+      if (!this.sharedKey) {
+        this.inboundQueue.push(message);
+        return;
+      }
+
+      await this.decryptChat(message);
+    });
+  }
+
+  private async flushInboundQueue(): Promise<void> {
+    const queued = this.inboundQueue;
+    this.inboundQueue = [];
+    for (const message of queued) {
+      await this.decryptChat(message);
+    }
+  }
+
+  private async decryptChat(message: EncryptedMessage): Promise<void> {
     if (!this.sharedKey) {
-      this.emit('error', 'NOT_READY', 'Received encrypted message before handshake completed');
+      this.inboundQueue.push(message);
       return;
     }
 
@@ -531,7 +587,7 @@ export class RelayClient implements IRelayClient {
     this.peerPublicKeyReceived = true;
 
     if (!this.localPublicKeySent) {
-      await this.sendPublicKey();
+      await this.sendPublicKeyNow();
     }
 
     this.setStatus('ready');
