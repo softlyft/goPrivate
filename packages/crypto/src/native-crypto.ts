@@ -1,5 +1,6 @@
 import { Buffer } from 'buffer';
 import * as ExpoCrypto from 'expo-crypto';
+import { ecdhP256SharedX, fromBase64Url, p256ScalarFromPkcs8 } from './ecdh-shared.js';
 import { rawToSpki, spkiToRaw } from './ec-spki.js';
 import type { ICryptoProvider, KeyPair } from './types.js';
 
@@ -45,6 +46,24 @@ function fromBase64(base64: string): Uint8Array {
   return copyBytes(Buffer.from(base64, 'base64'));
 }
 
+async function exportP256Scalar(
+  subtleApi: SubtleCrypto,
+  privateKey: CryptoKey,
+): Promise<Uint8Array> {
+  try {
+    const jwk = (await (subtleApi.exportKey as any)('jwk', privateKey)) as JsonWebKey;
+    if (jwk.d) {
+      return fromBase64Url(jwk.d);
+    }
+  } catch {
+    // quick-crypto JWK export can fail; PKCS#8 is implemented for ECDH.
+  }
+  const pkcs8 = copyBytes(
+    (await (subtleApi.exportKey as any)('pkcs8', privateKey)) as ArrayBuffer | Uint8Array,
+  );
+  return p256ScalarFromPkcs8(pkcs8);
+}
+
 /**
  * React Native crypto provider using react-native-quick-crypto.
  *
@@ -80,15 +99,17 @@ export class NativeCryptoProvider implements ICryptoProvider {
   }
 
   async deriveSharedSecret(privateKey: CryptoKey, peerPublicKey: CryptoKey): Promise<CryptoKey> {
-    const derivedBits = await (requireSubtle().deriveBits as any)(
-      { name: 'ECDH', public: peerPublicKey },
-      privateKey,
-      256,
+    // quick-crypto 0.7 stubs subtle.deriveBits for ECDH. Compute the same
+    // 32-byte X coordinate Web Crypto returns, then import it as AES-GCM.
+    const scalar = await exportP256Scalar(requireSubtle(), privateKey);
+    const peerRaw = copyBytes(
+      (await (requireSubtle().exportKey as any)('raw', peerPublicKey)) as ArrayBuffer | Uint8Array,
     );
+    const sharedX = ecdhP256SharedX(scalar, peerRaw);
 
     return (requireSubtle().importKey as any)(
       'raw',
-      copyBytes(derivedBits instanceof Uint8Array ? derivedBits : new Uint8Array(derivedBits)),
+      sharedX,
       { name: 'AES-GCM', length: 256 },
       false,
       ['encrypt', 'decrypt'],
