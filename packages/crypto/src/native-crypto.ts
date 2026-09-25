@@ -1,5 +1,6 @@
 import { Buffer } from 'buffer';
 import * as ExpoCrypto from 'expo-crypto';
+import { rawToSpki, spkiToRaw } from './ec-spki.js';
 import type { ICryptoProvider, KeyPair } from './types.js';
 
 // Expo Go does not ship this native module; a development build is required.
@@ -63,15 +64,15 @@ export class NativeCryptoProvider implements ICryptoProvider {
   }
 
   async exportPublicKey(publicKey: CryptoKey): Promise<string> {
-    const spki = await (requireSubtle().exportKey as any)('spki', publicKey);
-    return toBase64(spki as ArrayBuffer | Uint8Array);
+    const raw = await (requireSubtle().exportKey as any)('raw', publicKey);
+    return toBase64(rawToSpki(copyBytes(raw as ArrayBuffer | Uint8Array)));
   }
 
   async importPublicKey(spkiBase64: string): Promise<CryptoKey> {
-    const spki = fromBase64(spkiBase64);
+    const raw = spkiToRaw(fromBase64(spkiBase64));
     return (requireSubtle().importKey as any)(
-      'spki',
-      spki,
+      'raw',
+      raw,
       { name: 'ECDH', namedCurve: 'P-256' },
       true,
       [],
