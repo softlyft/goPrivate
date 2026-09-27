@@ -30,11 +30,11 @@ Or run packages/apps individually — see the root [README](../README.md).
 
 ### Reference relay (`apps/relay`)
 
-| Variable          | Default   | Purpose                                                                                          |
-| ----------------- | --------- | ------------------------------------------------------------------------------------------------ |
-| `PORT`            | `3001`    | HTTP / WebSocket listen port                                                                     |
-| `HOST`            | `0.0.0.0` | Bind address                                                                                     |
-| `NODE_ENV`        | —         | Set `production` in deployed environments                                                        |
+| Variable          | Default   | Purpose                                                                                                |
+| ----------------- | --------- | ------------------------------------------------------------------------------------------------------ |
+| `PORT`            | `3001`    | HTTP / WebSocket listen port                                                                           |
+| `HOST`            | `0.0.0.0` | Bind address                                                                                           |
+| `NODE_ENV`        | —         | Set `production` in deployed environments                                                              |
 | `ALLOWED_ORIGINS` | unset     | Extra CORS origins (comma-separated). Localhost is always allowed so local web can use a hosted relay. |
 
 ### Reference client (`apps/web`)
@@ -47,8 +47,8 @@ Or run packages/apps individually — see the root [README](../README.md).
 
 ### Reference mobile client (`apps/mobile`)
 
-| Variable                | Default                                                     | Purpose                                                                                          |
-| ----------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Variable                | Default                                                    | Purpose                                                                                          |
+| ----------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `EXPO_PUBLIC_RELAY_URL` | Dev: `ws://10.0.2.2:3001/ws`. Release: hosted `wss://…/ws` | Relay URL. Release APKs reject `ws://` and fall back to `wss://goprivate-relay.onrender.com/ws`. |
 
 `NEXT_PUBLIC_*` values are baked in at **build** time for Next.js. `EXPO_PUBLIC_*` is baked in at APK / native build time.

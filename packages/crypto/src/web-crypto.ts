@@ -24,9 +24,7 @@ function fromBase64(base64: string): ArrayBuffer {
 
 function getSubtle(): SubtleCrypto {
   if (isReactNative()) {
-    throw new Error(
-      'Web Crypto cannot run on React Native. Use createNativeCryptoProvider().',
-    );
+    throw new Error('Web Crypto cannot run on React Native. Use createNativeCryptoProvider().');
   }
   if (typeof globalThis.crypto?.subtle === 'undefined') {
     throw new Error('Web Crypto API is not available in this environment');
@@ -102,9 +100,7 @@ export class WebCryptoProvider implements ICryptoProvider {
 
 export function createCryptoProvider(): ICryptoProvider {
   if (isReactNative()) {
-    throw new Error(
-      'Web Crypto cannot run on React Native. Use createNativeCryptoProvider().',
-    );
+    throw new Error('Web Crypto cannot run on React Native. Use createNativeCryptoProvider().');
   }
   return new WebCryptoProvider();
 }

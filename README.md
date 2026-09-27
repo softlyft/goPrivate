@@ -95,12 +95,12 @@ Sideloadable Android APK: run **Mobile APK** from GitHub Actions (manual only). 
 
 ## Documentation
 
-| Audience                       | Start here                                                                 |
-| ------------------------------ | -------------------------------------------------------------------------- |
-| Users of the reference clients | [User guide](./docs/user-guide.md) · [Mobile](./apps/mobile/README.md)     |
-| Implementers                   | [Protocol docs](./docs/protocol/) · [RFCs](./rfcs/)                       |
-| Operators                      | [Self-hosting](./docs/self-hosting.md) · [Deploy](./docs/deploy.md)       |
-| Contributors                   | [Contributing](./CONTRIBUTING.md) · [Docs index](./docs/README.md)        |
+| Audience                       | Start here                                                             |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| Users of the reference clients | [User guide](./docs/user-guide.md) · [Mobile](./apps/mobile/README.md) |
+| Implementers                   | [Protocol docs](./docs/protocol/) · [RFCs](./rfcs/)                    |
+| Operators                      | [Self-hosting](./docs/self-hosting.md) · [Deploy](./docs/deploy.md)    |
+| Contributors                   | [Contributing](./CONTRIBUTING.md) · [Docs index](./docs/README.md)     |
 
 ## Roadmap
 

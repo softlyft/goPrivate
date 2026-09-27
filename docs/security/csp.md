@@ -35,14 +35,14 @@ connect-src 'self' ws://localhost:* ws://127.0.0.1:* wss://localhost:* wss://127
 
 ## Other security headers
 
-| Header                      | Value                                                          | Purpose                         |
-| --------------------------- | -------------------------------------------------------------- | ------------------------------- |
-| `X-Content-Type-Options`    | `nosniff`                                                      | Prevent MIME sniffing           |
-| `X-Frame-Options`           | `DENY`                                                         | Prevent clickjacking            |
-| `X-XSS-Protection`          | `1; mode=block`                                                | Legacy XSS filter               |
-| `Referrer-Policy`           | `strict-origin-when-cross-origin`                              | Limit referrer leakage          |
-| `Permissions-Policy`        | `camera=(), microphone=(), geolocation=(), interest-cohort=()` | Block unused APIs and FLoC      |
-| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload`                 | HTTPS only (production)         |
+| Header                      | Value                                                          | Purpose                    |
+| --------------------------- | -------------------------------------------------------------- | -------------------------- |
+| `X-Content-Type-Options`    | `nosniff`                                                      | Prevent MIME sniffing      |
+| `X-Frame-Options`           | `DENY`                                                         | Prevent clickjacking       |
+| `X-XSS-Protection`          | `1; mode=block`                                                | Legacy XSS filter          |
+| `Referrer-Policy`           | `strict-origin-when-cross-origin`                              | Limit referrer leakage     |
+| `Permissions-Policy`        | `camera=(), microphone=(), geolocation=(), interest-cohort=()` | Block unused APIs and FLoC |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload`                 | HTTPS only (production)    |
 
 ## Known limitations
 
