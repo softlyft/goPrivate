@@ -142,19 +142,38 @@ export default function ChatScreen() {
     });
 
     relayClient.on('message', async (msg) => {
+      console.log('[ChatScreen] Received message:', {
+        id: msg.id,
+        textLength: msg.text?.length ?? 0,
+        fromPeer: msg.fromPeer,
+        text: msg.text?.substring(0, 50), // First 50 chars for debugging
+      });
+
       if (!messageVault.isUnlocked) {
+        console.warn('[ChatScreen] Vault is locked, cannot store message');
+        return;
+      }
+
+      if (!msg.text) {
+        console.error('[ChatScreen] Message has no text!', msg);
+        setError('Received empty message');
         return;
       }
 
       try {
+        console.log('[ChatScreen] Encrypting message with vault...');
         const encrypted = await messageVault.encrypt(msg.text);
+        console.log('[ChatScreen] Message encrypted, length:', encrypted.length);
+
         addMessage({
           id: msg.id,
           encryptedText: encrypted,
           fromPeer: msg.fromPeer,
           timestamp: msg.timestamp,
         });
+        console.log('[ChatScreen] Message added to store');
       } catch (err) {
+        console.error('[ChatScreen] Failed to store message:', err);
         setError(err instanceof Error ? err.message : 'Failed to store message');
       }
     });
