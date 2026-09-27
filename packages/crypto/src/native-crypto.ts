@@ -1,5 +1,7 @@
 import { Buffer } from 'buffer';
 import * as ExpoCrypto from 'expo-crypto';
+import { ecdhP256SharedX, fromBase64Url, p256ScalarFromPkcs8 } from './ecdh-shared.js';
+import { rawToSpki, spkiToRaw } from './ec-spki.js';
 import type { ICryptoProvider, KeyPair } from './types.js';
 
 // Expo Go does not ship this native module; a development build is required.
@@ -31,14 +33,35 @@ function requireSubtle(): SubtleCrypto {
   return subtle;
 }
 
-function toBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  return Buffer.from(bytes).toString('base64');
+function copyBytes(data: ArrayBuffer | Uint8Array): Uint8Array {
+  const view = data instanceof Uint8Array ? data : new Uint8Array(data);
+  return new Uint8Array(view);
 }
 
-function fromBase64(base64: string): ArrayBuffer {
-  const buffer = Buffer.from(base64, 'base64');
-  return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+function toBase64(data: ArrayBuffer | Uint8Array): string {
+  return Buffer.from(copyBytes(data)).toString('base64');
+}
+
+function fromBase64(base64: string): Uint8Array {
+  return copyBytes(Buffer.from(base64, 'base64'));
+}
+
+async function exportP256Scalar(
+  subtleApi: SubtleCrypto,
+  privateKey: CryptoKey,
+): Promise<Uint8Array> {
+  try {
+    const jwk = (await (subtleApi.exportKey as any)('jwk', privateKey)) as JsonWebKey;
+    if (jwk.d) {
+      return fromBase64Url(jwk.d);
+    }
+  } catch {
+    // quick-crypto JWK export can fail; PKCS#8 is implemented for ECDH.
+  }
+  const pkcs8 = copyBytes(
+    (await (subtleApi.exportKey as any)('pkcs8', privateKey)) as ArrayBuffer | Uint8Array,
+  );
+  return p256ScalarFromPkcs8(pkcs8);
 }
 
 /**
@@ -60,15 +83,15 @@ export class NativeCryptoProvider implements ICryptoProvider {
   }
 
   async exportPublicKey(publicKey: CryptoKey): Promise<string> {
-    const spki = await (requireSubtle().exportKey as any)('spki', publicKey);
-    return toBase64(spki as ArrayBuffer);
+    const raw = await (requireSubtle().exportKey as any)('raw', publicKey);
+    return toBase64(rawToSpki(copyBytes(raw as ArrayBuffer | Uint8Array)));
   }
 
   async importPublicKey(spkiBase64: string): Promise<CryptoKey> {
-    const spki = fromBase64(spkiBase64);
+    const raw = spkiToRaw(fromBase64(spkiBase64));
     return (requireSubtle().importKey as any)(
-      'spki',
-      spki,
+      'raw',
+      raw,
       { name: 'ECDH', namedCurve: 'P-256' },
       true,
       [],
@@ -76,15 +99,17 @@ export class NativeCryptoProvider implements ICryptoProvider {
   }
 
   async deriveSharedSecret(privateKey: CryptoKey, peerPublicKey: CryptoKey): Promise<CryptoKey> {
-    const derivedBits = await (requireSubtle().deriveBits as any)(
-      { name: 'ECDH', public: peerPublicKey },
-      privateKey,
-      256,
+    // quick-crypto 0.7 stubs subtle.deriveBits for ECDH. Compute the same
+    // 32-byte X coordinate Web Crypto returns, then import it as AES-GCM.
+    const scalar = await exportP256Scalar(requireSubtle(), privateKey);
+    const peerRaw = copyBytes(
+      (await (requireSubtle().exportKey as any)('raw', peerPublicKey)) as ArrayBuffer | Uint8Array,
     );
+    const sharedX = ecdhP256SharedX(scalar, peerRaw);
 
     return (requireSubtle().importKey as any)(
       'raw',
-      Buffer.from(derivedBits),
+      sharedX,
       { name: 'AES-GCM', length: 256 },
       false,
       ['encrypt', 'decrypt'],
@@ -103,11 +128,11 @@ export class NativeCryptoProvider implements ICryptoProvider {
     const packed = new Uint8Array(iv.length + ciphertext.byteLength);
     packed.set(new Uint8Array(iv), 0);
     packed.set(new Uint8Array(ciphertext), iv.length);
-    return toBase64(packed.buffer);
+    return toBase64(packed);
   }
 
   async decrypt(ciphertext: string, sharedKey: CryptoKey): Promise<string> {
-    const packed = new Uint8Array(fromBase64(ciphertext));
+    const packed = fromBase64(ciphertext);
     const iv = packed.slice(0, 12);
     const data = packed.slice(12);
 
@@ -122,8 +147,8 @@ export class NativeCryptoProvider implements ICryptoProvider {
   async generateFingerprint(publicKeyBase64: string): Promise<string> {
     const keyBytes = fromBase64(publicKeyBase64);
     const hashBuffer = await (
-      requireSubtle().digest as (alg: string, data: Buffer) => Promise<ArrayBuffer>
-    )('SHA-256', Buffer.from(keyBytes));
+      requireSubtle().digest as (alg: string, data: Uint8Array) => Promise<ArrayBuffer>
+    )('SHA-256', keyBytes);
     const hashHex = Array.from(new Uint8Array(hashBuffer))
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');

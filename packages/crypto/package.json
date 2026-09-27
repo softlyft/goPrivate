@@ -27,6 +27,7 @@
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@goprivate/protocol": "workspace:*"
+    "@goprivate/protocol": "workspace:*",
+    "@noble/curves": "1.9.7"
   }
 }
