@@ -14,15 +14,35 @@ function DecryptedBody({ encryptedText }: { encryptedText: string }) {
   const [text, setText] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log(
+      '[MessageBubble] Decrypting message, encrypted length:',
+      encryptedText?.length ?? 0,
+    );
+
+    if (!encryptedText) {
+      console.error('[MessageBubble] No encrypted text provided!');
+      setText('[Empty message]');
+      return;
+    }
+
     let cancelled = false;
     setText(null);
 
     void messageVault
       .decrypt(encryptedText)
       .then((plain) => {
-        if (!cancelled) setText(sanitizeMessageText(plain));
+        console.log('[MessageBubble] Decrypted successfully, length:', plain?.length ?? 0);
+        if (!cancelled) {
+          if (!plain) {
+            console.warn('[MessageBubble] Decryption returned empty string');
+            setText('[Empty message]');
+          } else {
+            setText(sanitizeMessageText(plain));
+          }
+        }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('[MessageBubble] Decryption failed:', err);
         if (!cancelled) setText('Unable to decrypt');
       });
 

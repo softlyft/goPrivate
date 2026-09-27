@@ -47,11 +47,11 @@ User A                    Relay                     User B
 
 ## Interfaces (future-ready)
 
-| Interface         | Package | Purpose                         |
-| ----------------- | ------- | ------------------------------- |
+| Interface         | Package | Purpose                                            |
+| ----------------- | ------- | -------------------------------------------------- |
 | `ICryptoProvider` | crypto  | Web (`platform.ts`) or native (`native-crypto.ts`) |
-| `ITransport`      | sdk     | Swap WebSocket transport        |
-| `IRelayClient`    | sdk     | High-level session + messaging  |
-| `ISessionStore`   | relay   | Swap in-memory store if needed  |
+| `ITransport`      | sdk     | Swap WebSocket transport                           |
+| `IRelayClient`    | sdk     | High-level session + messaging                     |
+| `ISessionStore`   | relay   | Swap in-memory store if needed                     |
 
 See also: [Threat model](../threat-model.md), [Protocol docs](../protocol/), [ADRs](../adr/).

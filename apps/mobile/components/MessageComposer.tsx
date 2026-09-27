@@ -41,38 +41,38 @@ export function MessageComposer({
 
   return (
     <View style={styles.container}>
-        <View style={styles.inputRow}>
-          <TextInput
-            ref={inputRef}
-            value={text}
-            onChangeText={(value) => {
-              setText(value.slice(0, MAX_CHAT_TEXT_CHARS));
-              setLocalError(null);
-            }}
-            placeholder={disabled ? 'Waiting for secure channel…' : 'Type a message'}
-            editable={!disabled}
-            maxLength={MAX_CHAT_TEXT_CHARS}
-            autoComplete="off"
-            autoCorrect
-            autoCapitalize="sentences"
-            style={styles.input}
-            returnKeyType="send"
-            onSubmitEditing={handleSend}
-            blurOnSubmit={false}
-          />
-          <Pressable
-            disabled={disabled || sending || !text.trim()}
-            onPress={handleSend}
-            style={({ pressed }) => [
-              styles.sendButton,
-              (disabled || sending || !text.trim()) && styles.sendButtonDisabled,
-              pressed && styles.sendButtonPressed,
-            ]}
-          >
-            <Text style={styles.sendButtonText}>Send</Text>
-          </Pressable>
-        </View>
-        {localError && <Text style={styles.error}>{localError}</Text>}
+      <View style={styles.inputRow}>
+        <TextInput
+          ref={inputRef}
+          value={text}
+          onChangeText={(value) => {
+            setText(value.slice(0, MAX_CHAT_TEXT_CHARS));
+            setLocalError(null);
+          }}
+          placeholder={disabled ? 'Waiting for secure channel…' : 'Type a message'}
+          editable={!disabled}
+          maxLength={MAX_CHAT_TEXT_CHARS}
+          autoComplete="off"
+          autoCorrect
+          autoCapitalize="sentences"
+          style={styles.input}
+          returnKeyType="send"
+          onSubmitEditing={handleSend}
+          blurOnSubmit={false}
+        />
+        <Pressable
+          disabled={disabled || sending || !text.trim()}
+          onPress={handleSend}
+          style={({ pressed }) => [
+            styles.sendButton,
+            (disabled || sending || !text.trim()) && styles.sendButtonDisabled,
+            pressed && styles.sendButtonPressed,
+          ]}
+        >
+          <Text style={styles.sendButtonText}>Send</Text>
+        </Pressable>
+      </View>
+      {localError && <Text style={styles.error}>{localError}</Text>}
     </View>
   );
 }

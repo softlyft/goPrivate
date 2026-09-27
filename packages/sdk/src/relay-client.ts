@@ -560,11 +560,29 @@ export class RelayClient implements IRelayClient {
     }
 
     try {
+      console.log('[SDK] Decrypting incoming message...', {
+        messageId: message.id,
+        payloadLength: message.encryptedPayload?.length ?? 0,
+        hasSharedKey: !!this.sharedKey,
+      });
+
       const decrypted = await this.crypto.decrypt(message.encryptedPayload, this.sharedKey);
+      console.log('[SDK] Message decrypted, length:', decrypted?.length ?? 0);
+
       const plaintext = JSON.parse(decrypted) as AppPlaintext;
+      console.log('[SDK] Parsed plaintext:', {
+        kind: plaintext.kind,
+      });
+
       if (plaintext.kind !== AppMessageKind.CHAT) {
+        console.log('[SDK] Ignoring non-chat message');
         return;
       }
+
+      console.log('[SDK] Chat message details:', {
+        textLength: plaintext.text?.length ?? 0,
+        text: plaintext.text?.substring(0, 50), // First 50 chars
+      });
 
       const chatMessage: DecryptedChatMessage = {
         id: message.id,
@@ -572,8 +590,16 @@ export class RelayClient implements IRelayClient {
         timestamp: message.timestamp,
         fromPeer: true,
       };
+
+      console.log('[SDK] Emitting message event:', {
+        id: chatMessage.id,
+        textLength: chatMessage.text?.length ?? 0,
+        fromPeer: chatMessage.fromPeer,
+      });
+
       this.emit('message', chatMessage);
-    } catch {
+    } catch (err) {
+      console.error('[SDK] Decryption failed:', err);
       this.emit('error', 'DECRYPT_FAILED', 'Failed to decrypt message');
     }
   }
