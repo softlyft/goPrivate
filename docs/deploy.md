@@ -141,8 +141,8 @@ NEXT_PUBLIC_RELAY_URL=wss://goprivate-relay.onrender.com/ws
 
 Restart `pnpm --filter @goprivate/web dev` after changing it (Next only reads `NEXT_PUBLIC_*` on startup).
 
-| Environment          | `NEXT_PUBLIC_RELAY_URL`                 |
-| -------------------- | --------------------------------------- |
+| Environment          | `NEXT_PUBLIC_RELAY_URL`                         |
+| -------------------- | ----------------------------------------------- |
 | Local + local relay  | `ws://localhost:3001/ws` (or omit `.env.local`) |
 | Local + Render relay | `wss://goprivate-relay.onrender.com/ws`         |
 | Production (Vercel)  | `wss://goprivate-relay.onrender.com/ws`         |

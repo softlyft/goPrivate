@@ -121,10 +121,9 @@ export class NativeCryptoProvider implements ICryptoProvider {
 
   async generateFingerprint(publicKeyBase64: string): Promise<string> {
     const keyBytes = fromBase64(publicKeyBase64);
-    const hashBuffer = await (requireSubtle().digest as (alg: string, data: Buffer) => Promise<ArrayBuffer>)(
-      'SHA-256',
-      Buffer.from(keyBytes),
-    );
+    const hashBuffer = await (
+      requireSubtle().digest as (alg: string, data: Buffer) => Promise<ArrayBuffer>
+    )('SHA-256', Buffer.from(keyBytes));
     const hashHex = Array.from(new Uint8Array(hashBuffer))
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
