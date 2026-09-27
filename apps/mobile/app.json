@@ -23,6 +23,7 @@
     },
     "android": {
       "versionCode": 1,
+      "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
