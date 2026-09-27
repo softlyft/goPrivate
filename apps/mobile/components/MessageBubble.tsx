@@ -10,7 +10,7 @@ export type MaskLevel = 'clear' | 'soft' | 'masked';
 const DOUBLE_TAP_MS = 300;
 const MASK_PLACEHOLDER = '••••••••••';
 
-function DecryptedBody({ encryptedText }: { encryptedText: string }) {
+function DecryptedBody({ encryptedText, fromPeer }: { encryptedText: string; fromPeer: boolean }) {
   const [text, setText] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,10 +53,10 @@ function DecryptedBody({ encryptedText }: { encryptedText: string }) {
   }, [encryptedText]);
 
   if (text === null) {
-    return <Text style={styles.loading}>…</Text>;
+    return <Text style={[styles.loading, fromPeer && styles.loadingPeer]}>…</Text>;
   }
 
-  return <Text style={styles.messageText}>{text}</Text>;
+  return <Text style={[styles.messageText, fromPeer && styles.messageTextPeer]}>{text}</Text>;
 }
 
 export function MessageBubble({
@@ -101,9 +101,11 @@ export function MessageBubble({
         ]}
       >
         {showPlaintext ? (
-          <DecryptedBody encryptedText={message.encryptedText} />
+          <DecryptedBody encryptedText={message.encryptedText} fromPeer={message.fromPeer} />
         ) : (
-          <Text style={styles.messageText}>{MASK_PLACEHOLDER}</Text>
+          <Text style={[styles.messageText, message.fromPeer && styles.messageTextPeer]}>
+            {MASK_PLACEHOLDER}
+          </Text>
         )}
       </Pressable>
     </View>
@@ -153,10 +155,16 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: Colors.bubbleText,
   },
+  messageTextPeer: {
+    color: Colors.bubbleTextPeer,
+  },
   loading: {
     fontSize: 15,
     lineHeight: 20,
     color: Colors.bubbleText,
     opacity: 0.4,
+  },
+  loadingPeer: {
+    color: Colors.bubbleTextPeer,
   },
 });
