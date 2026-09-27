@@ -15,7 +15,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.goprivate.mobile",
-      "associatedDomains": ["applinks:goprivate.app", "applinks:www.goprivate.app"]
+      "associatedDomains": [
+        "applinks:goprivate.vercel.app",
+        "applinks:goprivate.app",
+        "applinks:www.goprivate.app"
+      ]
     },
     "android": {
       "versionCode": 1,
@@ -31,6 +35,11 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
+            {
+              "scheme": "https",
+              "host": "goprivate.vercel.app",
+              "pathPrefix": "/chat"
+            },
             {
               "scheme": "https",
               "host": "goprivate.app",

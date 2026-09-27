@@ -5,7 +5,7 @@ Reference Expo (SDK 57) client for goPrivate ephemeral 1:1 chat. It uses the sam
 ## What works
 
 - Create / join a session, PIN vault (SecureStore + PBKDF2), end-to-end ECDH P-256 + AES-GCM
-- Chat UI, deep links (`https://goprivate.app/chat/…`, `goprivate://…`)
+- Chat UI, deep links (`https://goprivate.vercel.app/chat/…`, `goprivate://…`)
 - App icon and splash extracted from the official logo (`tools/generate-mobile-icons.mjs`)
 - Release APK talks to the **hosted** relay (`wss://goprivate-relay.onrender.com/ws`) so it can chat with production web
 
@@ -69,7 +69,7 @@ npx eas-cli@latest build -p android --profile preview
 
 ## Talking to the web client
 
-A sideloaded APK and **production** web (`goprivate.app`) share the hosted Render relay. Create a session on one, open `https://goprivate.app/chat/<sessionId>` (or paste the link) on the other.
+A sideloaded APK and **production** web (`goprivate.vercel.app`) share the hosted Render relay. Create a session on one, open `https://goprivate.vercel.app/chat/<sessionId>` (or paste the link) on the other.
 
 Local Next.js (`ws://localhost:3001/ws` or a custom `.env.local`) is a **different** relay and will not see APK sessions.
 
@@ -91,7 +91,7 @@ apps/mobile/
 
 ## Deep links
 
-- HTTPS: `https://goprivate.app/chat/{sessionId}` and `https://www.goprivate.app/chat/{sessionId}`
+- HTTPS: `https://goprivate.vercel.app/chat/{sessionId}`
 - Custom scheme: `goprivate://chat/{sessionId}`
 
 Package / bundle id: `com.goprivate.mobile`. See [docs/mobile/DEEP_LINKING.md](../../docs/mobile/DEEP_LINKING.md).
