@@ -1,13 +1,15 @@
 import type { ExpoConfig } from 'expo/config';
-import {
+import native from '../../packages/config/src/native.json';
+import appJson from './app.json';
+
+const {
   ANDROID_PACKAGE,
   APP_NAME,
   DEEP_LINK_SCHEME,
   DEFAULT_PROD_RELAY_URL,
   IOS_BUNDLE_ID,
   PUBLIC_WEB_ORIGINS,
-} from '../../packages/config/src/index';
-import appJson from './app.json';
+} = native;
 
 const httpsHosts = PUBLIC_WEB_ORIGINS.map((origin) => new URL(origin).host);
 
