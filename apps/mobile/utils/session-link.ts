@@ -40,7 +40,9 @@ function sessionIdFromUrl(raw: string): string | null {
     // not a URL
   }
 
-  const custom = raw.match(new RegExp(`^${DEEP_LINK_SCHEME}:\\/\\/(?:chat\\/)?([a-f0-9]{16,64})`, 'i'));
+  const custom = raw.match(
+    new RegExp(`^${DEEP_LINK_SCHEME}:\\/\\/(?:chat\\/)?([a-f0-9]{16,64})`, 'i'),
+  );
   return custom?.[1] && SESSION_ID_PATTERN.test(custom[1]) ? custom[1] : null;
 }
 

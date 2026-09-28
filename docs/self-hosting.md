@@ -30,30 +30,30 @@ Or run packages/apps individually — see the root [README](../README.md).
 
 ### Reference relay (`apps/relay`)
 
-| Variable          | Default   | Purpose                                                                                                |
-| ----------------- | --------- | ------------------------------------------------------------------------------------------------------ |
-| `PORT`            | `3001`    | HTTP / WebSocket listen port                                                                           |
-| `HOST`            | `0.0.0.0` | Bind address                                                                                           |
-| `NODE_ENV`        | —         | Set `production` in deployed environments                                                              |
-| `ALLOWED_ORIGINS` | unset     | Extra CORS origins (comma-separated). Localhost is always allowed so local web can use a hosted relay. |
-| `HANDLE_CLAIM_SECRET` | unset | If set, `CLAIM_HANDLE` for **unregistered** names must include this secret. |
-| `HANDLE_REGISTRY_PATH` | `handles.json` in the relay working directory | JSON map of reserved names → `{ publicKey, expiresAt }`. Reloaded on each claim. |
+| Variable               | Default                                       | Purpose                                                                                                |
+| ---------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `PORT`                 | `3001`                                        | HTTP / WebSocket listen port                                                                           |
+| `HOST`                 | `0.0.0.0`                                     | Bind address                                                                                           |
+| `NODE_ENV`             | —                                             | Set `production` in deployed environments                                                              |
+| `ALLOWED_ORIGINS`      | unset                                         | Extra CORS origins (comma-separated). Localhost is always allowed so local web can use a hosted relay. |
+| `HANDLE_CLAIM_SECRET`  | unset                                         | If set, `CLAIM_HANDLE` for **unregistered** names must include this secret.                            |
+| `HANDLE_REGISTRY_PATH` | `handles.json` in the relay working directory | JSON map of reserved names → `{ publicKey, expiresAt }`. Reloaded on each claim.                       |
 
 ### Reference client (`apps/web`)
 
-| Variable                        | Default                  | Purpose                                                                |
-| ------------------------------- | ------------------------ | ---------------------------------------------------------------------- |
-| `NEXT_PUBLIC_RELAY_URL`         | `ws://localhost:3001/ws` | WebSocket URL (`ws://` or `wss://`, must include `/ws`)                |
-| `NEXT_PUBLIC_SUPPORT_URL`       | unset                    | Optional link for “Support goPrivate” on the conversation-ended screen |
-| `NEXT_PUBLIC_HANDLE_CLAIM_SECRET` | unset | Same value as relay `HANDLE_CLAIM_SECRET` if the operator requires it to claim a name |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | unset                    | Optional GA4 id (`G-…`); loads analytics on the home page only         |
+| Variable                          | Default                  | Purpose                                                                               |
+| --------------------------------- | ------------------------ | ------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_RELAY_URL`           | `ws://localhost:3001/ws` | WebSocket URL (`ws://` or `wss://`, must include `/ws`)                               |
+| `NEXT_PUBLIC_SUPPORT_URL`         | unset                    | Optional link for “Support goPrivate” on the conversation-ended screen                |
+| `NEXT_PUBLIC_HANDLE_CLAIM_SECRET` | unset                    | Same value as relay `HANDLE_CLAIM_SECRET` if the operator requires it to claim a name |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID`   | unset                    | Optional GA4 id (`G-…`); loads analytics on the home page only                        |
 
 ### Reference mobile client (`apps/mobile`)
 
-| Variable                | Default                                                    | Purpose                                                                                          |
-| ----------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `EXPO_PUBLIC_RELAY_URL` | Dev: `ws://10.0.2.2:3001/ws`. Release: hosted `wss://…/ws` | Relay URL. Release APKs reject `ws://` and fall back to `wss://goprivate-relay.onrender.com/ws`. |
-| `EXPO_PUBLIC_HANDLE_CLAIM_SECRET` | unset | Same value as relay `HANDLE_CLAIM_SECRET` if the operator requires it to claim a name |
+| Variable                          | Default                                                    | Purpose                                                                                          |
+| --------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `EXPO_PUBLIC_RELAY_URL`           | Dev: `ws://10.0.2.2:3001/ws`. Release: hosted `wss://…/ws` | Relay URL. Release APKs reject `ws://` and fall back to `wss://goprivate-relay.onrender.com/ws`. |
+| `EXPO_PUBLIC_HANDLE_CLAIM_SECRET` | unset                                                      | Same value as relay `HANDLE_CLAIM_SECRET` if the operator requires it to claim a name            |
 
 `NEXT_PUBLIC_*` values are baked in at **build** time for Next.js. `EXPO_PUBLIC_*` is baked in at APK / native build time.
 

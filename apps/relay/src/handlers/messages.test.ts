@@ -6,6 +6,7 @@ import {
   RelayEvent,
   handleClaimMessage,
 } from '@goprivate/protocol';
+import { PREMIUM_MAX_CONCURRENT_CHATS } from '@goprivate/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createMessageHandler,
@@ -564,7 +565,7 @@ describe('message handlers', () => {
     );
     expect(lastError(other)).toBe('HANDLE_TAKEN');
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < PREMIUM_MAX_CONCURRENT_CHATS; i++) {
       const caller = fakeSocket();
       handle(
         caller as never,
@@ -619,11 +620,10 @@ describe('message handlers', () => {
     const pair = generateKeyPairSync('ec', { namedCurve: 'P-256' });
     const publicKey = pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
     const signedAt = Date.now();
-    const signature = sign(
-      'sha256',
-      Buffer.from(handleClaimMessage('alice', signedAt)),
-      { key: pair.privateKey, dsaEncoding: 'ieee-p1363' },
-    ).toString('base64');
+    const signature = sign('sha256', Buffer.from(handleClaimMessage('alice', signedAt)), {
+      key: pair.privateKey,
+      dsaEncoding: 'ieee-p1363',
+    }).toString('base64');
 
     const store = new InMemorySessionStore();
     const handles = new InMemoryHandleStore();

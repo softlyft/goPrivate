@@ -28,7 +28,7 @@ export function HandlePage() {
   const params = useParams<{ handle: string }>();
   const handle = (params.handle ?? '').toLowerCase();
   const router = useRouter();
-  const { setupVault, ringHandle } = useChatSession();
+  const { unlockOrSetupVault, ringHandle } = useChatSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPin, setShowPin] = useState(!messageVault.isUnlocked);
@@ -47,7 +47,7 @@ export function HandlePage() {
 
   async function handlePin(pin: string): Promise<void> {
     try {
-      await setupVault(pin);
+      await unlockOrSetupVault(pin);
       setShowPin(false);
       await reach(handle);
     } catch (err) {
@@ -74,9 +74,9 @@ export function HandlePage() {
   return (
     <AppShell>
       <Header />
-      <main className="relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-5 py-6">
+      <main className="relative flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-5 py-6">
         <Glass
-          className="w-full max-w-sm"
+          className="my-auto w-full max-w-sm shrink-0"
           contentClassName="flex flex-col items-center gap-5 px-6 py-8 text-center"
         >
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
@@ -113,12 +113,12 @@ export function HandlePage() {
           <div className="absolute inset-0 z-20 flex min-h-0 flex-col bg-background/55 backdrop-blur-xl animate-fade-in">
             <PinPadViewport>
               <PinPad
-                title="Set reveal PIN"
+                title={messageVault.hasVault ? 'Enter your PIN' : 'Set reveal PIN'}
                 subtitle="This PIN encrypts messages on your device."
                 confirmLabel="Continue"
                 onComplete={(pin) => void handlePin(pin)}
                 onCancel={() => setShowPin(false)}
-                mode="setup"
+                mode={messageVault.hasVault ? 'verify' : 'setup'}
               />
             </PinPadViewport>
           </div>

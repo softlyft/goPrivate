@@ -9,10 +9,11 @@ import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Glass } from '@/components/ui/glass';
 import { useChatSession } from '@/hooks/use-chat-session';
+import { concurrentChatLimitHint } from '@goprivate/config';
 
 export function ConversationsPage() {
   const router = useRouter();
-  const { chats } = useChatSession();
+  const { chats, claimedHandle } = useChatSession();
 
   return (
     <AppShell className="animate-fade-in">
@@ -37,7 +38,8 @@ export function ConversationsPage() {
               Open conversations
             </h1>
             <p className="text-sm leading-relaxed text-muted">
-              Each chat is still 1:1. Leave one without closing the others.
+              Each chat is still 1:1. Leave one without closing the others.{' '}
+              {concurrentChatLimitHint(Boolean(claimedHandle))}
             </p>
           </div>
 

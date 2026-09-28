@@ -1,5 +1,6 @@
 'use client';
 
+import { concurrentChatLimitHint, maxConcurrentChats } from '@goprivate/config';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { PinPad, PinPadViewport } from '@/components/PinPad';
@@ -10,11 +11,13 @@ import { messageVault } from '@/services/vault';
 
 export function CreateSessionButton() {
   const router = useRouter();
-  const { setupVault, createSession } = useChatSession();
+  const { chats, claimedHandle, unlockOrSetupVault, createSession } = useChatSession();
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [statusText, setStatusText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const premium = Boolean(claimedHandle);
+  const atCap = chats.length >= maxConcurrentChats(premium);
 
   async function startConversation(): Promise<void> {
     setLoading(true);
@@ -34,7 +37,7 @@ export function CreateSessionButton() {
 
   async function handlePinSet(pin: string) {
     try {
-      await setupVault(pin);
+      await unlockOrSetupVault(pin);
       await startConversation();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create session');
@@ -46,6 +49,10 @@ export function CreateSessionButton() {
 
   function handleClick() {
     setError(null);
+    if (atCap) {
+      setError(concurrentChatLimitHint(premium));
+      return;
+    }
     if (messageVault.isUnlocked) {
       void startConversation();
       return;
@@ -56,9 +63,12 @@ export function CreateSessionButton() {
   return (
     <>
       <div className="flex flex-col items-center gap-2">
-        <Button onClick={handleClick} disabled={loading} className="min-w-52">
+        <Button onClick={handleClick} disabled={loading || atCap} className="min-w-52">
           Start Private Conversation
         </Button>
+        <p className="max-w-[18rem] text-center text-[11px] leading-relaxed text-muted">
+          {concurrentChatLimitHint(premium)}
+        </p>
         {error && <p className="text-xs text-danger">{error}</p>}
       </div>
 
@@ -76,12 +86,16 @@ export function CreateSessionButton() {
           ) : (
             <PinPadViewport>
               <PinPad
-                title="Set reveal PIN"
-                subtitle="This PIN encrypts messages on your device and is required to unmask older ones."
-                confirmLabel="Create Session"
+                title={messageVault.hasVault ? 'Enter your PIN' : 'Set reveal PIN'}
+                subtitle={
+                  messageVault.hasVault
+                    ? 'Unlock the PIN saved on this device to start a chat.'
+                    : 'This PIN encrypts messages on your device. You can also set it in Settings.'
+                }
+                confirmLabel="Continue"
                 onComplete={(pin) => void handlePinSet(pin)}
                 onCancel={() => setShowPin(false)}
-                mode="setup"
+                mode={messageVault.hasVault ? 'verify' : 'setup'}
               />
             </PinPadViewport>
           )}

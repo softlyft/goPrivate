@@ -1,4 +1,10 @@
-import { MAX_CONCURRENT_CHATS } from '@goprivate/config';
+import {
+  FREE_MAX_CONCURRENT_CHATS,
+  MAX_CONCURRENT_CHATS,
+  PREMIUM_MAX_CONCURRENT_CHATS,
+  concurrentChatLimitError,
+  maxConcurrentChats,
+} from '@goprivate/config';
 import {
   ClientEvent,
   RelayEvent,
@@ -15,7 +21,12 @@ import type {
 import { createRelayClient } from './relay-client.js';
 import { WebSocketTransport } from './transport.js';
 
-export { MAX_CONCURRENT_CHATS };
+export {
+  FREE_MAX_CONCURRENT_CHATS,
+  MAX_CONCURRENT_CHATS,
+  PREMIUM_MAX_CONCURRENT_CHATS,
+  maxConcurrentChats,
+};
 
 export interface ChatSnapshot {
   sessionId: string;
@@ -122,6 +133,20 @@ export class ChatHub {
     return this.claimedHandle;
   }
 
+  get chatLimit(): number {
+    return maxConcurrentChats(this.isPremium);
+  }
+
+  private get isPremium(): boolean {
+    return Boolean(this.claimedHandle || this.desiredHandle);
+  }
+
+  private assertCanOpenChat(): void {
+    if (this.clients.size >= this.chatLimit) {
+      throw new Error(concurrentChatLimitError(this.isPremium));
+    }
+  }
+
   get size(): number {
     return this.clients.size;
   }
@@ -161,9 +186,7 @@ export class ChatHub {
   }
 
   async ringHandle(handle: string): Promise<string> {
-    if (this.clients.size >= MAX_CONCURRENT_CHATS) {
-      throw new Error(`You can have at most ${MAX_CONCURRENT_CHATS} conversations at once`);
-    }
+    this.assertCanOpenChat();
     const client = this.createClient();
     try {
       if (
@@ -197,9 +220,16 @@ export class ChatHub {
     if (this.claimInFlight) {
       return this.claimInFlight;
     }
-    this.claimInFlight = this.claimHandleNow(handle).finally(() => {
-      this.claimInFlight = null;
-    });
+    this.claimInFlight = this.claimHandleNow(handle)
+      .catch((error) => {
+        if (this.desiredHandle === handle && this.claimedHandle !== handle) {
+          this.desiredHandle = null;
+        }
+        throw error;
+      })
+      .finally(() => {
+        this.claimInFlight = null;
+      });
     return this.claimInFlight;
   }
 
@@ -430,9 +460,7 @@ export class ChatHub {
       return;
     }
 
-    if (this.clients.size >= MAX_CONCURRENT_CHATS) {
-      throw new Error(`You can have at most ${MAX_CONCURRENT_CHATS} conversations at once`);
-    }
+    this.assertCanOpenChat();
 
     const client = this.createClient();
     this.clients.set(sessionId, client);

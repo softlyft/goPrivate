@@ -15,7 +15,12 @@ const nextConfig: NextConfig = {
   ...(process.env.DOCKER_BUILD === '1' ? { output: 'standalone' as const } : {}),
   // Trace imports from the monorepo root (workspace packages + hoisted deps)
   outputFileTracingRoot: repoRoot,
-  transpilePackages: ['@goprivate/config', '@goprivate/protocol', '@goprivate/crypto', '@goprivate/sdk'],
+  transpilePackages: [
+    '@goprivate/config',
+    '@goprivate/protocol',
+    '@goprivate/crypto',
+    '@goprivate/sdk',
+  ],
   turbopack: {
     root: repoRoot,
   },

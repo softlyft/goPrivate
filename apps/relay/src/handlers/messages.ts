@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import type { WebSocket } from '@fastify/websocket';
-import { HANDLE_ALLOWLIST, MAX_CONCURRENT_CHATS, isAllowedHandle } from '@goprivate/config';
+import { HANDLE_ALLOWLIST, PREMIUM_MAX_CONCURRENT_CHATS, isAllowedHandle } from '@goprivate/config';
 import {
   ClientEvent,
   MAX_RELAY_SESSIONS,
@@ -360,7 +360,7 @@ function handleRingHandle(
     return;
   }
 
-  if (handles.inboundCount(handle) >= MAX_CONCURRENT_CHATS) {
+  if (handles.inboundCount(handle) >= PREMIUM_MAX_CONCURRENT_CHATS) {
     sendToSocket(socket, {
       type: RelayEvent.ERROR,
       payload: {

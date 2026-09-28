@@ -1,5 +1,10 @@
 import Link from 'next/link';
-import { APP_NAME, pinLengthLabel, sessionTtlLabel } from '@goprivate/config';
+import {
+  APP_NAME,
+  concurrentChatLimitHint,
+  pinLengthLabel,
+  sessionTtlLabel,
+} from '@goprivate/config';
 import { AppShell } from '@/components/AppShell';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -52,8 +57,8 @@ export function GuidePage() {
               <li>Talking on a shared or borrowed phone with extra caution</li>
             </ul>
             <p>
-              Each link is for two people. You can run several of those 1:1 chats at once. Not
-              groups. Not broadcasting.
+              Each link is for two people. {concurrentChatLimitHint(false)} Not groups. Not
+              broadcasting.
             </p>
           </Section>
 

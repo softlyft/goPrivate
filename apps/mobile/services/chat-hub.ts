@@ -4,7 +4,7 @@ import { messageVault } from './vault';
 import { useSessionStore } from '../store/session';
 import { createMobileRelayClient } from '../utils/relay';
 import { getHandleClaimSecret, getRelayUrl } from '../utils/env';
-import { createHandleProof } from './handle-lease';
+import { createHandleProof, savePreferredHandle } from './handle-lease';
 import { createDeepLink } from '../utils/deeplink';
 
 let hubSingleton: ChatHub | null = null;
@@ -163,7 +163,9 @@ export async function claimHandle(handle: string): Promise<string> {
   if (!messageVault.isUnlocked) {
     throw new Error('Set your reveal PIN before going available');
   }
-  return getChatHub().claimHandle(handle);
+  const claimed = await getChatHub().claimHandle(handle);
+  await savePreferredHandle(claimed);
+  return claimed;
 }
 
 export async function unclaimHandle(): Promise<void> {

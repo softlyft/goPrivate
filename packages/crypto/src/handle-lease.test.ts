@@ -15,8 +15,8 @@ privateKey=priv`);
   });
 
   it('reads JSON', () => {
-    expect(
-      parseHandleLeasePaste(JSON.stringify({ handle: 'bob', privateKey: 'k' })),
-    ).toMatchObject({ handle: 'bob', privateKey: 'k' });
+    expect(parseHandleLeasePaste(JSON.stringify({ handle: 'bob', privateKey: 'k' }))).toMatchObject(
+      { handle: 'bob', privateKey: 'k' },
+    );
   });
 });

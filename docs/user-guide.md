@@ -22,7 +22,7 @@ It’s for **two people**. Not groups. Not broadcasting. The web site and the An
 
 ### Start a private chat
 
-Tap **Start Private Conversation**, choose a 6-digit PIN, and you’ll get a link. Send that link to the one person you want to talk to. You can do this in the browser or in the Android app.
+Tap **Start Private Conversation**, choose a 6-digit PIN, and you’ll get a link. Send that link to the one person you want to talk to. You can do this in the browser or in the Android app. Without a lasting name you can keep **3** chats open at once; while you are available with a claimed name you can keep **7**.
 
 ### Join someone’s chat
 
@@ -30,7 +30,7 @@ Open the link they sent you (or paste it on the home screen and tap **Join**). Y
 
 ### Use a lasting name
 
-If you want a stable address like `goprivate.vercel.app/alice`, tap **Use a lasting link**. If the operator reserved that name, paste the lease key they sent you — it lives on your device and expires on a date they chose. People who open that URL start a normal 30-minute 1:1 with you **if you are online**. Closing the tab still takes the name offline; the reservation itself survives a server restart.
+If you want a stable address like `goprivate.vercel.app/alice`, tap **Use a lasting link**. If the operator reserved that name, paste the lease key they sent you once — this browser or app remembers the name and key so you do not hunt for it again. People who open that URL start a normal 30-minute 1:1 with you **if you are online**. Closing the tab still takes the name offline; come back on the same device and tap **Go available**. The reservation itself survives a server restart.
 
 ### Chat securely
 
@@ -70,7 +70,7 @@ That’s it.
 
 - **Nothing is saved on a server for later.** When the chat ends, it’s over.
 - **No accounts.** There’s nothing to log into or delete later.
-- **One guest only.** A session is for you and one other person.
+- **Three chats at once** without a lasting name. **Seven** while you are available with a claimed name.
 - **Remember your PIN** for that chat. If you forget it, you can’t unhide older messages.
 - **Leaving ends your side.** Switching apps briefly should reconnect automatically; staying away too long (or leaving deliberately) ends the conversation on this device.
 
