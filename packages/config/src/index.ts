@@ -20,7 +20,7 @@
  *   NEXT_PUBLIC_HANDLE_CLAIM_SECRET, EXPO_PUBLIC_HANDLE_CLAIM_SECRET
  */
 
-import native from './native.json';
+import native from './native.json' with { type: 'json' };
 
 /** Shown in the header, share sheets, and metadata. */
 export const APP_NAME = native.APP_NAME;
