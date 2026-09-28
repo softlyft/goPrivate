@@ -132,7 +132,9 @@ export function SettingsControl() {
 
                     <div className="flex items-center justify-between gap-3 rounded-2xl border border-black/8 bg-white/45 px-4 py-3">
                       <div className="min-w-0 text-left">
-                        <p className="text-sm font-medium text-foreground">{pinLengthLabel()} PIN</p>
+                        <p className="text-sm font-medium text-foreground">
+                          {pinLengthLabel()} PIN
+                        </p>
                         <p className="text-[11px] leading-relaxed text-muted">
                           {hasPin
                             ? 'Saved on this device. Used to encrypt local messages.'

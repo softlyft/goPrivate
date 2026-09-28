@@ -620,11 +620,10 @@ describe('message handlers', () => {
     const pair = generateKeyPairSync('ec', { namedCurve: 'P-256' });
     const publicKey = pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
     const signedAt = Date.now();
-    const signature = sign(
-      'sha256',
-      Buffer.from(handleClaimMessage('alice', signedAt)),
-      { key: pair.privateKey, dsaEncoding: 'ieee-p1363' },
-    ).toString('base64');
+    const signature = sign('sha256', Buffer.from(handleClaimMessage('alice', signedAt)), {
+      key: pair.privateKey,
+      dsaEncoding: 'ieee-p1363',
+    }).toString('base64');
 
     const store = new InMemorySessionStore();
     const handles = new InMemoryHandleStore();

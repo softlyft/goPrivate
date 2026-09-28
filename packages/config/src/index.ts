@@ -127,9 +127,7 @@ export const PREMIUM_PRICE_USDT_MONTHLY = 2;
 export const PREMIUM_YEARLY_DISCOUNT = 0.1;
 
 export function premiumPriceUsdtYearly(): number {
-  return (
-    Math.round(PREMIUM_PRICE_USDT_MONTHLY * 12 * (1 - PREMIUM_YEARLY_DISCOUNT) * 100) / 100
-  );
+  return Math.round(PREMIUM_PRICE_USDT_MONTHLY * 12 * (1 - PREMIUM_YEARLY_DISCOUNT) * 100) / 100;
 }
 
 export function formatUsdt(amount: number): string {

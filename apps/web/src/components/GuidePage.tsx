@@ -1,5 +1,10 @@
 import Link from 'next/link';
-import { APP_NAME, concurrentChatLimitHint, pinLengthLabel, sessionTtlLabel } from '@goprivate/config';
+import {
+  APP_NAME,
+  concurrentChatLimitHint,
+  pinLengthLabel,
+  sessionTtlLabel,
+} from '@goprivate/config';
 import { AppShell } from '@/components/AppShell';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';

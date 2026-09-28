@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatHub } from './chat-hub.js';
-import {
-  FREE_MAX_CONCURRENT_CHATS,
-  PREMIUM_MAX_CONCURRENT_CHATS,
-} from '@goprivate/config';
+import { FREE_MAX_CONCURRENT_CHATS, PREMIUM_MAX_CONCURRENT_CHATS } from '@goprivate/config';
 import type {
   ConnectionStatus,
   DecryptedChatMessage,

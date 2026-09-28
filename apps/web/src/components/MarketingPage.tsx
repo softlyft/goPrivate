@@ -124,11 +124,15 @@ export function MarketingPage() {
           </header>
 
           <section className="flex flex-col items-center py-14 text-center sm:py-20">
-            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted">{TAGLINE}</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted">
+              {TAGLINE}
+            </p>
             <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-[-0.04em] text-foreground sm:text-5xl">
               Private 1:1 chat that disappears.
             </h1>
-            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted sm:text-base">{DESCRIPTION}</p>
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
+              {DESCRIPTION}
+            </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/"
@@ -148,7 +152,9 @@ export function MarketingPage() {
           <section className="grid gap-4 sm:grid-cols-2">
             {FEATURES.map((feature) => (
               <Glass key={feature.title} contentClassName="space-y-2 px-5 py-5 sm:px-6">
-                <h2 className="text-base font-semibold tracking-tight text-foreground">{feature.title}</h2>
+                <h2 className="text-base font-semibold tracking-tight text-foreground">
+                  {feature.title}
+                </h2>
                 <p className="text-sm leading-relaxed text-muted">{feature.body}</p>
               </Glass>
             ))}
@@ -156,14 +162,16 @@ export function MarketingPage() {
 
           <section id="pricing" className="scroll-mt-8 pt-16 sm:pt-20">
             <div className="mx-auto max-w-2xl text-center">
-              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted">Pricing</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted">
+                Pricing
+              </p>
               <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-foreground">
                 Hosted plans, settled in USDT
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted">
-                The protocol remains open. These plans apply to the hosted {APP_NAME} service. Premium is{' '}
-                {formatUsdt(PREMIUM_PRICE_USDT_MONTHLY)} per month, or {YEARLY_OFF_PERCENT}% less when billed
-                annually.
+                The protocol remains open. These plans apply to the hosted {APP_NAME} service.
+                Premium is {formatUsdt(PREMIUM_PRICE_USDT_MONTHLY)} per month, or{' '}
+                {YEARLY_OFF_PERCENT}% less when billed annually.
               </p>
               <div className="mt-6 inline-flex rounded-full border border-black/8 bg-white/55 p-1 shadow-[var(--shadow-glass)]">
                 <button
@@ -242,8 +250,8 @@ export function MarketingPage() {
               />
             </div>
             <p className="mx-auto mt-6 max-w-2xl text-center text-[11px] leading-relaxed text-muted">
-              Self-hosting the reference implementation remains available under AGPLv3. Hosted Premium
-              and Custom plans support the public relay.
+              Self-hosting the reference implementation remains available under AGPLv3. Hosted
+              Premium and Custom plans support the public relay.
             </p>
           </section>
 
@@ -302,7 +310,8 @@ export function MarketingPage() {
                   Complete payment
                 </h3>
                 <p className="text-sm leading-relaxed text-muted">
-                  Send <span className="font-medium text-foreground">{formatUsdt(premiumAmount)}</span>{' '}
+                  Send{' '}
+                  <span className="font-medium text-foreground">{formatUsdt(premiumAmount)}</span>{' '}
                   to the address below. Once the transfer is confirmed, contact us at{' '}
                   <Link
                     href={contactHref}

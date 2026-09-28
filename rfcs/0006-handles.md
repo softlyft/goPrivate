@@ -6,7 +6,7 @@ A handle is a **live presence mailbox**, not a session and not an account.
 
 ## Why
 
-Share links today (`/chat/{hex}`) *are* the conversation: two parties, 30-minute TTL. A lasting `/{handle}` URL can only mean “reach me while I am connected.” Offline visitors see `HANDLE_UNAVAILABLE`. There is no voicemail and no database.
+Share links today (`/chat/{hex}`) _are_ the conversation: two parties, 30-minute TTL. A lasting `/{handle}` URL can only mean “reach me while I am connected.” Offline visitors see `HANDLE_UNAVAILABLE`. There is no voicemail and no database.
 
 ## Events
 

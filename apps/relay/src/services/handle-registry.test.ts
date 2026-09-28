@@ -1,20 +1,16 @@
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { handleClaimMessage } from '@goprivate/protocol';
-import {
-  parseHandleRegistry,
-  verifyHandleLeaseProof,
-} from './handle-registry.js';
+import { parseHandleRegistry, verifyHandleLeaseProof } from './handle-registry.js';
 
 function issueLease() {
   const { publicKey, privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
   const publicKeyB64 = publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
   const signedAt = Date.now();
-  const signature = sign(
-    'sha256',
-    Buffer.from(handleClaimMessage('alice', signedAt)),
-    { key: privateKey, dsaEncoding: 'ieee-p1363' },
-  ).toString('base64');
+  const signature = sign('sha256', Buffer.from(handleClaimMessage('alice', signedAt)), {
+    key: privateKey,
+    dsaEncoding: 'ieee-p1363',
+  }).toString('base64');
   return {
     lease: { publicKey: publicKeyB64, expiresAt: Date.now() + 60_000 },
     proof: { publicKey: publicKeyB64, signedAt, signature },
