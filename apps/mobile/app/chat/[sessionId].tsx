@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
   KeyboardAvoidingView,
   Platform,
+  BackHandler,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,7 +20,7 @@ import { ShareButton } from '../../components/ShareButton';
 import { PinPad } from '../../components/PinPad';
 import { messageVault } from '../../services/vault';
 import { ensureChat, getChatHub } from '../../services/chat-hub';
-import { listChats, useSessionStore } from '../../store/session';
+import { useSessionStore } from '../../store/session';
 import { Colors } from '../../constants/Colors';
 import { createDeepLink } from '../../utils/deeplink';
 
@@ -59,7 +60,6 @@ export default function ChatScreen() {
   const isTablet = width >= 768;
 
   const chat = useSessionStore((s) => (sessionId ? s.chats[sessionId] : undefined));
-  const chats = useSessionStore((s) => listChats(s.chats));
   const vaultReadyStore = useSessionStore((s) => s.vaultReady);
   const setVaultMeta = useSessionStore((s) => s.setVaultMeta);
   const setVaultReady = useSessionStore((s) => s.setVaultReady);
@@ -167,7 +167,7 @@ export default function ChatScreen() {
     setEndedByLeave(true);
     const remaining = Object.keys(useSessionStore.getState().chats);
     if (remaining.length > 0) {
-      router.replace('/');
+      router.replace('/chats');
     }
   }
 
@@ -183,9 +183,18 @@ export default function ChatScreen() {
     }
   }
 
-  function handleChats() {
-    router.replace('/');
+  function handleBack() {
+    router.replace('/chats');
   }
+
+  useEffect(() => {
+    if (!vaultReady) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      router.replace('/chats');
+      return true;
+    });
+    return () => sub.remove();
+  }, [router, vaultReady]);
 
   if (!sessionId) {
     return (
@@ -219,9 +228,9 @@ export default function ChatScreen() {
         <Text style={styles.endedBody}>No messages stored. No account created.</Text>
         <Pressable
           style={({ pressed }) => [styles.homeButton, pressed && styles.buttonPressed]}
-          onPress={() => router.replace('/')}
+          onPress={() => router.replace('/chats')}
         >
-          <Text style={styles.homeButtonText}>Back home</Text>
+          <Text style={styles.homeButtonText}>Back to conversations</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -235,18 +244,16 @@ export default function ChatScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <View style={styles.topBar}>
+          <Pressable
+            style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
+            onPress={handleBack}
+          >
+            <Text style={styles.backButtonText}>← Back</Text>
+          </Pressable>
           <View style={styles.topBarText}>
             <Text style={styles.statusText}>{statusLabel(status)}</Text>
             {remainingText ? <Text style={styles.timerText}>{remainingText}</Text> : null}
           </View>
-          {chats.length > 1 ? (
-            <Pressable
-              style={({ pressed }) => [styles.chatsButton, pressed && styles.buttonPressed]}
-              onPress={handleChats}
-            >
-              <Text style={styles.chatsButtonText}>Chats</Text>
-            </Pressable>
-          ) : null}
           <Pressable
             style={({ pressed }) => [styles.leaveButton, pressed && styles.buttonPressed]}
             onPress={() => void handleLeave()}
@@ -273,8 +280,8 @@ export default function ChatScreen() {
               </Pressable>
             </View>
             <Text style={styles.shareHint}>
-              Share this link with one person. Start more 1:1 chats from home. Sessions end after 30
-              minutes or when everyone leaves.
+              Share this link with one person. Start more 1:1 chats from Open conversations.
+              Sessions end after 30 minutes or when everyone leaves.
             </Text>
           </View>
         ) : null}
@@ -328,7 +335,16 @@ const styles = StyleSheet.create({
   },
   topBarText: {
     flex: 1,
-    paddingRight: 12,
+    paddingHorizontal: 8,
+  },
+  backButton: {
+    paddingVertical: 8,
+    paddingRight: 4,
+  },
+  backButtonText: {
+    color: Colors.primary,
+    fontSize: 15,
+    fontWeight: '600',
   },
   statusText: {
     fontSize: 14,
@@ -339,16 +355,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textMuted,
     marginTop: 2,
-  },
-  chatsButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-  },
-  chatsButtonText: {
-    color: Colors.primary,
-    fontSize: 13,
-    fontWeight: '600',
   },
   leaveButton: {
     paddingHorizontal: 14,

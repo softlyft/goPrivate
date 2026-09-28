@@ -47,7 +47,7 @@ export function ConversationEnded({ onHome }: { onHome: () => void }) {
         </div>
 
         <Button type="button" variant="secondary" onClick={onHome} className="mt-1 w-full">
-          Back home
+          Back to conversations
         </Button>
       </Glass>
     </div>

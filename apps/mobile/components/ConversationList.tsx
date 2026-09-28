@@ -25,15 +25,19 @@ function statusLabel(chat: ChatRecord): string {
 export function ConversationList({
   chats,
   onOpen,
+  emptyText,
 }: {
   chats: ChatRecord[];
   onOpen: (sessionId: string) => void;
+  emptyText?: string;
 }) {
-  if (chats.length === 0) return null;
+  if (chats.length === 0) {
+    if (!emptyText) return null;
+    return <Text style={styles.empty}>{emptyText}</Text>;
+  }
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.heading}>Open conversations</Text>
       {chats.map((chat) => (
         <Pressable
           key={chat.sessionId}
@@ -59,15 +63,13 @@ const styles = StyleSheet.create({
   wrap: {
     width: '100%',
     gap: 8,
-    marginBottom: 8,
   },
-  heading: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
+  empty: {
+    fontSize: 14,
+    lineHeight: 20,
     color: Colors.textMuted,
-    marginBottom: 4,
+    textAlign: 'center',
+    paddingVertical: 12,
   },
   row: {
     flexDirection: 'row',

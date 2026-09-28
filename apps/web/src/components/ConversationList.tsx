@@ -18,17 +18,24 @@ function remainingLabel(expiresAt: number | null): string | null {
 export function ConversationList({
   chats,
   onOpen,
+  heading = 'Open conversations',
+  emptyText,
 }: {
   chats: ChatRecord[];
   onOpen: (sessionId: string) => void;
+  heading?: string | null;
+  emptyText?: string;
 }) {
-  if (chats.length === 0) return null;
+  if (chats.length === 0) {
+    if (!emptyText) return null;
+    return <p className="w-full text-center text-sm text-muted">{emptyText}</p>;
+  }
 
   return (
     <div className="flex w-full flex-col gap-2 text-left">
-      <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted">
-        Open conversations
-      </p>
+      {heading ? (
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted">{heading}</p>
+      ) : null}
       <ul className="flex flex-col gap-2">
         {chats.map((chat) => {
           const remaining = remainingLabel(chat.expiresAt);

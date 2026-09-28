@@ -40,6 +40,16 @@ function generateSessionId(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+function isLiveStatus(status: ConnectionStatus): boolean {
+  return (
+    status === 'connecting' ||
+    status === 'connected' ||
+    status === 'awaiting_partner' ||
+    status === 'handshaking' ||
+    status === 'ready'
+  );
+}
+
 function emptySnapshot(sessionId: string, isHost: boolean): ChatSnapshot {
   return {
     sessionId,
@@ -133,6 +143,7 @@ export class ChatHub {
     const client = this.clients.get(sessionId);
     if (!client) return;
     if (client.status === 'expired') return;
+    if (client.connected && isLiveStatus(client.status)) return;
     await client.reconnect();
   }
 
@@ -162,9 +173,9 @@ export class ChatHub {
     const existing = this.clients.get(sessionId);
     if (existing) {
       if (
+        !existing.connected ||
         existing.status === 'disconnected' ||
-        existing.status === 'error' ||
-        existing.status === 'connecting'
+        existing.status === 'error'
       ) {
         await existing.reconnect();
       }
@@ -206,7 +217,10 @@ export class ChatHub {
 
   private attach(sessionId: string, client: IRelayClient): void {
     const onStatus: RelayClientEvents['status'] = (status) => {
-      this.patch(sessionId, { status });
+      this.patch(sessionId, {
+        status,
+        ...(isLiveStatus(status) ? { error: null } : {}),
+      });
     };
     const onCreated: RelayClientEvents['sessionCreated'] = (_id, expiresAt) => {
       this.patch(sessionId, { isHost: true, expiresAt, error: null });

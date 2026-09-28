@@ -232,6 +232,14 @@ function handleCreateSession(
   });
 }
 
+function isSocketOpen(socket: { readyState?: number }): boolean {
+  return socket.readyState === undefined || socket.readyState === 1;
+}
+
+function pruneDeadParticipants(session: Session): void {
+  session.participants = session.participants.filter((p) => isSocketOpen(p.socket));
+}
+
 function handleJoinSession(
   store: ISessionStore,
   socket: WebSocket,
@@ -270,6 +278,8 @@ function handleJoinSession(
     });
     return;
   }
+
+  pruneDeadParticipants(session);
 
   cancelPendingDestroy(sessionId);
 
