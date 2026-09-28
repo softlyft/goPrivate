@@ -38,8 +38,8 @@ export function GuidePage() {
               How goPrivate works
             </h1>
             <p className="text-sm leading-relaxed text-muted">
-              A private chat that disappears when you’re done. No sign-up. No profile. No saved
-              history. Just you, one other person, and a short conversation that stays between you.
+              A private 1:1 chat that disappears when you’re done. No sign-up. No profile. No saved
+              history. You can keep several 1:1 conversations going at the same time.
             </p>
           </Glass>
 
@@ -50,7 +50,10 @@ export function GuidePage() {
               <li>A quick check-in that shouldn’t live in a normal chat app</li>
               <li>Talking on a shared or borrowed phone with extra caution</li>
             </ul>
-            <p>It’s for two people. Not groups. Not broadcasting.</p>
+            <p>
+              Each link is for two people. You can run several of those 1:1 chats at once. Not
+              groups. Not broadcasting.
+            </p>
           </Section>
 
           <Section title="What you can do">
@@ -144,17 +147,20 @@ export function GuidePage() {
                 nothing to log into or delete later.
               </li>
               <li>
-                <strong className="font-medium text-foreground">One guest only.</strong> A session
-                is for you and one other person.
+                <strong className="font-medium text-foreground">One guest per chat.</strong> Each
+                session is you and one other person. Start or join another link for a second
+                conversation — the first one stays connected.
               </li>
               <li>
-                <strong className="font-medium text-foreground">Remember your PIN</strong> for that
-                chat. If you forget it, you can’t unhide older messages.
+                <strong className="font-medium text-foreground">Remember your PIN</strong> on this
+                device. If you forget it, you can’t unhide older messages.
               </li>
               <li>
-                <strong className="font-medium text-foreground">Leaving closes your side.</strong>{' '}
-                Leaving closes your side. Switching apps briefly should reconnect automatically;
-                staying away too long may end the session.
+                <strong className="font-medium text-foreground">
+                  Leave closes that chat only.
+                </strong>{' '}
+                Other open conversations keep running. Switching apps briefly should reconnect
+                automatically.
               </li>
             </ul>
           </Section>

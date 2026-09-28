@@ -25,7 +25,11 @@ export default function JoinScreen() {
   const [pinError, setPinError] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
   const setVaultMeta = useSessionStore((s) => s.setVaultMeta);
-  const clearMessages = useSessionStore((s) => s.clearMessages);
+  const setVaultReady = useSessionStore((s) => s.setVaultReady);
+
+  function goToChat(id: string) {
+    router.push(chatHref(id));
+  }
 
   function handleJoin() {
     const id = extractSessionId(sessionId);
@@ -36,7 +40,10 @@ export default function JoinScreen() {
 
     setSessionId(id);
     setJoinError(null);
-    clearMessages();
+    if (messageVault.isUnlocked) {
+      goToChat(id);
+      return;
+    }
     setShowPinSetup(true);
   }
 
@@ -45,6 +52,7 @@ export default function JoinScreen() {
     try {
       const meta = await messageVault.setup(pin);
       setVaultMeta(meta);
+      setVaultReady(true);
 
       const id = extractSessionId(sessionId);
       if (!id) {

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  AppState,
   Pressable,
   Clipboard,
   useWindowDimensions,
@@ -13,16 +12,15 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { ConnectionStatus, IRelayClient } from '@goprivate/sdk';
-import { createMobileRelayClient } from '../../utils/relay';
+import type { ConnectionStatus } from '@goprivate/sdk';
 import { MessageList } from '../../components/MessageList';
 import { MessageComposer } from '../../components/MessageComposer';
 import { ShareButton } from '../../components/ShareButton';
 import { PinPad } from '../../components/PinPad';
 import { messageVault } from '../../services/vault';
-import { useSessionStore } from '../../store/session';
+import { ensureChat, getChatHub } from '../../services/chat-hub';
+import { listChats, useSessionStore } from '../../store/session';
 import { Colors } from '../../constants/Colors';
-import { getRelayUrl } from '../../utils/env';
 import { createDeepLink } from '../../utils/deeplink';
 
 function paramValue(value: string | string[] | undefined): string | undefined {
@@ -60,40 +58,54 @@ export default function ChatScreen() {
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
 
-  const [client, setClient] = useState<IRelayClient | null>(null);
-  const [status, setStatus] = useState<ConnectionStatus>('connecting');
-  const [error, setError] = useState<string | null>(null);
-  const [expiresAt, setExpiresAt] = useState<number | null>(null);
-  const [remainingLabel, setRemainingLabel] = useState<string | null>(null);
+  const chat = useSessionStore((s) => (sessionId ? s.chats[sessionId] : undefined));
+  const chats = useSessionStore((s) => listChats(s.chats));
+  const vaultReadyStore = useSessionStore((s) => s.vaultReady);
+  const setVaultMeta = useSessionStore((s) => s.setVaultMeta);
+  const setVaultReady = useSessionStore((s) => s.setVaultReady);
+
   const [copied, setCopied] = useState(false);
   const [endedByLeave, setEndedByLeave] = useState(false);
-  const [vaultReady, setVaultReady] = useState(messageVault.isUnlocked);
+  const [vaultReady, setLocalVaultReady] = useState(vaultReadyStore && messageVault.isUnlocked);
   const [pinError, setPinError] = useState<string | null>(null);
-  const [localFingerprint, setLocalFingerprint] = useState<string | null>(null);
-  const [peerFingerprint, setPeerFingerprint] = useState<string | null>(null);
+  const [remainingText, setRemainingText] = useState<string | null>(null);
 
-  const messages = useSessionStore((s) => s.messages);
-  const addMessage = useSessionStore((s) => s.addMessage);
-  const clearMessages = useSessionStore((s) => s.clearMessages);
-  const setVaultMeta = useSessionStore((s) => s.setVaultMeta);
-
+  const status = chat?.status ?? 'connecting';
+  const error = chat?.error ?? null;
+  const expiresAt = chat?.expiresAt ?? null;
+  const messages = chat?.messages ?? [];
+  const localFingerprint = chat?.localFingerprint ?? null;
+  const peerFingerprint = chat?.peerFingerprint ?? null;
   const isReady = status === 'ready';
   const conversationEnded = status === 'expired' || endedByLeave;
   const canShare = Boolean(sessionId) && !conversationEnded && status !== 'ready';
 
   useEffect(() => {
+    setEndedByLeave(false);
+    if (sessionId) {
+      useSessionStore.getState().setActiveSessionId(sessionId);
+    }
+    return () => {
+      const store = useSessionStore.getState();
+      if (store.activeSessionId === sessionId) {
+        store.setActiveSessionId(null);
+      }
+    };
+  }, [sessionId]);
+
+  useEffect(() => {
     if (!expiresAt) {
-      setRemainingLabel(null);
+      setRemainingText(null);
       return;
     }
     const tick = () => {
       const ms = expiresAt - Date.now();
       if (ms <= 0) {
-        setRemainingLabel('Ending now');
+        setRemainingText('Ending now');
         return;
       }
       const mins = Math.ceil(ms / 60_000);
-      setRemainingLabel(`${mins} min left`);
+      setRemainingText(`${mins} min left`);
     };
     tick();
     const timer = setInterval(tick, 15_000);
@@ -101,119 +113,21 @@ export default function ChatScreen() {
   }, [expiresAt]);
 
   useEffect(() => {
-    if (!sessionId || !vaultReady) {
-      return;
-    }
+    if (!sessionId || !vaultReady) return;
 
-    const relayClient = createMobileRelayClient();
-
-    relayClient.on('status', (next) => {
-      setStatus(next);
-      if (next === 'awaiting_partner') {
-        setLocalFingerprint(null);
-        setPeerFingerprint(null);
-      }
-      if (next !== 'error') {
-        setError(null);
-      }
-    });
-
-    relayClient.on('sessionCreated', (_id, nextExpiresAt) => {
-      setExpiresAt(nextExpiresAt);
-    });
-
-    relayClient.on('partnerJoined', (nextExpiresAt) => {
-      setExpiresAt(nextExpiresAt);
-    });
-
-    relayClient.on('sessionExpired', () => {
-      clearMessages();
-      void messageVault.lock();
-      setStatus('expired');
-    });
-
-    relayClient.on('fingerprintsReady', (local, peer) => {
-      setLocalFingerprint(local);
-      setPeerFingerprint(peer);
-    });
-
-    relayClient.on('error', (_code, message) => {
-      setError(message);
-    });
-
-    relayClient.on('message', async (msg) => {
-      console.log('[ChatScreen] Received message:', {
-        id: msg.id,
-        textLength: msg.text?.length ?? 0,
-        fromPeer: msg.fromPeer,
-        text: msg.text?.substring(0, 50), // First 50 chars for debugging
+    let cancelled = false;
+    void ensureChat(sessionId, isHost).catch((err) => {
+      if (cancelled) return;
+      useSessionStore.getState().upsertChat(sessionId, {
+        status: 'error',
+        error: err instanceof Error ? err.message : 'Failed to start session',
       });
-
-      if (!messageVault.isUnlocked) {
-        console.warn('[ChatScreen] Vault is locked, cannot store message');
-        return;
-      }
-
-      if (!msg.text) {
-        console.error('[ChatScreen] Message has no text!', msg);
-        setError('Received empty message');
-        return;
-      }
-
-      try {
-        console.log('[ChatScreen] Encrypting message with vault...');
-        const encrypted = await messageVault.encrypt(msg.text);
-        console.log('[ChatScreen] Message encrypted, length:', encrypted.length);
-
-        addMessage({
-          id: msg.id,
-          encryptedText: encrypted,
-          fromPeer: msg.fromPeer,
-          timestamp: msg.timestamp,
-        });
-        console.log('[ChatScreen] Message added to store');
-      } catch (err) {
-        console.error('[ChatScreen] Failed to store message:', err);
-        setError(err instanceof Error ? err.message : 'Failed to store message');
-      }
-    });
-
-    setClient(relayClient);
-
-    void relayClient
-      .connect(getRelayUrl())
-      .then(async () => {
-        if (isHost) {
-          await relayClient.createSession(sessionId);
-        } else {
-          await relayClient.joinSession(sessionId);
-        }
-        if (relayClient.expiresAt) {
-          setExpiresAt(relayClient.expiresAt);
-        }
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Failed to start session');
-      });
-
-    return () => {
-      void relayClient.disconnect();
-    };
-  }, [sessionId, vaultReady, isHost, addMessage, clearMessages]);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (nextAppState === 'active' && client && status === 'disconnected') {
-        void client.reconnect().catch((err) => {
-          setError(err instanceof Error ? err.message : 'Failed to reconnect');
-        });
-      }
     });
 
     return () => {
-      subscription.remove();
+      cancelled = true;
     };
-  }, [client, status]);
+  }, [sessionId, vaultReady, isHost]);
 
   async function handlePinSetup(pin: string) {
     setPinError(null);
@@ -221,6 +135,7 @@ export default function ChatScreen() {
       const meta = await messageVault.setup(pin);
       setVaultMeta(meta);
       setVaultReady(true);
+      setLocalVaultReady(true);
     } catch (err) {
       setPinError(err instanceof Error ? err.message : 'Failed to set up PIN');
       await messageVault.clearVault();
@@ -228,15 +143,13 @@ export default function ChatScreen() {
   }
 
   async function handleSend(text: string) {
-    if (!client || !isReady) {
+    if (!sessionId || !isReady) {
       throw new Error('Not connected');
     }
-
     if (!messageVault.isUnlocked) {
       throw new Error('Vault is locked');
     }
-
-    await client.sendMessage(text);
+    await getChatHub().sendMessage(sessionId, text);
   }
 
   function handleCopyLink() {
@@ -247,27 +160,31 @@ export default function ChatScreen() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  async function endConversation(leaveRelay: boolean) {
-    if (leaveRelay) {
-      await client?.leaveSession();
-    }
-    clearMessages();
-    await messageVault.lock();
-    setEndedByLeave(true);
-  }
-
   async function handleLeave() {
-    await endConversation(true);
+    if (sessionId) {
+      await getChatHub().leaveSession(sessionId);
+    }
+    setEndedByLeave(true);
+    const remaining = Object.keys(useSessionStore.getState().chats);
+    if (remaining.length > 0) {
+      router.replace('/');
+    }
   }
 
   async function handleRetry() {
-    if (!client) return;
-    setError(null);
+    if (!sessionId) return;
+    useSessionStore.getState().upsertChat(sessionId, { error: null });
     try {
-      await client.reconnect();
+      await getChatHub().reconnect(sessionId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reconnect');
+      useSessionStore.getState().upsertChat(sessionId, {
+        error: err instanceof Error ? err.message : 'Failed to reconnect',
+      });
     }
+  }
+
+  function handleChats() {
+    router.replace('/');
   }
 
   if (!sessionId) {
@@ -320,8 +237,16 @@ export default function ChatScreen() {
         <View style={styles.topBar}>
           <View style={styles.topBarText}>
             <Text style={styles.statusText}>{statusLabel(status)}</Text>
-            {remainingLabel ? <Text style={styles.timerText}>{remainingLabel}</Text> : null}
+            {remainingText ? <Text style={styles.timerText}>{remainingText}</Text> : null}
           </View>
+          {chats.length > 1 ? (
+            <Pressable
+              style={({ pressed }) => [styles.chatsButton, pressed && styles.buttonPressed]}
+              onPress={handleChats}
+            >
+              <Text style={styles.chatsButtonText}>Chats</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             style={({ pressed }) => [styles.leaveButton, pressed && styles.buttonPressed]}
             onPress={() => void handleLeave()}
@@ -348,8 +273,8 @@ export default function ChatScreen() {
               </Pressable>
             </View>
             <Text style={styles.shareHint}>
-              Share now. Web opens the https link. This app opens goprivate://. Sessions end after
-              30 minutes or when everyone leaves.
+              Share this link with one person. Start more 1:1 chats from home. Sessions end after 30
+              minutes or when everyone leaves.
             </Text>
           </View>
         ) : null}
@@ -414,6 +339,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textMuted,
     marginTop: 2,
+  },
+  chatsButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
+  chatsButtonText: {
+    color: Colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
   },
   leaveButton: {
     paddingHorizontal: 14,

@@ -6,6 +6,7 @@ import { PinPad, PinPadViewport } from '@/components/PinPad';
 import { Button } from '@/components/ui/button';
 import { Glass } from '@/components/ui/glass';
 import { useChatSession } from '@/hooks/use-chat-session';
+import { messageVault } from '@/services/vault';
 
 export function CreateSessionButton() {
   const router = useRouter();
@@ -15,12 +16,11 @@ export function CreateSessionButton() {
   const [statusText, setStatusText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handlePinSet(pin: string) {
+  async function startConversation(): Promise<void> {
     setLoading(true);
     setError(null);
     setStatusText('Waking relay / connecting…');
     try {
-      await setupVault(pin);
       setStatusText('Creating session…');
       const sessionId = await createSession();
       router.push(`/chat/${sessionId}`);
@@ -32,16 +32,37 @@ export function CreateSessionButton() {
     }
   }
 
+  async function handlePinSet(pin: string) {
+    try {
+      await setupVault(pin);
+      await startConversation();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create session');
+      setLoading(false);
+      setStatusText(null);
+      setShowPin(false);
+    }
+  }
+
+  function handleClick() {
+    setError(null);
+    if (messageVault.isUnlocked) {
+      void startConversation();
+      return;
+    }
+    setShowPin(true);
+  }
+
   return (
     <>
       <div className="flex flex-col items-center gap-2">
-        <Button onClick={() => setShowPin(true)} disabled={loading} className="min-w-52">
+        <Button onClick={handleClick} disabled={loading} className="min-w-52">
           Start Private Conversation
         </Button>
         {error && <p className="text-xs text-danger">{error}</p>}
       </div>
 
-      {showPin && (
+      {(showPin || loading) && (
         <div className="absolute inset-0 z-20 flex min-h-0 flex-col bg-background/55 backdrop-blur-xl animate-fade-in">
           {loading ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6">

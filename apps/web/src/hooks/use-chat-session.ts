@@ -1,36 +1,52 @@
 'use client';
 
 import { useEffect } from 'react';
-import { createRelayClient, type IRelayClient } from '@goprivate/sdk';
+import { ChatHub, type ChatSnapshot, type IRelayClient } from '@goprivate/sdk';
 import { messageVault } from '@/services/vault';
-import { useSessionStore } from '@/store/session';
+import { listChats, useSessionStore } from '@/store/session';
 import { getRelayUrl, getShareUrl } from '@/utils/env';
 
-let clientSingleton: IRelayClient | null = null;
+let hubSingleton: ChatHub | null = null;
 let wired = false;
 let lifecycleBound = false;
 let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 let resumeInFlight: Promise<void> | null = null;
 
-function getClient(): IRelayClient {
-  if (!clientSingleton) {
-    clientSingleton = createRelayClient();
+export function getChatHub(): ChatHub {
+  if (!hubSingleton) {
+    hubSingleton = new ChatHub({ getRelayUrl });
   }
-  return clientSingleton;
+  return hubSingleton;
 }
 
-async function ingestPlaintextMessage(message: {
-  id: string;
-  text: string;
-  timestamp: number;
-  fromPeer: boolean;
-}): Promise<void> {
+function applySnapshot(sessionId: string, snapshot: ChatSnapshot): void {
+  useSessionStore.getState().upsertChat(sessionId, {
+    isHost: snapshot.isHost,
+    status: snapshot.status,
+    expiresAt: snapshot.expiresAt,
+    partnerPresent: snapshot.partnerPresent,
+    error: snapshot.error,
+    shareUrl: getShareUrl(sessionId),
+  });
+}
+
+async function ingestPlaintextMessage(
+  sessionId: string,
+  message: {
+    id: string;
+    text: string;
+    timestamp: number;
+    fromPeer: boolean;
+  },
+): Promise<void> {
   if (!messageVault.isUnlocked) {
-    useSessionStore.getState().setError('Vault is locked — cannot store message securely');
+    useSessionStore.getState().upsertChat(sessionId, {
+      error: 'Vault is locked — cannot store message securely',
+    });
     return;
   }
   const encryptedText = await messageVault.encrypt(message.text);
-  useSessionStore.getState().addMessage({
+  useSessionStore.getState().addMessage(sessionId, {
     id: message.id,
     encryptedText,
     timestamp: message.timestamp,
@@ -38,97 +54,52 @@ async function ingestPlaintextMessage(message: {
   });
 }
 
-function wireClient(client: IRelayClient): void {
-  client.on('status', (status) => {
-    useSessionStore.getState().setStatus(status);
-    // Auto-resume when the socket drops while the tab is still visible
-    if (status === 'disconnected' && typeof document !== 'undefined') {
-      if (document.visibilityState === 'visible') {
-        scheduleResume(400);
-      }
-    }
+function wireHub(hub: ChatHub): void {
+  hub.on('snapshot', (sessionId, snapshot) => {
+    applySnapshot(sessionId, snapshot);
   });
 
-  client.on('sessionCreated', (sessionId, expiresAt) => {
-    useSessionStore.getState().setSessionId(sessionId);
-    useSessionStore.getState().setShareUrl(getShareUrl(sessionId));
-    useSessionStore.getState().setExpiresAt(expiresAt);
+  hub.on('message', (sessionId, message) => {
+    void ingestPlaintextMessage(sessionId, message);
   });
 
-  client.on('partnerJoined', (expiresAt) => {
-    useSessionStore.getState().setPartnerPresent(true);
-    useSessionStore.getState().setExpiresAt(expiresAt);
-    useSessionStore.getState().setError(null);
+  hub.on('fingerprints', (sessionId, local, peer) => {
+    useSessionStore.getState().upsertChat(sessionId, {
+      localFingerprint: local,
+      peerFingerprint: peer,
+    });
   });
 
-  client.on('partnerLeft', () => {
-    useSessionStore.getState().setPartnerPresent(false);
+  hub.on('removed', (sessionId) => {
+    useSessionStore.getState().removeChat(sessionId);
+    maybeLockVault();
   });
+}
 
-  client.on('sessionExpired', () => {
-    messageVault.lock();
-    useSessionStore.getState().setStatus('expired');
-    useSessionStore.getState().setError('This session has expired (30 minute limit).');
-    useSessionStore.getState().setExpiresAt(null);
-    useSessionStore.getState().clearVault();
-  });
-
-  client.on('message', (message) => {
-    void ingestPlaintextMessage(message);
-  });
-
-  client.on('error', (code, message) => {
-    if (code === 'SESSION_NOT_FOUND') {
-      // Handled by reconnect/join callers
-      return;
-    }
-    useSessionStore.getState().setError(message);
-    if (code === 'SESSION_EXPIRED') {
-      messageVault.lock();
-      useSessionStore.getState().setStatus('expired');
-      useSessionStore.getState().clearVault();
-    }
-  });
+function maybeLockVault(): void {
+  if (Object.keys(useSessionStore.getState().chats).length > 0) return;
+  if (getChatHub().size > 0) return;
+  messageVault.lock();
+  useSessionStore.getState().clearVault();
 }
 
 function scheduleResume(delayMs = 0): void {
   if (resumeTimer) clearTimeout(resumeTimer);
   resumeTimer = setTimeout(() => {
     resumeTimer = null;
-    void resumeSession();
+    void resumeSessions();
   }, delayMs);
 }
 
-async function resumeSession(): Promise<void> {
+async function resumeSessions(): Promise<void> {
   if (resumeInFlight) return resumeInFlight;
-
-  const store = useSessionStore.getState();
-  const client = clientSingleton;
-  if (!client) return;
-  if (!store.sessionId && !client.sessionId) return;
-  if (store.status === 'expired') return;
   if (!messageVault.isUnlocked) return;
-
-  // Socket still open and session healthy — nothing to do
-  if (
-    client.connected &&
-    (store.status === 'ready' ||
-      store.status === 'awaiting_partner' ||
-      store.status === 'handshaking')
-  ) {
-    return;
-  }
-  if (store.status === 'connecting' && client.connected) return;
+  if (getChatHub().size === 0) return;
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
 
   resumeInFlight = (async () => {
     try {
-      store.setError(null);
-      store.setStatus('connecting');
-      await client.reconnect();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to reconnect';
-      useSessionStore.getState().setError(message);
-      useSessionStore.getState().setStatus('disconnected');
+      await getChatHub().reconnectAll();
     } finally {
       resumeInFlight = null;
     }
@@ -151,29 +122,24 @@ function bindLifecycle(): void {
   window.addEventListener('focus', onResume);
 }
 
+function ensureHub(): ChatHub {
+  const hub = getChatHub();
+  if (!wired) {
+    wireHub(hub);
+    wired = true;
+  }
+  bindLifecycle();
+  return hub;
+}
+
 export function useChatSession() {
   const store = useSessionStore();
+  const chats = listChats(store.chats);
+  const activeChat = store.activeSessionId ? (store.chats[store.activeSessionId] ?? null) : null;
 
   useEffect(() => {
     bindLifecycle();
   }, []);
-
-  async function ensureConnected(): Promise<IRelayClient> {
-    const client = getClient();
-    if (!wired) {
-      wireClient(client);
-      wired = true;
-    }
-    bindLifecycle();
-    if (
-      client.status === 'disconnected' ||
-      client.status === 'error' ||
-      client.status === 'expired'
-    ) {
-      await client.connect(getRelayUrl());
-    }
-    return client;
-  }
 
   async function setupVault(pin: string): Promise<void> {
     const meta = await messageVault.setup(pin);
@@ -185,14 +151,15 @@ export function useChatSession() {
     if (!messageVault.isUnlocked) {
       throw new Error('Set your reveal PIN before creating a session');
     }
-    store.reset();
-    const client = await ensureConnected();
-    const sessionId = await client.createSession();
-    store.setSessionId(sessionId);
-    store.setShareUrl(getShareUrl(sessionId));
-    if (client.expiresAt) {
-      store.setExpiresAt(client.expiresAt);
-    }
+    const hub = ensureHub();
+    const sessionId = await hub.createSession();
+    store.upsertChat(sessionId, {
+      isHost: true,
+      shareUrl: getShareUrl(sessionId),
+      status: hub.get(sessionId)?.status ?? 'awaiting_partner',
+      expiresAt: hub.get(sessionId)?.expiresAt ?? null,
+    });
+    store.setActiveSessionId(sessionId);
     return sessionId;
   }
 
@@ -200,67 +167,51 @@ export function useChatSession() {
     if (!messageVault.isUnlocked) {
       throw new Error('Set your reveal PIN before joining a session');
     }
-    store.reset();
-    store.setSessionId(sessionId);
-    const client = await ensureConnected();
-    await client.joinSession(sessionId);
+    const hub = ensureHub();
+    if (!hub.has(sessionId)) {
+      await hub.joinSession(sessionId);
+    }
+    store.upsertChat(sessionId, {
+      shareUrl: getShareUrl(sessionId),
+      status: hub.get(sessionId)?.status ?? 'connecting',
+      expiresAt: hub.get(sessionId)?.expiresAt ?? null,
+    });
+    store.setActiveSessionId(sessionId);
   }
 
-  async function sendMessage(text: string): Promise<void> {
-    const client = getClient();
-    if (client.status !== 'ready') {
-      await resumeSession();
+  async function sendMessage(sessionId: string, text: string): Promise<void> {
+    const hub = ensureHub();
+    const client: IRelayClient | undefined = hub.getClient(sessionId);
+    if (client && client.status !== 'ready') {
+      await hub.reconnect(sessionId);
     }
-    await getClient().sendMessage(text);
+    await hub.sendMessage(sessionId, text);
   }
 
-  async function leaveSession(): Promise<void> {
-    try {
-      const client = getClient();
-      await client.leaveSession();
-    } finally {
-      clientSingleton = null;
-      wired = false;
-      messageVault.lock();
-      store.reset();
-      store.clearVault();
-    }
+  async function leaveSession(sessionId: string): Promise<void> {
+    await ensureHub().leaveSession(sessionId);
   }
 
-  /** Tear down the socket after TTL without wiping the expired UI state. */
-  async function expireSession(): Promise<void> {
-    try {
-      const client = getClient();
-      await client.leaveSession();
-    } catch {
-      try {
-        getClient().disconnect();
-      } catch {
-        // ignore
-      }
-    } finally {
-      clientSingleton = null;
-      wired = false;
-      messageVault.lock();
-      useSessionStore.setState({
-        status: 'expired',
-        error: 'This session has expired (30 minute limit).',
-        partnerPresent: false,
-        expiresAt: null,
-        vaultMeta: null,
-        vaultReady: false,
-        messages: [],
-      });
-    }
+  async function expireSession(sessionId: string): Promise<void> {
+    await ensureHub().leaveSession(sessionId);
+  }
+
+  function openSession(sessionId: string): void {
+    store.setActiveSessionId(sessionId);
   }
 
   return {
-    ...store,
+    chats,
+    activeChat,
+    activeSessionId: store.activeSessionId,
+    vaultReady: store.vaultReady,
+    vaultMeta: store.vaultMeta,
     setupVault,
     createSession,
     joinSession,
     sendMessage,
     leaveSession,
     expireSession,
+    openSession,
   };
 }

@@ -3,10 +3,11 @@ import { View, Text, Pressable, StyleSheet, Modal, Image, useWindowDimensions } 
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PinPad } from '../components/PinPad';
+import { ConversationList } from '../components/ConversationList';
 import { messageVault } from '../services/vault';
-import { useSessionStore } from '../store/session';
+import { startHostChat } from '../services/chat-hub';
+import { listChats, useSessionStore } from '../store/session';
 import { Colors } from '../constants/Colors';
-import { generateSessionId } from '../utils/session-id';
 import { chatHref } from '../utils/session-link';
 
 export default function HomeScreen() {
@@ -17,10 +18,27 @@ export default function HomeScreen() {
   const [pinError, setPinError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const setVaultMeta = useSessionStore((s) => s.setVaultMeta);
-  const clearMessages = useSessionStore((s) => s.clearMessages);
+  const setVaultReady = useSessionStore((s) => s.setVaultReady);
+  const chats = useSessionStore((s) => listChats(s.chats));
+
+  async function openHostChat() {
+    const sessionId = await startHostChat();
+    router.push(chatHref(sessionId));
+  }
 
   async function handleStartConversation() {
-    clearMessages();
+    if (messageVault.isUnlocked) {
+      setIsCreating(true);
+      setPinError(null);
+      try {
+        await openHostChat();
+      } catch (err) {
+        setPinError(err instanceof Error ? err.message : 'Failed to start conversation');
+      } finally {
+        setIsCreating(false);
+      }
+      return;
+    }
     setShowPinSetup(true);
   }
 
@@ -32,8 +50,9 @@ export default function HomeScreen() {
     try {
       const meta = await messageVault.setup(pin);
       setVaultMeta(meta);
+      setVaultReady(true);
       setShowPinSetup(false);
-      router.push(chatHref(generateSessionId(), { host: true }));
+      await openHostChat();
     } catch (err) {
       setPinError(err instanceof Error ? err.message : 'Failed to set up PIN');
       await messageVault.clearVault();
@@ -63,18 +82,22 @@ export default function HomeScreen() {
             <Text style={styles.tagline}>Private conversations. No trace.</Text>
           </View>
           <Text style={styles.subtitle}>
-            Ephemeral, end-to-end encrypted conversations that vanish in 30 minutes.
+            Ephemeral 1:1 chats that vanish in 30 minutes. Run several conversations at once.
           </Text>
         </View>
 
         <View style={styles.actions}>
+          <ConversationList chats={chats} onOpen={(id) => router.push(chatHref(id))} />
           <Pressable
             style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
             onPress={handleStartConversation}
             disabled={isCreating}
           >
-            <Text style={styles.primaryButtonText}>Start Private Conversation</Text>
+            <Text style={styles.primaryButtonText}>
+              {isCreating ? 'Starting…' : 'Start Private Conversation'}
+            </Text>
           </Pressable>
+          {pinError && !showPinSetup ? <Text style={styles.homeError}>{pinError}</Text> : null}
 
           <Pressable
             style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
@@ -254,5 +277,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
     color: Colors.textMuted,
     fontSize: 14,
+  },
+  homeError: {
+    textAlign: 'center',
+    color: Colors.error,
+    fontSize: 13,
   },
 });
