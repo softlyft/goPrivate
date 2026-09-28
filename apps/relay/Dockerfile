@@ -4,20 +4,22 @@ WORKDIR /app
 
 FROM base AS build
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc tsconfig.base.json ./
+COPY packages/config ./packages/config
 COPY packages/protocol ./packages/protocol
 COPY apps/relay ./apps/relay
 
-# Install workspace deps for relay + protocol (lockfile optional on first render)
+# Install workspace deps for relay + protocol + config (lockfile optional on first render)
 RUN if [ -f pnpm-lock.yaml ]; then \
       pnpm install --filter @goprivate/relay... --frozen-lockfile; \
     else \
       pnpm install --filter @goprivate/relay...; \
     fi
 
-RUN pnpm --filter @goprivate/protocol build \
+RUN pnpm --filter @goprivate/config build \
+ && pnpm --filter @goprivate/protocol build \
  && pnpm --filter @goprivate/relay build
 
-# Portable production bundle (includes workspace deps like @goprivate/protocol)
+# Portable production bundle (includes workspace deps like @goprivate/config)
 RUN pnpm --filter @goprivate/relay deploy --prod --legacy /app/deploy
 
 FROM node:22-alpine AS runner

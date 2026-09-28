@@ -4,6 +4,7 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc ./
+COPY packages/config/package.json ./packages/config/
 COPY packages/protocol/package.json ./packages/protocol/
 COPY packages/crypto/package.json ./packages/crypto/
 COPY packages/sdk/package.json ./packages/sdk/
@@ -21,7 +22,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV DOCKER_BUILD=1
 ARG NEXT_PUBLIC_RELAY_URL=ws://localhost:3001/ws
 ENV NEXT_PUBLIC_RELAY_URL=$NEXT_PUBLIC_RELAY_URL
-RUN pnpm --filter @goprivate/protocol build \
+RUN pnpm --filter @goprivate/config build \
+  && pnpm --filter @goprivate/protocol build \
   && pnpm --filter @goprivate/crypto build \
   && pnpm --filter @goprivate/sdk build \
   && pnpm --filter @goprivate/web build
