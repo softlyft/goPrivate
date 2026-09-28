@@ -1,5 +1,6 @@
 'use client';
 
+import { PIN_LENGTH } from '@goprivate/config';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Glass } from '@/components/ui/glass';
@@ -43,7 +44,7 @@ export function PinPad({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key >= '0' && e.key <= '9') {
-        activeSetter((prev) => (prev.length < 6 ? prev + e.key : prev));
+        activeSetter((prev) => (prev.length < PIN_LENGTH ? prev + e.key : prev));
       } else if (e.key === 'Backspace') {
         activeSetter((prev) => prev.slice(0, -1));
       }
@@ -54,7 +55,7 @@ export function PinPad({
 
   function pushDigit(digit: string) {
     setError(null);
-    activeSetter((prev) => (prev.length < 6 ? prev + digit : prev));
+    activeSetter((prev) => (prev.length < PIN_LENGTH ? prev + digit : prev));
   }
 
   function backspace() {
@@ -74,7 +75,7 @@ export function PinPad({
   }
 
   function submit() {
-    if (activeValue.length !== 6) return;
+    if (activeValue.length !== PIN_LENGTH) return;
 
     if (mode === 'verify') {
       onComplete(activeValue);
@@ -101,7 +102,7 @@ export function PinPad({
     mode === 'verify'
       ? 'Enter your reveal PIN'
       : step === 'enter'
-        ? 'Choose a 6-digit PIN'
+        ? `Choose a ${PIN_LENGTH}-digit PIN`
         : 'Confirm your PIN';
 
   return (
@@ -116,7 +117,7 @@ export function PinPad({
       </div>
 
       <div className={cn('flex gap-2.5', shake && 'animate-pin-shake')} aria-label="PIN digits">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: PIN_LENGTH }).map((_, i) => (
           <span
             key={i}
             className={cn(
@@ -163,7 +164,7 @@ export function PinPad({
       </div>
 
       <div className="flex w-full flex-col gap-2">
-        <Button onClick={submit} disabled={activeValue.length !== 6} className="w-full">
+        <Button onClick={submit} disabled={activeValue.length !== PIN_LENGTH} className="w-full">
           {mode === 'verify' ? 'Reveal' : step === 'confirm' ? confirmLabel : 'Next'}
         </Button>
         {onCancel && (

@@ -1,3 +1,4 @@
+import { APP_NAME } from '@goprivate/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
@@ -74,7 +75,7 @@ async function main() {
   process.on('SIGINT', () => void shutdown('SIGINT'));
 
   await app.listen({ port: PORT, host: HOST });
-  app.log.info(`goPrivate relay listening on ${HOST}:${PORT}`);
+  app.log.info(`${APP_NAME} relay listening on ${HOST}:${PORT}`);
 }
 
 main().catch((err) => {

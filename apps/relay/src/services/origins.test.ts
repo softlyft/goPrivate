@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PUBLIC_WEB_ORIGINS } from '@goprivate/config';
 import { isAllowedOrigin } from './origins.js';
 
 describe('isAllowedOrigin', () => {
@@ -7,9 +8,9 @@ describe('isAllowedOrigin', () => {
   });
 
   it('allows production site origins', () => {
-    expect(isAllowedOrigin('https://goprivate.vercel.app', { nodeEnv: 'production' })).toBe(true);
-    expect(isAllowedOrigin('https://goprivate.app', { nodeEnv: 'production' })).toBe(true);
-    expect(isAllowedOrigin('https://www.goprivate.app', { nodeEnv: 'production' })).toBe(true);
+    for (const origin of PUBLIC_WEB_ORIGINS) {
+      expect(isAllowedOrigin(origin, { nodeEnv: 'production' })).toBe(true);
+    }
   });
 
   it('allows localhost on any port so local web can use a hosted relay', () => {

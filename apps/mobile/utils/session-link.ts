@@ -1,3 +1,4 @@
+import { DEEP_LINK_SCHEME } from '@goprivate/config';
 import { SESSION_ID_PATTERN } from '@goprivate/protocol';
 
 export function extractSessionId(input: string): string | null {
@@ -26,7 +27,7 @@ function sessionIdFromUrl(raw: string): string | null {
       return fromPath;
     }
 
-    if (url.protocol === 'goprivate:') {
+    if (url.protocol === `${DEEP_LINK_SCHEME}:`) {
       if (url.hostname === 'chat') {
         const id = parts[0];
         if (id && SESSION_ID_PATTERN.test(id)) return id;
@@ -39,7 +40,7 @@ function sessionIdFromUrl(raw: string): string | null {
     // not a URL
   }
 
-  const custom = raw.match(/^goprivate:\/\/(?:chat\/)?([a-f0-9]{16,64})/i);
+  const custom = raw.match(new RegExp(`^${DEEP_LINK_SCHEME}:\\/\\/(?:chat\\/)?([a-f0-9]{16,64})`, 'i'));
   return custom?.[1] && SESSION_ID_PATTERN.test(custom[1]) ? custom[1] : null;
 }
 

@@ -1,14 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { AppShell } from '@/components/AppShell';
+import { BrandMark } from '@/components/BrandMark';
 import { CreateSessionButton } from '@/components/CreateSessionButton';
 import { Header } from '@/components/Header';
 import { JoinSessionForm } from '@/components/JoinSessionForm';
 import { Glass } from '@/components/ui/glass';
 import { useChatSession } from '@/hooks/use-chat-session';
 import type { ChatRecord } from '@/store/session';
+import { pinLengthLabel, SUBTITLE, TAGLINE } from '@goprivate/config';
 
 export function LandingPage() {
   const { chats } = useChatSession();
@@ -36,29 +37,10 @@ export function LandingPage() {
           >
             <div className="space-y-4">
               <div className="flex justify-center">
-                <Image
-                  src="/logo.jpg"
-                  alt="goPrivate"
-                  width={112}
-                  height={112}
-                  className="h-24 w-auto rounded-2xl shadow-lg sm:h-28"
-                  priority
-                />
+                <BrandMark size="lg" />
               </div>
-              <div className="space-y-2">
-                <h2 className="text-[2.35rem] font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl">
-                  <span style={{ color: '#169e6b' }}>go</span>
-                  <span style={{ color: '#1a4d3d' }}>Private</span>
-                </h2>
-                <p className="text-[11px] font-medium text-muted">
-                  Private conversations. No trace.
-                </p>
-              </div>
-              <p className="text-sm leading-relaxed text-muted sm:text-[15px]">
-                Ephemeral 1:1 chat that vanishes when you leave.
-                <br />
-                Run several conversations at once. No accounts.
-              </p>
+              <p className="text-[11px] font-medium text-muted">{TAGLINE}</p>
+              <p className="text-sm leading-relaxed text-muted sm:text-[15px]">{SUBTITLE}</p>
             </div>
 
             <ConversationInboxLink chats={chats} />
@@ -77,7 +59,7 @@ export function LandingPage() {
             </div>
 
             <p className="text-[11px] leading-relaxed text-muted">
-              Set a 6-digit PIN to reveal older masked messages on your device.
+              Set a {pinLengthLabel()} PIN to reveal older masked messages on your device.
             </p>
 
             <Link

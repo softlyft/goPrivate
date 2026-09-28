@@ -1,3 +1,4 @@
+import { MAX_CONCURRENT_CHATS } from '@goprivate/config';
 import type {
   ConnectionStatus,
   DecryptedChatMessage,
@@ -6,8 +7,7 @@ import type {
 } from './types.js';
 import { createRelayClient } from './relay-client.js';
 
-/** Client-side cap on simultaneous 1:1 conversations (matches per-IP create limit). */
-export const MAX_CONCURRENT_CHATS = 5;
+export { MAX_CONCURRENT_CHATS };
 
 export interface ChatSnapshot {
   sessionId: string;

@@ -19,6 +19,7 @@
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@goprivate/config": "workspace:*",
     "@goprivate/crypto": "workspace:*",
     "@goprivate/protocol": "workspace:*"
   }

@@ -13,6 +13,7 @@
   "dependencies": {
     "@fastify/cors": "^11.0.1",
     "@fastify/websocket": "^11.0.2",
+    "@goprivate/config": "workspace:*",
     "@goprivate/protocol": "workspace:*",
     "fastify": "^5.2.2",
     "ws": "^8.18.1"

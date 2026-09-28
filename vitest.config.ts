@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.join(root, 'apps/web/src'),
+      '@goprivate/config': path.join(root, 'packages/config/src/index.ts'),
       '@goprivate/protocol': path.join(root, 'packages/protocol/src/index.ts'),
       '@goprivate/crypto/native': path.join(root, 'packages/crypto/src/native-crypto.ts'),
       '@goprivate/crypto': path.join(root, 'packages/crypto/src/index.ts'),

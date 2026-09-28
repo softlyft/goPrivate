@@ -1,3 +1,4 @@
+import { customSchemeUrl } from '@goprivate/config';
 import * as Linking from 'expo-linking';
 import { webChatUrl } from './public-url';
 import { extractSessionId } from './session-link';
@@ -25,7 +26,7 @@ export function createDeepLink(sessionId: string): {
 } {
   return {
     https: webChatUrl(sessionId),
-    custom: `goprivate://chat/${sessionId}`,
+    custom: customSchemeUrl(sessionId),
   };
 }
 

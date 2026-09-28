@@ -196,7 +196,7 @@ describe('ChatHub', () => {
       await hub.createSession(`${i}`.padStart(32, 'a'));
     }
     await expect(hub.createSession('ffffffffffffffffffffffffffffffff')).rejects.toThrow(
-      /at most 5 conversations/,
+      new RegExp(`at most ${MAX_CONCURRENT_CHATS} conversations`),
     );
     expect(hub.size).toBe(MAX_CONCURRENT_CHATS);
   });

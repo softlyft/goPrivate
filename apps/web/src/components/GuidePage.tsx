@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { APP_NAME, pinLengthLabel, sessionTtlLabel } from '@goprivate/config';
 import { AppShell } from '@/components/AppShell';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -35,7 +36,7 @@ export function GuidePage() {
           <Glass contentClassName="space-y-2 px-5 py-6">
             <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted">Guide</p>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              How goPrivate works
+              How {APP_NAME} works
             </h1>
             <p className="text-sm leading-relaxed text-muted">
               A private 1:1 chat that disappears when you’re done. No sign-up. No profile. No saved
@@ -65,8 +66,8 @@ export function GuidePage() {
                   <strong className="font-medium text-foreground">
                     Start Private Conversation
                   </strong>
-                  , choose a 6-digit PIN, and you’ll get a link. Send that link to the one person
-                  you want to talk to.
+                  , choose a {pinLengthLabel()} PIN, and you’ll get a link. Send that link to the
+                  one person you want to talk to.
                 </p>
               </div>
               <div>
@@ -104,19 +105,19 @@ export function GuidePage() {
                 </p>
                 <p>
                   Your PIN lives only on your phone or computer. The other person has their own PIN.
-                  Nobody else — and not goPrivate — knows it.
+                  Nobody else — and not {APP_NAME} — knows it.
                 </p>
               </div>
               <div>
                 <h3 className="mb-1 text-sm font-medium text-foreground">Watch the clock</h3>
                 <p>
                   Every chat lasts{' '}
-                  <strong className="font-medium text-foreground">30 minutes</strong>. You’ll see a
-                  timer at the top. When it hits zero, the chat ends.
+                  <strong className="font-medium text-foreground">{sessionTtlLabel()}</strong>.
+                  You’ll see a timer at the top. When it hits zero, the chat ends.
                 </p>
                 <p>
                   You can also leave anytime with{' '}
-                  <strong className="font-medium text-foreground">Leave</strong>, or tap goPrivate
+                  <strong className="font-medium text-foreground">Leave</strong>, or tap {APP_NAME}
                   to go home.
                 </p>
               </div>
@@ -166,7 +167,7 @@ export function GuidePage() {
           </Section>
 
           <Section title="What it doesn’t do">
-            <p>goPrivate keeps things simple on purpose. It doesn’t support:</p>
+            <p>{APP_NAME} keeps things simple on purpose. It doesn’t support:</p>
             <ul className="list-disc space-y-1.5 pl-5">
               <li>Photos, files, voice, or video</li>
               <li>Group chats</li>
@@ -200,7 +201,7 @@ export function GuidePage() {
             <p>
               The public home page may load{' '}
               <strong className="font-medium text-foreground">Google Analytics</strong> so we can
-              see roughly how many people visit goPrivate. That helps us know whether the free
+              see roughly how many people visit {APP_NAME}. That helps us know whether the free
               public relay is worth keeping online — and whether community support is enough to fund
               it.
             </p>

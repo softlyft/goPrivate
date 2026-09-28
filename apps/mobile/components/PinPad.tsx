@@ -1,3 +1,4 @@
+import { PIN_LENGTH } from '@goprivate/config';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useState, useEffect } from 'react';
 
@@ -39,7 +40,7 @@ export function PinPad({
 
   function pushDigit(digit: string) {
     setError(null);
-    activeSetter((prev) => (prev.length < 6 ? prev + digit : prev));
+    activeSetter((prev) => (prev.length < PIN_LENGTH ? prev + digit : prev));
   }
 
   function backspace() {
@@ -59,7 +60,7 @@ export function PinPad({
   }
 
   function submit() {
-    if (activeValue.length !== 6) return;
+    if (activeValue.length !== PIN_LENGTH) return;
 
     if (mode === 'verify') {
       onComplete(activeValue);
@@ -86,7 +87,7 @@ export function PinPad({
     mode === 'verify'
       ? 'Enter your reveal PIN'
       : step === 'enter'
-        ? 'Choose a 6-digit PIN'
+        ? `Choose a ${PIN_LENGTH}-digit PIN`
         : 'Confirm your PIN';
 
   return (
@@ -98,7 +99,7 @@ export function PinPad({
       </View>
 
       <View style={[styles.dots, shake && styles.shake]}>
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: PIN_LENGTH }).map((_, i) => (
           <View
             key={i}
             style={[styles.dot, i < activeValue.length ? styles.dotFilled : styles.dotEmpty]}
@@ -134,9 +135,12 @@ export function PinPad({
 
       <View style={styles.actions}>
         <Pressable
-          style={[styles.submitButton, activeValue.length !== 6 && styles.submitButtonDisabled]}
+          style={[
+            styles.submitButton,
+            activeValue.length !== PIN_LENGTH && styles.submitButtonDisabled,
+          ]}
           onPress={submit}
-          disabled={activeValue.length !== 6}
+          disabled={activeValue.length !== PIN_LENGTH}
         >
           <Text style={styles.submitButtonText}>
             {mode === 'verify' ? 'Reveal' : step === 'confirm' ? confirmLabel : 'Next'}

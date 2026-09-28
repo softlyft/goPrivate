@@ -1,6 +1,7 @@
-/** Production web client. Share links must match the deployed Next.js host. */
-export const PUBLIC_WEB_ORIGIN = 'https://goprivate.vercel.app';
+import { PUBLIC_WEB_ORIGIN, publicChatUrl } from '@goprivate/config';
+
+export { PUBLIC_WEB_ORIGIN };
 
 export function webChatUrl(sessionId: string): string {
-  return `${PUBLIC_WEB_ORIGIN}/chat/${sessionId}`;
+  return publicChatUrl(sessionId);
 }

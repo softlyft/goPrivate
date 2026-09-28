@@ -1,12 +1,11 @@
-const DEFAULT_PROD_RELAY = 'wss://goprivate-relay.onrender.com/ws';
-const DEFAULT_DEV_RELAY = 'ws://10.0.2.2:3001/ws';
+import { DEFAULT_ANDROID_EMULATOR_RELAY_URL, DEFAULT_PROD_RELAY_URL } from '@goprivate/config';
 
 export function getRelayUrl(): string {
   const fromEnv = process.env.EXPO_PUBLIC_RELAY_URL?.trim();
   if (fromEnv && isUsableRelayUrl(fromEnv)) {
     return fromEnv;
   }
-  return __DEV__ ? DEFAULT_DEV_RELAY : DEFAULT_PROD_RELAY;
+  return __DEV__ ? DEFAULT_ANDROID_EMULATOR_RELAY_URL : DEFAULT_PROD_RELAY_URL;
 }
 
 function isUsableRelayUrl(url: string): boolean {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEEP_LINK_SCHEME, PUBLIC_WEB_ORIGINS, customSchemeUrl } from '@goprivate/config';
 import { chatHref, extractSessionId } from './session-link.js';
 
 const id = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
@@ -9,16 +10,15 @@ describe('extractSessionId', () => {
   });
 
   it('accepts production, www, vercel, and localhost chat urls', () => {
-    expect(extractSessionId(`https://goprivate.vercel.app/chat/${id}`)).toBe(id);
-    expect(extractSessionId(`https://goprivate.app/chat/${id}`)).toBe(id);
-    expect(extractSessionId(`https://www.goprivate.app/chat/${id}`)).toBe(id);
-    expect(extractSessionId(`https://go-private.vercel.app/chat/${id}`)).toBe(id);
+    for (const origin of PUBLIC_WEB_ORIGINS) {
+      expect(extractSessionId(`${origin}/chat/${id}`)).toBe(id);
+    }
     expect(extractSessionId(`http://localhost:3002/chat/${id}`)).toBe(id);
   });
 
   it('accepts custom scheme links', () => {
-    expect(extractSessionId(`goprivate://chat/${id}`)).toBe(id);
-    expect(extractSessionId(`goprivate://${id}`)).toBe(id);
+    expect(extractSessionId(customSchemeUrl(id))).toBe(id);
+    expect(extractSessionId(`${DEEP_LINK_SCHEME}://${id}`)).toBe(id);
   });
 
   it('rejects short or non-hex values', () => {

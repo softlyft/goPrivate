@@ -14,6 +14,7 @@ import { PinPad } from '../components/PinPad';
 import { messageVault } from '../services/vault';
 import { useSessionStore } from '../store/session';
 import { Colors } from '../constants/Colors';
+import { DEEP_LINK_SCHEME, PUBLIC_WEB_ORIGIN, pinLengthLabel } from '@goprivate/config';
 import { chatHref, extractSessionId } from '../utils/session-link';
 
 export default function JoinScreen() {
@@ -112,8 +113,8 @@ export default function JoinScreen() {
         <View style={styles.info}>
           <Text style={styles.infoTitle}>Accepted formats:</Text>
           <Text style={styles.infoText}>
-            • Full URL: https://goprivate.vercel.app/chat/abc123{'\n'}• Custom scheme:
-            goprivate://chat/abc123{'\n'}• Session ID only: abc123
+            • Full URL: {PUBLIC_WEB_ORIGIN}/chat/abc123{'\n'}• Custom scheme: {DEEP_LINK_SCHEME}
+            ://chat/abc123{'\n'}• Session ID only: abc123
           </Text>
         </View>
       </View>
@@ -131,7 +132,7 @@ export default function JoinScreen() {
           <View style={[styles.modalContent, isTablet && styles.modalContentTablet]}>
             <PinPad
               title="Set your reveal PIN"
-              subtitle="Choose a 6-digit PIN to protect your messages"
+              subtitle={`Choose a ${pinLengthLabel()} PIN to protect your messages`}
               mode="setup"
               externalError={pinError}
               onComplete={(pin) => void handlePinSetup(pin)}

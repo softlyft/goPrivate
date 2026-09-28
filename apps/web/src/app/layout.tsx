@@ -1,5 +1,7 @@
+import type { CSSProperties } from 'react';
 import type { Metadata, Viewport } from 'next';
 import { Geist_Mono, Sora } from 'next/font/google';
+import { APP_NAME, DESCRIPTION, COLOR, brandCssVars } from '@goprivate/config';
 import './globals.css';
 
 const sora = Sora({
@@ -14,12 +16,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'goPrivate',
-  description: 'Ephemeral end-to-end encrypted messaging. No accounts. No history.',
+  title: APP_NAME,
+  description: DESCRIPTION,
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'goPrivate',
+    title: APP_NAME,
   },
   formatDetection: {
     telephone: false,
@@ -32,7 +34,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#f4f4f5',
+  themeColor: COLOR.background,
 };
 
 export default function RootLayout({
@@ -41,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" style={brandCssVars() as CSSProperties}>
       <body className={`${sora.variable} ${geistMono.variable} antialiased`}>{children}</body>
     </html>
   );

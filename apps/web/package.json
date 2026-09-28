@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@goprivate/config": "workspace:*",
     "@goprivate/crypto": "workspace:*",
     "@goprivate/protocol": "workspace:*",
     "@goprivate/sdk": "workspace:*",

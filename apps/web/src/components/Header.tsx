@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Glass } from '@/components/ui/glass';
+import { BrandMark } from '@/components/BrandMark';
 import { cn } from '@/utils/cn';
 
 export function Header({
@@ -32,31 +32,11 @@ export function Header({
             onClick={onHomeClick}
             className="flex items-center gap-2 transition-opacity hover:opacity-70"
           >
-            <Image
-              src="/logo.jpg"
-              alt="goPrivate"
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-lg"
-            />
-            <span className="text-sm font-semibold tracking-tight">
-              <span style={{ color: '#169e6b' }}>go</span>
-              <span style={{ color: '#1a4d3d' }}>Private</span>
-            </span>
+            <BrandMark />
           </button>
         ) : (
           <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-70">
-            <Image
-              src="/logo.jpg"
-              alt="goPrivate"
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-lg"
-            />
-            <span className="text-sm font-semibold tracking-tight">
-              <span style={{ color: '#169e6b' }}>go</span>
-              <span style={{ color: '#1a4d3d' }}>Private</span>
-            </span>
+            <BrandMark />
           </Link>
         )}
       </div>

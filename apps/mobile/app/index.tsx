@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Modal, Image, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { pinLengthLabel, sessionTtlLabel, TAGLINE } from '@goprivate/config';
+import { BrandMark } from '../components/BrandMark';
 import { PinPad } from '../components/PinPad';
 import { messageVault } from '../services/vault';
 import { startHostChat } from '../services/chat-hub';
@@ -68,20 +70,11 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Image
-            source={require('../assets/images/logo.jpg')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>
-              <Text style={styles.titleGreen}>go</Text>
-              <Text style={styles.titleDark}>Private</Text>
-            </Text>
-            <Text style={styles.tagline}>Private conversations. No trace.</Text>
-          </View>
+          <BrandMark />
+          <Text style={styles.tagline}>{TAGLINE}</Text>
           <Text style={styles.subtitle}>
-            Ephemeral 1:1 chats that vanish in 30 minutes. Run several conversations at once.
+            Ephemeral 1:1 chats that vanish in {sessionTtlLabel()}. Run several conversations at
+            once.
           </Text>
         </View>
 
@@ -119,7 +112,7 @@ export default function HomeScreen() {
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             • No account required{'\n'}• Messages encrypted on your device{'\n'}• Sessions expire
-            automatically{'\n'}• Secure 6-digit PIN protection
+            automatically{'\n'}• Secure {pinLengthLabel()} PIN protection
           </Text>
         </View>
       </View>
@@ -139,7 +132,7 @@ export default function HomeScreen() {
           <View style={[styles.modalContent, isTablet && styles.modalContentTablet]}>
             <PinPad
               title="Set your reveal PIN"
-              subtitle="Choose a 6-digit PIN to protect your messages"
+              subtitle={`Choose a ${pinLengthLabel()} PIN to protect your messages`}
               mode="setup"
               externalError={pinError}
               onComplete={(pin) => void handlePinSetup(pin)}
@@ -171,32 +164,6 @@ const styles = StyleSheet.create({
   header: {
     marginTop: 24,
     alignItems: 'center',
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    borderRadius: 24,
-    marginBottom: 16,
-    shadowColor: Colors.brandDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  titleContainer: {
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  titleGreen: {
-    color: Colors.brandGreen,
-  },
-  titleDark: {
-    color: Colors.brandDark,
   },
   tagline: {
     fontSize: 13,

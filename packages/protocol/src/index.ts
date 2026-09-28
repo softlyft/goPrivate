@@ -1,8 +1,12 @@
-/** Session lifetime from creation (30 minutes) */
-export const SESSION_TTL_MS = 30 * 60 * 1000;
-
-/** Keep empty sessions briefly so mobile app-switch can reconnect. */
-export const RECONNECT_GRACE_MS = 60_000;
+/** Session lifetime from creation */
+export {
+  SESSION_TTL_MS,
+  RECONNECT_GRACE_MS,
+  MAX_RELAY_SESSIONS,
+  MAX_RELAY_CONNECTIONS,
+  RATE_LIMIT_MAX_ACTIONS,
+  RATE_LIMIT_WINDOW_MS,
+} from '@goprivate/config';
 
 /** Max UTF-16 length of chat plaintext before encryption. */
 export const MAX_CHAT_TEXT_CHARS = 4_000;
@@ -12,16 +16,6 @@ export const MAX_ENCRYPTED_PAYLOAD_CHARS = 24_000;
 
 /** Max WebSocket text frame size (bytes) accepted by the relay. */
 export const MAX_WS_MESSAGE_BYTES = 64_000;
-
-/** Max concurrent sessions in the in-memory relay store. */
-export const MAX_RELAY_SESSIONS = 500;
-
-/** Max concurrent WebSocket connections on the relay. */
-export const MAX_RELAY_CONNECTIONS = 1_000;
-
-/** Max CREATE/JOIN/SEND actions per IP per sliding window. */
-export const RATE_LIMIT_MAX_ACTIONS = 60;
-export const RATE_LIMIT_WINDOW_MS = 60_000;
 
 /** Session IDs: hex from clients (32 chars) or uuid-like. */
 export const SESSION_ID_PATTERN = /^[a-f0-9]{16,64}$/i;

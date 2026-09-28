@@ -1,3 +1,4 @@
+import { pinLengthLabel, sessionTtlLabel } from '@goprivate/config';
 import { useEffect, useState } from 'react';
 import {
   View,
@@ -210,7 +211,7 @@ export default function ChatScreen() {
         <View style={[styles.pinCard, isTablet && styles.pinCardTablet]}>
           <PinPad
             title="Set your reveal PIN"
-            subtitle="Choose a 6-digit PIN to protect your messages"
+            subtitle={`Choose a ${pinLengthLabel()} PIN to protect your messages`}
             mode="setup"
             externalError={pinError}
             onComplete={(pin) => void handlePinSetup(pin)}
@@ -281,7 +282,7 @@ export default function ChatScreen() {
             </View>
             <Text style={styles.shareHint}>
               Share this link with one person. Start more 1:1 chats from Open conversations.
-              Sessions end after 30 minutes or when everyone leaves.
+              Sessions end after {sessionTtlLabel()} or when everyone leaves.
             </Text>
           </View>
         ) : null}

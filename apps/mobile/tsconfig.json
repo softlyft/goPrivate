@@ -5,6 +5,7 @@
     "skipLibCheck": true,
     "paths": {
       "@/*": ["./src/*"],
+      "@goprivate/config": ["../../packages/config/src/index.ts"],
       "@goprivate/protocol": ["../../packages/protocol/src/index.ts"],
       "@goprivate/crypto/native": ["../../packages/crypto/src/native-crypto.ts"],
       "@goprivate/crypto": ["../../packages/crypto/src/index.ts"],
@@ -12,5 +13,5 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "app.config.ts"]
 }
