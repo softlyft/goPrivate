@@ -96,8 +96,19 @@ function wireHub(hub: ChatHub): void {
 function bindAppState(): void {
   if (appStateBound) return;
   appStateBound = true;
+  let lastBackgroundAt = 0;
   AppState.addEventListener('change', (next) => {
-    if (next === 'active' && messageVault.isUnlocked) {
+    if (next === 'background') {
+      lastBackgroundAt = Date.now();
+      return;
+    }
+    if (
+      next === 'active' &&
+      messageVault.isUnlocked &&
+      lastBackgroundAt > 0 &&
+      Date.now() - lastBackgroundAt > 500
+    ) {
+      lastBackgroundAt = 0;
       void getChatHub().reconnectAll();
     }
   });
@@ -131,11 +142,13 @@ export async function startGuestChat(sessionId: string): Promise<void> {
 
 export async function ensureChat(sessionId: string, isHost: boolean): Promise<void> {
   const hub = getChatHub();
+  const hosted = isHost || Boolean(useSessionStore.getState().chats[sessionId]?.isHost);
   if (hub.has(sessionId)) {
     useSessionStore.getState().setActiveSessionId(sessionId);
+    await hub.reconnect(sessionId);
     return;
   }
-  if (isHost) {
+  if (hosted) {
     await startHostChat(sessionId);
     return;
   }

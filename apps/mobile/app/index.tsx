@@ -22,7 +22,7 @@ export default function HomeScreen() {
 
   async function openHostChat() {
     const sessionId = await startHostChat();
-    router.push(chatHref(sessionId));
+    router.push(chatHref(sessionId, { host: true }));
   }
 
   async function handleStartConversation() {

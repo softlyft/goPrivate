@@ -27,7 +27,10 @@ export default function ChatsScreen() {
         <ConversationList
           chats={chats}
           emptyText="No open conversations yet. Start one, or join a link from home."
-          onOpen={(id) => router.push(chatHref(id))}
+          onOpen={(id) => {
+            const chat = chats.find((item) => item.sessionId === id);
+            router.push(chatHref(id, { host: chat?.isHost }));
+          }}
         />
       </View>
 

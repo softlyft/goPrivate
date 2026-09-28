@@ -169,7 +169,12 @@ export function useChatSession() {
       throw new Error('Set your reveal PIN before joining a session');
     }
     const hub = ensureHub();
-    if (!hub.has(sessionId)) {
+    const record = store.chats[sessionId];
+    if (hub.has(sessionId)) {
+      await hub.reconnect(sessionId);
+    } else if (record?.isHost) {
+      await hub.createSession(sessionId);
+    } else {
       await hub.joinSession(sessionId);
     }
     store.upsertChat(sessionId, {

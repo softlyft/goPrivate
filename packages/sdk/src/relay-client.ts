@@ -183,7 +183,7 @@ export class RelayClient implements IRelayClient {
     if (this._status === 'expired') {
       throw new Error('Session expired');
     }
-    if (this.connected && this.isLiveStatus(this._status)) {
+    if (this.isLiveStatus(this._status)) {
       return;
     }
     if (this.reconnectInFlight) {
