@@ -9,6 +9,7 @@ on:
     branches: [main, master]
     paths:
       - 'apps/web/**'
+      - 'packages/config/**'
       - 'packages/protocol/**'
       - 'packages/crypto/**'
       - 'packages/sdk/**'
