@@ -7,6 +7,7 @@
 - Sessions live in memory and die when empty (with a short reconnect grace)
 - Crypto uses Web Crypto in the browser and `react-native-quick-crypto` on native (ECDH P-256 → AES-GCM)
 - Sessions last 30 minutes from creation (`SESSION_TTL_MS`)
+- Optional lasting `/{handle}` links are in-memory presence only (owner must stay connected)
 
 ## Threat model
 
@@ -15,6 +16,7 @@
 | Passive relay / network observer of ciphertext    | Yes        | Chat payloads are AES-GCM after ECDH                                                                                                         |
 | Compromised / malicious relay during key exchange | **No**     | Public keys are exchanged as plaintext JSON inside `encryptedPayload` before a shared secret exists (TOFU). A malicious relay can MITM ECDH. |
 | Other users / session squatting                   | Partial    | Two-party cap + session id entropy; share the link only with your partner                                                                    |
+| Handle presence oracle                            | No         | Visiting `/{handle}` reveals whether that name is currently claimed                                                                          |
 | Casual device inspection of app storage           | Yes        | Messages at rest are vault-encrypted; PIN wraps the vault key                                                                                |
 | Offline brute-force of a 6-digit PIN              | Moderate   | 1 million PIN combinations; mitigated by high PBKDF2 iterations and in-memory session lifetime                                               |
 | Shoulder surfing the PIN pad                      | No         | UX tradeoff                                                                                                                                  |

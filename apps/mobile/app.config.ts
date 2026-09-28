@@ -39,6 +39,11 @@ const config: ExpoConfig = {
             host,
             pathPrefix: '/chat',
           })),
+          ...httpsHosts.map((host) => ({
+            scheme: 'https' as const,
+            host,
+            pathPrefix: '/',
+          })),
           {
             scheme: DEEP_LINK_SCHEME,
             host: '*',

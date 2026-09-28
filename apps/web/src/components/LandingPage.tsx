@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { AppShell } from '@/components/AppShell';
 import { BrandMark } from '@/components/BrandMark';
+import { ClaimHandleControl } from '@/components/ClaimHandleControl';
 import { CreateSessionButton } from '@/components/CreateSessionButton';
 import { Header } from '@/components/Header';
 import { JoinSessionForm } from '@/components/JoinSessionForm';
@@ -46,6 +47,8 @@ export function LandingPage() {
             <ConversationInboxLink chats={chats} />
 
             <CreateSessionButton />
+
+            <ClaimHandleControl />
 
             <div className="flex w-full flex-col items-center gap-3">
               <div className="flex w-full items-center gap-3">

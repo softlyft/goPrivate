@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getRelayUrl, getShareUrl } from './env.js';
+import { getHandleShareUrl, getRelayUrl, getShareUrl } from './env.js';
 
 describe('env utils', () => {
   afterEach(() => {
@@ -17,7 +17,9 @@ describe('env utils', () => {
 
   it('builds share urls for ssr and browser', () => {
     expect(getShareUrl('abc')).toBe('/chat/abc');
+    expect(getHandleShareUrl('alice')).toBe('/alice');
     vi.stubGlobal('window', { location: { origin: 'https://app.test' } });
     expect(getShareUrl('abc')).toBe('https://app.test/chat/abc');
+    expect(getHandleShareUrl('alice')).toBe('https://app.test/alice');
   });
 });

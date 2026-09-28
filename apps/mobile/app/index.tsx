@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Modal, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { BrandMark } from '../components/BrandMark';
 import { PinPad } from '../components/PinPad';
 import { messageVault } from '../services/vault';
 import { startHostChat } from '../services/chat-hub';
+import { ClaimHandleCard } from '../components/ClaimHandleCard';
 import { listChats, useSessionStore } from '../store/session';
 import { Colors } from '../constants/Colors';
 import { chatHref } from '../utils/session-link';
@@ -18,6 +19,7 @@ export default function HomeScreen() {
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [pinError, setPinError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const afterPinRef = useRef<(() => Promise<void>) | null>(null);
   const setVaultMeta = useSessionStore((s) => s.setVaultMeta);
   const setVaultReady = useSessionStore((s) => s.setVaultReady);
   const chats = useSessionStore((s) => listChats(s.chats));
@@ -53,7 +55,13 @@ export default function HomeScreen() {
       setVaultMeta(meta);
       setVaultReady(true);
       setShowPinSetup(false);
-      await openHostChat();
+      const after = afterPinRef.current;
+      afterPinRef.current = null;
+      if (after) {
+        await after();
+      } else {
+        await openHostChat();
+      }
     } catch (err) {
       setPinError(err instanceof Error ? err.message : 'Failed to set up PIN');
       await messageVault.clearVault();
@@ -107,6 +115,12 @@ export default function HomeScreen() {
           >
             <Text style={styles.secondaryButtonText}>Join with Link</Text>
           </Pressable>
+          <ClaimHandleCard
+            onNeedPin={(afterUnlock) => {
+              afterPinRef.current = afterUnlock;
+              setShowPinSetup(true);
+            }}
+          />
         </View>
 
         <View style={styles.footer}>
@@ -138,6 +152,7 @@ export default function HomeScreen() {
               onComplete={(pin) => void handlePinSetup(pin)}
               onCancel={() => {
                 if (!isCreating) {
+                  afterPinRef.current = null;
                   setShowPinSetup(false);
                   setPinError(null);
                 }

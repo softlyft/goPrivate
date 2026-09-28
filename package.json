@@ -12,7 +12,7 @@
     "build:packages": "pnpm --filter @goprivate/config build && pnpm --filter @goprivate/protocol build && pnpm --filter @goprivate/crypto build && pnpm --filter @goprivate/sdk build",
     "smoke:relay": "node scripts/smoke-relay.mjs",
     "smoke:crypto": "node scripts/smoke-crypto.mjs",
-    "test": "vitest run",
+    "handle:issue": "node tools/issue-handle.mjs",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "policy:git": "node scripts/apply-git-policy.mjs",

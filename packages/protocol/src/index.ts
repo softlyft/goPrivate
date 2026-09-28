@@ -21,6 +21,8 @@ export const MAX_WS_MESSAGE_BYTES = 64_000;
 export const SESSION_ID_PATTERN = /^[a-f0-9]{16,64}$/i;
 export const MAX_SESSION_ID_LENGTH = 64;
 
+export { HANDLE_PATTERN, isHandleSlug, isAllowedHandle, normalizeHandle } from '@goprivate/config';
+
 /** Max length of encrypted message id (uuid). */
 export const MAX_MESSAGE_ID_LENGTH = 80;
 
@@ -31,6 +33,9 @@ export const ClientEvent = {
   SEND_MESSAGE: 'SEND_MESSAGE',
   PING: 'PING',
   LEAVE_SESSION: 'LEAVE_SESSION',
+  CLAIM_HANDLE: 'CLAIM_HANDLE',
+  UNCLAIM_HANDLE: 'UNCLAIM_HANDLE',
+  RING_HANDLE: 'RING_HANDLE',
 } as const;
 
 export type ClientEventType = (typeof ClientEvent)[keyof typeof ClientEvent];
@@ -44,6 +49,9 @@ export const RelayEvent = {
   SESSION_EXPIRED: 'SESSION_EXPIRED',
   ERROR: 'ERROR',
   PONG: 'PONG',
+  HANDLE_CLAIMED: 'HANDLE_CLAIMED',
+  INCOMING_RING: 'INCOMING_RING',
+  RING_READY: 'RING_READY',
 } as const;
 
 export type RelayEventType = (typeof RelayEvent)[keyof typeof RelayEvent];
@@ -71,12 +79,36 @@ export interface LeaveSessionPayload {
   sessionId: string;
 }
 
+export interface ClaimHandleProof {
+  publicKey: string;
+  signedAt: number;
+  signature: string;
+}
+
+export interface ClaimHandlePayload {
+  handle: string;
+  secret?: string;
+  proof?: ClaimHandleProof;
+}
+
+/** Canonical bytes the lease key signs when claiming a handle. */
+export function handleClaimMessage(handle: string, signedAt: number): string {
+  return `goprivate:claim:${handle}:${signedAt}`;
+}
+
+export interface RingHandlePayload {
+  handle: string;
+}
+
 export type ClientToRelayMessage =
   | { type: typeof ClientEvent.CREATE_SESSION; payload?: CreateSessionPayload }
   | { type: typeof ClientEvent.JOIN_SESSION; payload: JoinSessionPayload }
   | { type: typeof ClientEvent.SEND_MESSAGE; payload: SendMessagePayload }
   | { type: typeof ClientEvent.PING; payload?: Record<string, never> }
-  | { type: typeof ClientEvent.LEAVE_SESSION; payload: LeaveSessionPayload };
+  | { type: typeof ClientEvent.LEAVE_SESSION; payload: LeaveSessionPayload }
+  | { type: typeof ClientEvent.CLAIM_HANDLE; payload: ClaimHandlePayload }
+  | { type: typeof ClientEvent.UNCLAIM_HANDLE; payload?: Record<string, never> }
+  | { type: typeof ClientEvent.RING_HANDLE; payload: RingHandlePayload };
 
 export interface SessionCreatedPayload {
   sessionId: string;
@@ -106,6 +138,21 @@ export interface ErrorPayload {
   message: string;
 }
 
+export interface HandleClaimedPayload {
+  handle: string;
+}
+
+export interface IncomingRingPayload {
+  sessionId: string;
+  handle: string;
+  expiresAt: number;
+}
+
+export interface RingReadyPayload {
+  sessionId: string;
+  expiresAt: number;
+}
+
 export type RelayToClientMessage =
   | { type: typeof RelayEvent.SESSION_CREATED; payload: SessionCreatedPayload }
   | { type: typeof RelayEvent.PARTNER_JOINED; payload: PartnerJoinedPayload }
@@ -113,7 +160,10 @@ export type RelayToClientMessage =
   | { type: typeof RelayEvent.PARTNER_LEFT; payload: PartnerLeftPayload }
   | { type: typeof RelayEvent.SESSION_EXPIRED; payload: SessionExpiredPayload }
   | { type: typeof RelayEvent.ERROR; payload: ErrorPayload }
-  | { type: typeof RelayEvent.PONG; payload?: Record<string, never> };
+  | { type: typeof RelayEvent.PONG; payload?: Record<string, never> }
+  | { type: typeof RelayEvent.HANDLE_CLAIMED; payload: HandleClaimedPayload }
+  | { type: typeof RelayEvent.INCOMING_RING; payload: IncomingRingPayload }
+  | { type: typeof RelayEvent.RING_READY; payload: RingReadyPayload };
 
 /** Application-level payload kinds carried inside encryptedPayload after encryption */
 export const AppMessageKind = {

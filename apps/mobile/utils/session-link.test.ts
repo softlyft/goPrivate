@@ -24,6 +24,7 @@ describe('extractSessionId', () => {
   it('rejects short or non-hex values', () => {
     expect(extractSessionId('abc123')).toBeNull();
     expect(extractSessionId('https://goprivate.app/guide')).toBeNull();
+    expect(extractSessionId('https://goprivate.app/alice')).toBeNull();
   });
 
   it('marks host chats so the screen creates instead of joining', () => {

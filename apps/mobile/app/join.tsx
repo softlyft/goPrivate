@@ -14,7 +14,12 @@ import { PinPad } from '../components/PinPad';
 import { messageVault } from '../services/vault';
 import { useSessionStore } from '../store/session';
 import { Colors } from '../constants/Colors';
-import { DEEP_LINK_SCHEME, PUBLIC_WEB_ORIGIN, pinLengthLabel } from '@goprivate/config';
+import {
+  DEEP_LINK_SCHEME,
+  PUBLIC_WEB_ORIGIN,
+  extractHandle,
+  pinLengthLabel,
+} from '@goprivate/config';
 import { chatHref, extractSessionId } from '../utils/session-link';
 
 export default function JoinScreen() {
@@ -33,6 +38,12 @@ export default function JoinScreen() {
   }
 
   function handleJoin() {
+    const handle = extractHandle(sessionId);
+    if (handle) {
+      setJoinError(null);
+      router.push(`/${handle}`);
+      return;
+    }
     const id = extractSessionId(sessionId);
     if (!id) {
       setJoinError('Enter a valid session link or ID');
@@ -113,7 +124,8 @@ export default function JoinScreen() {
         <View style={styles.info}>
           <Text style={styles.infoTitle}>Accepted formats:</Text>
           <Text style={styles.infoText}>
-            • Full URL: {PUBLIC_WEB_ORIGIN}/chat/abc123{'\n'}• Custom scheme: {DEEP_LINK_SCHEME}
+            • Full URL: {PUBLIC_WEB_ORIGIN}/chat/abc123{'\n'}• Lasting name: {PUBLIC_WEB_ORIGIN}
+            /alice{'\n'}• Custom scheme: {DEEP_LINK_SCHEME}
             ://chat/abc123{'\n'}• Session ID only: abc123
           </Text>
         </View>

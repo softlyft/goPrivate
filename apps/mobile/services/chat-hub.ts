@@ -3,7 +3,8 @@ import { ChatHub, type ChatSnapshot } from '@goprivate/sdk';
 import { messageVault } from './vault';
 import { useSessionStore } from '../store/session';
 import { createMobileRelayClient } from '../utils/relay';
-import { getRelayUrl } from '../utils/env';
+import { getHandleClaimSecret, getRelayUrl } from '../utils/env';
+import { createHandleProof } from './handle-lease';
 import { createDeepLink } from '../utils/deeplink';
 
 let hubSingleton: ChatHub | null = null;
@@ -14,6 +15,8 @@ export function getChatHub(): ChatHub {
   if (!hubSingleton) {
     hubSingleton = new ChatHub({
       getRelayUrl,
+      getClaimSecret: getHandleClaimSecret,
+      getHandleProof: (handle) => createHandleProof(handle),
       createClient: () => createMobileRelayClient(),
     });
   }
@@ -72,6 +75,7 @@ async function ingestPlaintextMessage(
 function maybeLockVault(): void {
   if (Object.keys(useSessionStore.getState().chats).length > 0) return;
   if (getChatHub().size > 0) return;
+  if (getChatHub().handle) return;
   void messageVault.lock();
   useSessionStore.getState().clearVault();
 }
@@ -153,4 +157,29 @@ export async function ensureChat(sessionId: string, isHost: boolean): Promise<vo
     return;
   }
   await startGuestChat(sessionId);
+}
+
+export async function claimHandle(handle: string): Promise<string> {
+  if (!messageVault.isUnlocked) {
+    throw new Error('Set your reveal PIN before going available');
+  }
+  return getChatHub().claimHandle(handle);
+}
+
+export async function unclaimHandle(): Promise<void> {
+  await getChatHub().unclaimHandle();
+  maybeLockVault();
+}
+
+export async function startHandleChat(handle: string): Promise<string> {
+  const hub = getChatHub();
+  const sessionId = await hub.ringHandle(handle);
+  useSessionStore.getState().upsertChat(sessionId, {
+    isHost: true,
+    shareUrl: shareUrlFor(sessionId),
+    status: hub.get(sessionId)?.status ?? 'awaiting_partner',
+    expiresAt: hub.get(sessionId)?.expiresAt ?? null,
+  });
+  useSessionStore.getState().setActiveSessionId(sessionId);
+  return sessionId;
 }

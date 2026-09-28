@@ -1,8 +1,10 @@
+import { generateKeyPairSync, sign } from 'node:crypto';
 import {
   ClientEvent,
   MAX_RELAY_SESSIONS,
   RECONNECT_GRACE_MS,
   RelayEvent,
+  handleClaimMessage,
 } from '@goprivate/protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -11,6 +13,7 @@ import {
   handleDisconnect,
   sweepExpiredSessions,
 } from './messages.js';
+import { InMemoryHandleStore } from '../session/handles.js';
 import { InMemorySessionStore } from '../session/store.js';
 import { allowAction, resetRateLimitsForTests } from '../services/limits.js';
 
@@ -476,5 +479,176 @@ describe('message handlers', () => {
       'rj2',
     );
     expect(rejoiner.sent.at(-1)).toMatchObject({ type: RelayEvent.SESSION_CREATED });
+  });
+
+  it('claims a handle, rings into a new 1:1, and drops the claim on disconnect', () => {
+    const store = new InMemorySessionStore();
+    const handles = new InMemoryHandleStore();
+    const handle = createMessageHandler(store, handles);
+    const owner = fakeSocket();
+    const caller = fakeSocket();
+
+    handle(
+      owner as never,
+      JSON.stringify({ type: ClientEvent.CLAIM_HANDLE, payload: { handle: 'alice' } }),
+    );
+    expect(owner.sent[0]).toMatchObject({
+      type: RelayEvent.HANDLE_CLAIMED,
+      payload: { handle: 'alice' },
+    });
+
+    handle(
+      caller as never,
+      JSON.stringify({ type: ClientEvent.RING_HANDLE, payload: { handle: 'alice' } }),
+      '3.3.3.3',
+    );
+    expect(caller.sent[0]).toMatchObject({ type: RelayEvent.RING_READY });
+    expect(owner.sent[1]).toMatchObject({
+      type: RelayEvent.INCOMING_RING,
+      payload: { handle: 'alice' },
+    });
+    const sessionId = (caller.sent[0] as { payload: { sessionId: string } }).payload.sessionId;
+    expect(store.get(sessionId)?.participants).toHaveLength(1);
+
+    handleDisconnect(store, owner as never, handles);
+    const late = fakeSocket();
+    handle(
+      late as never,
+      JSON.stringify({ type: ClientEvent.RING_HANDLE, payload: { handle: 'alice' } }),
+    );
+    expect(lastError(late)).toBe('HANDLE_UNAVAILABLE');
+  });
+
+  it('starts a second inbound 1:1 while the first is still live', () => {
+    const store = new InMemorySessionStore();
+    const handles = new InMemoryHandleStore();
+    const handle = createMessageHandler(store, handles);
+    const owner = fakeSocket();
+    handle(
+      owner as never,
+      JSON.stringify({ type: ClientEvent.CLAIM_HANDLE, payload: { handle: 'alice' } }),
+    );
+
+    const first = fakeSocket();
+    const second = fakeSocket();
+    handle(
+      first as never,
+      JSON.stringify({ type: ClientEvent.RING_HANDLE, payload: { handle: 'alice' } }),
+    );
+    handle(
+      second as never,
+      JSON.stringify({ type: ClientEvent.RING_HANDLE, payload: { handle: 'alice' } }),
+    );
+
+    const id1 = (first.sent[0] as { payload: { sessionId: string } }).payload.sessionId;
+    const id2 = (second.sent[0] as { payload: { sessionId: string } }).payload.sessionId;
+    expect(id1).not.toBe(id2);
+    expect(store.size()).toBe(2);
+    expect(handles.inboundCount('alice')).toBe(2);
+  });
+
+  it('returns HANDLE_BUSY at the inbound cap and HANDLE_TAKEN when claimed', () => {
+    const store = new InMemorySessionStore();
+    const handles = new InMemoryHandleStore();
+    const handle = createMessageHandler(store, handles);
+    const owner = fakeSocket();
+    handle(
+      owner as never,
+      JSON.stringify({ type: ClientEvent.CLAIM_HANDLE, payload: { handle: 'alice' } }),
+    );
+
+    const other = fakeSocket();
+    handle(
+      other as never,
+      JSON.stringify({ type: ClientEvent.CLAIM_HANDLE, payload: { handle: 'alice' } }),
+    );
+    expect(lastError(other)).toBe('HANDLE_TAKEN');
+
+    for (let i = 0; i < 5; i++) {
+      const caller = fakeSocket();
+      handle(
+        caller as never,
+        JSON.stringify({ type: ClientEvent.RING_HANDLE, payload: { handle: 'alice' } }),
+        `10.0.0.${i + 1}`,
+      );
+      expect(caller.sent[0]).toMatchObject({ type: RelayEvent.RING_READY });
+    }
+    const extra = fakeSocket();
+    handle(
+      extra as never,
+      JSON.stringify({ type: ClientEvent.RING_HANDLE, payload: { handle: 'alice' } }),
+      '10.0.0.9',
+    );
+    expect(lastError(extra)).toBe('HANDLE_BUSY');
+  });
+
+  it('enforces allowlist and optional claim secret', () => {
+    const store = new InMemorySessionStore();
+    const handles = new InMemoryHandleStore();
+    const handle = createMessageHandler(store, handles, {
+      allowlist: ['alice'],
+      claimSecret: 's3cret',
+    });
+    const owner = fakeSocket();
+    handle(
+      owner as never,
+      JSON.stringify({ type: ClientEvent.CLAIM_HANDLE, payload: { handle: 'bob' } }),
+    );
+    expect(lastError(owner)).toBe('HANDLE_FORBIDDEN');
+
+    handle(
+      owner as never,
+      JSON.stringify({ type: ClientEvent.CLAIM_HANDLE, payload: { handle: 'alice' } }),
+    );
+    expect(lastError(owner)).toBe('HANDLE_FORBIDDEN');
+
+    handle(
+      owner as never,
+      JSON.stringify({
+        type: ClientEvent.CLAIM_HANDLE,
+        payload: { handle: 'alice', secret: 's3cret' },
+      }),
+    );
+    expect(owner.sent.at(-1)).toMatchObject({
+      type: RelayEvent.HANDLE_CLAIMED,
+      payload: { handle: 'alice' },
+    });
+  });
+
+  it('requires a valid unexpired lease for names in the registry', () => {
+    const pair = generateKeyPairSync('ec', { namedCurve: 'P-256' });
+    const publicKey = pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
+    const signedAt = Date.now();
+    const signature = sign(
+      'sha256',
+      Buffer.from(handleClaimMessage('alice', signedAt)),
+      { key: pair.privateKey, dsaEncoding: 'ieee-p1363' },
+    ).toString('base64');
+
+    const store = new InMemorySessionStore();
+    const handles = new InMemoryHandleStore();
+    const handle = createMessageHandler(store, handles, {
+      getRegistry: () => ({
+        alice: { publicKey, expiresAt: Date.now() + 60_000 },
+      }),
+    });
+    const owner = fakeSocket();
+    handle(
+      owner as never,
+      JSON.stringify({ type: ClientEvent.CLAIM_HANDLE, payload: { handle: 'alice' } }),
+    );
+    expect(lastError(owner)).toBe('HANDLE_FORBIDDEN');
+
+    handle(
+      owner as never,
+      JSON.stringify({
+        type: ClientEvent.CLAIM_HANDLE,
+        payload: { handle: 'alice', proof: { publicKey, signedAt, signature } },
+      }),
+    );
+    expect(owner.sent.at(-1)).toMatchObject({
+      type: RelayEvent.HANDLE_CLAIMED,
+      payload: { handle: 'alice' },
+    });
   });
 });

@@ -79,4 +79,28 @@ describe('parseClientMessage', () => {
       ),
     ).toMatchObject({ ok: true });
   });
+
+  it('parses handle claim and ring payloads', () => {
+    const claim = parseClientMessage(
+      JSON.stringify({ type: ClientEvent.CLAIM_HANDLE, payload: { handle: 'Alice' } }),
+    );
+    expect(claim.ok).toBe(true);
+    if (claim.ok && claim.message.type === ClientEvent.CLAIM_HANDLE) {
+      expect(claim.message.payload.handle).toBe('alice');
+    }
+
+    const ring = parseClientMessage(
+      JSON.stringify({ type: ClientEvent.RING_HANDLE, payload: { handle: 'alice' } }),
+    );
+    expect(ring.ok).toBe(true);
+
+    expect(
+      parseClientMessage(
+        JSON.stringify({ type: ClientEvent.CLAIM_HANDLE, payload: { handle: 'chat' } }),
+      ).ok,
+    ).toBe(false);
+    expect(parseClientMessage(JSON.stringify({ type: ClientEvent.UNCLAIM_HANDLE }))).toMatchObject({
+      ok: true,
+    });
+  });
 });

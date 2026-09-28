@@ -1,14 +1,39 @@
+import { timingSafeEqual } from 'node:crypto';
 import type { WebSocket } from '@fastify/websocket';
+import { HANDLE_ALLOWLIST, MAX_CONCURRENT_CHATS, isAllowedHandle } from '@goprivate/config';
 import {
   ClientEvent,
   MAX_RELAY_SESSIONS,
   RECONNECT_GRACE_MS,
   RelayEvent,
+  type ClaimHandleProof,
 } from '@goprivate/protocol';
+import { InMemoryHandleStore, type IHandleStore } from '../session/handles.js';
 import type { ISessionStore, Participant, Session } from '../session/store.js';
 import { allowAction, canCreateSession, canCreateSessionFromIP } from '../services/limits.js';
 import { broadcast, sendToSocket } from '../services/messenger.js';
 import { parseClientMessage } from '../services/validate.js';
+import {
+  type HandleLease,
+  type HandleRegistry,
+  verifyHandleLeaseProof,
+} from '../services/handle-registry.js';
+
+export interface MessageHandlerOptions {
+  claimSecret?: string;
+  allowlist?: readonly string[];
+  getRegistry?: () => HandleRegistry;
+}
+
+function secretsEqual(provided: string | undefined, expected: string): boolean {
+  const left = Buffer.from(provided ?? '');
+  const right = Buffer.from(expected);
+  if (left.length !== right.length) {
+    timingSafeEqual(right, right);
+    return false;
+  }
+  return timingSafeEqual(left, right);
+}
 
 // Helper to obfuscate IP for logging (GDPR-friendly)
 function obfuscateIP(ip: string): string {
@@ -32,7 +57,17 @@ function createParticipantId(): string {
   return crypto.randomUUID();
 }
 
-export function createMessageHandler(store: ISessionStore) {
+export function createMessageHandler(
+  store: ISessionStore,
+  handles: IHandleStore = new InMemoryHandleStore(),
+  options: MessageHandlerOptions = {},
+) {
+  const allowlist = options.allowlist ?? HANDLE_ALLOWLIST;
+  const claimAllowed = (handle: string): boolean => {
+    if (allowlist.length === 0) return isAllowedHandle(handle);
+    return allowlist.includes(handle);
+  };
+
   return function handleMessage(socket: WebSocket, raw: string, ip = 'unknown'): void {
     const parsed = parseClientMessage(raw);
     if (!parsed.ok) {
@@ -74,7 +109,7 @@ export function createMessageHandler(store: ISessionStore) {
             });
             return;
           }
-          handleCreateSession(store, socket, message.payload?.sessionId, ip);
+          handleCreateSession(store, handles, socket, message.payload?.sessionId, ip);
           break;
         case ClientEvent.JOIN_SESSION:
           if (!allowAction(ip, 'join')) {
@@ -89,7 +124,7 @@ export function createMessageHandler(store: ISessionStore) {
             });
             return;
           }
-          handleJoinSession(store, socket, message.payload.sessionId, ip);
+          handleJoinSession(store, handles, socket, message.payload.sessionId, ip);
           break;
         case ClientEvent.SEND_MESSAGE:
           if (!allowAction(ip, 'send')) {
@@ -104,13 +139,58 @@ export function createMessageHandler(store: ISessionStore) {
             });
             return;
           }
-          handleSendMessage(store, socket, message.payload.message);
+          handleSendMessage(store, socket, message.payload.message, handles);
           break;
         case ClientEvent.PING:
           sendToSocket(socket, { type: RelayEvent.PONG, payload: {} });
           break;
         case ClientEvent.LEAVE_SESSION:
-          handleLeave(store, socket);
+          handleLeave(store, handles, socket);
+          break;
+        case ClientEvent.CLAIM_HANDLE:
+          if (!allowAction(ip, 'claim')) {
+            sendToSocket(socket, {
+              type: RelayEvent.ERROR,
+              payload: { code: 'RATE_LIMITED', message: 'Too many handle claims' },
+            });
+            return;
+          }
+          handleClaimHandle(
+            store,
+            handles,
+            socket,
+            message.payload.handle,
+            message.payload.secret,
+            message.payload.proof,
+            {
+              claimSecret: options.claimSecret,
+              claimAllowed,
+              getLease: (name) => options.getRegistry?.()[name],
+            },
+          );
+          break;
+        case ClientEvent.UNCLAIM_HANDLE:
+          handles.releaseBySocket(socket);
+          break;
+        case ClientEvent.RING_HANDLE:
+          if (!allowAction(ip, 'ring')) {
+            sendToSocket(socket, {
+              type: RelayEvent.ERROR,
+              payload: { code: 'RATE_LIMITED', message: 'Too many handle rings' },
+            });
+            return;
+          }
+          if (!canCreateSessionFromIP(ip)) {
+            sendToSocket(socket, {
+              type: RelayEvent.ERROR,
+              payload: {
+                code: 'RATE_LIMITED',
+                message: 'Too many sessions from your IP. Try again later.',
+              },
+            });
+            return;
+          }
+          handleRingHandle(store, handles, socket, message.payload.handle, ip);
           break;
         default:
           sendToSocket(socket, {
@@ -128,13 +208,17 @@ export function createMessageHandler(store: ISessionStore) {
   };
 }
 
-function expireIfNeeded(store: ISessionStore, session: Session): boolean {
+function expireIfNeeded(store: ISessionStore, session: Session, handles?: IHandleStore): boolean {
   if (!store.isExpired(session)) return false;
-  expireSession(store, session);
+  expireSession(store, session, handles);
   return true;
 }
 
-export function expireSession(store: ISessionStore, session: Session): void {
+export function expireSession(
+  store: ISessionStore,
+  session: Session,
+  handles?: IHandleStore,
+): void {
   cancelPendingDestroy(session.id);
   const sockets = session.participants.map((p) => p.socket);
   broadcast(sockets, {
@@ -142,6 +226,7 @@ export function expireSession(store: ISessionStore, session: Session): void {
     payload: { sessionId: session.id },
   });
   store.destroy(session.id);
+  handles?.dropInbound(session.id);
   for (const socket of sockets) {
     try {
       socket.close();
@@ -151,22 +236,39 @@ export function expireSession(store: ISessionStore, session: Session): void {
   }
 }
 
-export function sweepExpiredSessions(store: ISessionStore): number {
+export function sweepExpiredSessions(store: ISessionStore, handles?: IHandleStore): number {
   const expired = store.getExpired();
   for (const session of expired) {
-    expireSession(store, session);
+    expireSession(store, session, handles);
   }
   return expired.length;
 }
 
-function handleCreateSession(
+function rejectIfBusy(store: ISessionStore, handles: IHandleStore, socket: WebSocket): boolean {
+  if (store.findBySocket(socket) || handles.getBySocket(socket)) {
+    sendToSocket(socket, {
+      type: RelayEvent.ERROR,
+      payload: { code: 'ALREADY_IN_SESSION', message: 'Socket already in a session' },
+    });
+    return true;
+  }
+  return false;
+}
+
+function handleClaimHandle(
   store: ISessionStore,
+  handles: IHandleStore,
   socket: WebSocket,
-  sessionId: string | undefined,
-  ip: string,
+  handle: string,
+  secret: string | undefined,
+  proof: ClaimHandleProof | undefined,
+  options: {
+    claimSecret?: string;
+    claimAllowed: (handle: string) => boolean;
+    getLease?: (handle: string) => HandleLease | undefined;
+  },
 ): void {
-  const existing = store.findBySocket(socket);
-  if (existing) {
+  if (store.findBySocket(socket)) {
     sendToSocket(socket, {
       type: RelayEvent.ERROR,
       payload: { code: 'ALREADY_IN_SESSION', message: 'Socket already in a session' },
@@ -174,13 +276,151 @@ function handleCreateSession(
     return;
   }
 
+  const lease = options.getLease?.(handle);
+  if (lease) {
+    if (!proof) {
+      sendToSocket(socket, {
+        type: RelayEvent.ERROR,
+        payload: {
+          code: 'HANDLE_FORBIDDEN',
+          message: 'This name is reserved. Paste the lease key from your operator.',
+        },
+      });
+      return;
+    }
+    const result = verifyHandleLeaseProof(lease, handle, proof);
+    if (result !== 'ok') {
+      sendToSocket(socket, {
+        type: RelayEvent.ERROR,
+        payload: {
+          code: result,
+          message:
+            result === 'HANDLE_EXPIRED'
+              ? 'This name lease has expired. Ask the operator for a new key.'
+              : 'This device is not the current owner of that name.',
+        },
+      });
+      return;
+    }
+  } else {
+    if (!options.claimAllowed(handle)) {
+      sendToSocket(socket, {
+        type: RelayEvent.ERROR,
+        payload: {
+          code: 'HANDLE_FORBIDDEN',
+          message: 'This handle is not available on this relay',
+        },
+      });
+      return;
+    }
+    if (options.claimSecret && !secretsEqual(secret, options.claimSecret)) {
+      sendToSocket(socket, {
+        type: RelayEvent.ERROR,
+        payload: { code: 'HANDLE_FORBIDDEN', message: 'Handle claim was rejected' },
+      });
+      return;
+    }
+  }
+  try {
+    handles.claim(handle, socket);
+  } catch (err) {
+    if (err instanceof Error && err.message === 'HANDLE_TAKEN') {
+      sendToSocket(socket, {
+        type: RelayEvent.ERROR,
+        payload: { code: 'HANDLE_TAKEN', message: 'Someone else is using this name right now' },
+      });
+      return;
+    }
+    throw err;
+  }
+  sendToSocket(socket, {
+    type: RelayEvent.HANDLE_CLAIMED,
+    payload: { handle },
+  });
+}
+
+function handleRingHandle(
+  store: ISessionStore,
+  handles: IHandleStore,
+  socket: WebSocket,
+  handle: string,
+  ip: string,
+): void {
+  if (rejectIfBusy(store, handles, socket)) return;
+
+  const claim = handles.get(handle);
+  if (!claim) {
+    sendToSocket(socket, {
+      type: RelayEvent.ERROR,
+      payload: {
+        code: 'HANDLE_UNAVAILABLE',
+        message: 'This person is not online. Handles only work while they are connected.',
+      },
+    });
+    return;
+  }
+
+  if (handles.inboundCount(handle) >= MAX_CONCURRENT_CHATS) {
+    sendToSocket(socket, {
+      type: RelayEvent.ERROR,
+      payload: {
+        code: 'HANDLE_BUSY',
+        message: 'This person already has too many conversations open',
+      },
+    });
+    return;
+  }
+
+  if (!canCreateSession(store.size())) {
+    sendToSocket(socket, {
+      type: RelayEvent.ERROR,
+      payload: {
+        code: 'SERVER_BUSY',
+        message: `Session capacity reached (${MAX_RELAY_SESSIONS})`,
+      },
+    });
+    return;
+  }
+
+  const sessionId = crypto.randomUUID().replace(/-/g, '');
+  const participant: Participant = { id: createParticipantId(), socket };
+  const session = store.create(sessionId, participant);
+  handles.addInbound(handle, sessionId);
+
+  logger.info({
+    event: 'handle_ring',
+    handle,
+    sessionId: obfuscateSessionId(sessionId),
+    ip: obfuscateIP(ip),
+    timestamp: Date.now(),
+  });
+
+  sendToSocket(socket, {
+    type: RelayEvent.RING_READY,
+    payload: { sessionId, expiresAt: session.expiresAt },
+  });
+  sendToSocket(claim.socket, {
+    type: RelayEvent.INCOMING_RING,
+    payload: { sessionId, handle, expiresAt: session.expiresAt },
+  });
+}
+
+function handleCreateSession(
+  store: ISessionStore,
+  handles: IHandleStore,
+  socket: WebSocket,
+  sessionId: string | undefined,
+  ip: string,
+): void {
+  if (rejectIfBusy(store, handles, socket)) return;
+
   const id = sessionId ?? crypto.randomUUID().replace(/-/g, '');
   const current = store.get(id);
 
   // Reclaim an empty session after a mobile disconnect (reconnect grace)
   if (current && current.participants.length === 0) {
     cancelPendingDestroy(id);
-    if (expireIfNeeded(store, current)) {
+    if (expireIfNeeded(store, current, handles)) {
       sendToSocket(socket, {
         type: RelayEvent.ERROR,
         payload: { code: 'SESSION_EXPIRED', message: 'Session has expired' },
@@ -306,18 +546,12 @@ function tryJoinSession(
 
 function handleJoinSession(
   store: ISessionStore,
+  handles: IHandleStore,
   socket: WebSocket,
   sessionId: string,
   ip: string,
 ): void {
-  const existing = store.findBySocket(socket);
-  if (existing) {
-    sendToSocket(socket, {
-      type: RelayEvent.ERROR,
-      payload: { code: 'ALREADY_IN_SESSION', message: 'Socket already in a session' },
-    });
-    return;
-  }
+  if (rejectIfBusy(store, handles, socket)) return;
 
   const session = store.get(sessionId);
   if (!session) {
@@ -331,7 +565,7 @@ function handleJoinSession(
     return;
   }
 
-  if (expireIfNeeded(store, session)) {
+  if (expireIfNeeded(store, session, handles)) {
     sendJoinError(socket, 'SESSION_EXPIRED', 'Session has expired');
     return;
   }
@@ -340,13 +574,13 @@ function handleJoinSession(
   if (result !== 'full') return;
 
   setTimeout(() => {
-    if (store.findBySocket(socket)) return;
+    if (store.findBySocket(socket) || handles.getBySocket(socket)) return;
     const current = store.get(sessionId);
     if (!current) {
       sendJoinError(socket, 'SESSION_NOT_FOUND', 'Session does not exist');
       return;
     }
-    if (expireIfNeeded(store, current)) {
+    if (expireIfNeeded(store, current, handles)) {
       sendJoinError(socket, 'SESSION_EXPIRED', 'Session has expired');
       return;
     }
@@ -361,6 +595,7 @@ function handleSendMessage(
   store: ISessionStore,
   socket: WebSocket,
   message: { id: string; encryptedPayload: string; timestamp: number },
+  handles?: IHandleStore,
 ): void {
   const found = store.findBySocket(socket);
   if (!found) {
@@ -371,7 +606,7 @@ function handleSendMessage(
     return;
   }
 
-  if (expireIfNeeded(store, found.session)) {
+  if (expireIfNeeded(store, found.session, handles)) {
     return;
   }
 
@@ -383,8 +618,13 @@ function handleSendMessage(
   });
 }
 
-export function handleDisconnect(store: ISessionStore, socket: WebSocket): void {
-  handleLeave(store, socket);
+export function handleDisconnect(
+  store: ISessionStore,
+  socket: WebSocket,
+  handles: IHandleStore = new InMemoryHandleStore(),
+): void {
+  handles.releaseBySocket(socket);
+  handleLeave(store, handles, socket);
 }
 
 const pendingDestroy = new Map<string, ReturnType<typeof setTimeout>>();
@@ -397,19 +637,24 @@ function cancelPendingDestroy(sessionId: string): void {
   }
 }
 
-function scheduleDestroyIfEmpty(store: ISessionStore, sessionId: string): void {
+function scheduleDestroyIfEmpty(
+  store: ISessionStore,
+  sessionId: string,
+  handles?: IHandleStore,
+): void {
   cancelPendingDestroy(sessionId);
   const timer = setTimeout(() => {
     pendingDestroy.delete(sessionId);
     const session = store.get(sessionId);
     if (session && session.participants.length === 0) {
       store.destroy(sessionId);
+      handles?.dropInbound(sessionId);
     }
   }, RECONNECT_GRACE_MS);
   pendingDestroy.set(sessionId, timer);
 }
 
-function handleLeave(store: ISessionStore, socket: WebSocket): void {
+function handleLeave(store: ISessionStore, handles: IHandleStore, socket: WebSocket): void {
   const found = store.findBySocket(socket);
   if (!found) return;
 
@@ -426,5 +671,5 @@ function handleLeave(store: ISessionStore, socket: WebSocket): void {
     return;
   }
 
-  scheduleDestroyIfEmpty(store, session.id);
+  scheduleDestroyIfEmpty(store, session.id, handles);
 }

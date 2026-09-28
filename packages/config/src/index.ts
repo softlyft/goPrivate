@@ -11,7 +11,8 @@
  *   app.json name, scheme, bundleIdentifier, package, associatedDomains
  * - Deploy env (overrides the defaults here):
  *   NEXT_PUBLIC_RELAY_URL, EXPO_PUBLIC_RELAY_URL, ALLOWED_ORIGINS,
- *   NEXT_PUBLIC_SUPPORT_URL
+ *   NEXT_PUBLIC_SUPPORT_URL, HANDLE_CLAIM_SECRET,
+ *   NEXT_PUBLIC_HANDLE_CLAIM_SECRET, EXPO_PUBLIC_HANDLE_CLAIM_SECRET
  */
 
 /** Shown in the header, share sheets, and metadata. */
@@ -68,6 +69,31 @@ export const COLOR = {
   danger: '#dc2626',
 } as const;
 
+/**
+ * Lasting /{handle} links are presence mailboxes, not accounts.
+ * Empty allowlist = any valid handle may be claimed while the owner is online.
+ * Non-empty = only these names (typical private-server setup).
+ */
+export const HANDLE_ALLOWLIST: string[] = [];
+
+/** `alice`, `olumide-1` — not a reserved app path. */
+export const HANDLE_PATTERN = /^[a-z][a-z0-9-]{1,30}$/;
+
+/** App routes that must never resolve as a handle. */
+export const RESERVED_PATHS = [
+  'chat',
+  'chats',
+  'guide',
+  'join',
+  'api',
+  'login',
+  'static',
+  'health',
+  'ws',
+  '_next',
+  'favicon.ico',
+] as const;
+
 /** Live 1:1 chats on one device. */
 export const MAX_CONCURRENT_CHATS = 5;
 
@@ -117,6 +143,70 @@ export function publicChatUrl(sessionId: string): string {
 
 export function customSchemeUrl(sessionId: string): string {
   return `${DEEP_LINK_SCHEME}://chat/${sessionId}`;
+}
+
+export function publicHandleUrl(handle: string): string {
+  return `${PUBLIC_WEB_ORIGIN}/${normalizeHandle(handle)}`;
+}
+
+export function customSchemeHandleUrl(handle: string): string {
+  return `${DEEP_LINK_SCHEME}://${normalizeHandle(handle)}`;
+}
+
+export function normalizeHandle(raw: string): string {
+  return raw.trim().toLowerCase();
+}
+
+export function isReservedPath(slug: string): boolean {
+  return (RESERVED_PATHS as readonly string[]).includes(normalizeHandle(slug));
+}
+
+/** Pattern + reserved paths only (ignore allowlist). Used for URL routing. */
+export function isHandleSlug(raw: string): boolean {
+  const handle = normalizeHandle(raw);
+  return HANDLE_PATTERN.test(handle) && !isReservedPath(handle);
+}
+
+/** Whether this instance will let someone CLAIM the name. */
+export function isAllowedHandle(raw: string): boolean {
+  const handle = normalizeHandle(raw);
+  if (!isHandleSlug(handle)) return false;
+  if (HANDLE_ALLOWLIST.length === 0) return true;
+  return HANDLE_ALLOWLIST.includes(handle);
+}
+
+/**
+ * Pull a handle out of a paste or URL. Session `/chat/{hex}` links return null.
+ */
+export function extractHandle(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(trimmed);
+    const parts = url.pathname.split('/').filter(Boolean);
+
+    if (url.protocol === `${DEEP_LINK_SCHEME}:`) {
+      if (url.hostname === 'chat') return null;
+      if (url.hostname && isHandleSlug(url.hostname) && parts.length === 0) {
+        return normalizeHandle(url.hostname);
+      }
+      const fromPath = parts[0];
+      if (fromPath && isHandleSlug(fromPath) && parts.length === 1) {
+        return normalizeHandle(fromPath);
+      }
+      return null;
+    }
+
+    if (parts[0] === 'chat') return null;
+    const slug = parts[0];
+    if (slug && isHandleSlug(slug) && parts.length === 1) {
+      return normalizeHandle(slug);
+    }
+    return null;
+  } catch {
+    return isHandleSlug(trimmed) ? normalizeHandle(trimmed) : null;
+  }
 }
 
 export function inviteShareMessage(urls: { web: string; app: string }): string {

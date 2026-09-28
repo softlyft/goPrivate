@@ -171,7 +171,7 @@ export function GuidePage() {
             <ul className="list-disc space-y-1.5 pl-5">
               <li>Photos, files, voice, or video</li>
               <li>Group chats</li>
-              <li>Contact lists or usernames</li>
+              <li>Contact lists or offline inboxes</li>
               <li>Message history after you leave</li>
               <li>Notifications after the chat is over</li>
             </ul>

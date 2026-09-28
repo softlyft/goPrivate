@@ -5,6 +5,9 @@ import {
   MAX_SESSION_ID_LENGTH,
   MAX_WS_MESSAGE_BYTES,
   SESSION_ID_PATTERN,
+  isHandleSlug,
+  normalizeHandle,
+  type ClaimHandleProof,
   type ClientToRelayMessage,
   type EncryptedMessage,
 } from '@goprivate/protocol';
@@ -43,6 +46,32 @@ function isValidEncryptedMessage(value: unknown): value is EncryptedMessage {
   }
   if (typeof value.timestamp !== 'number' || !Number.isFinite(value.timestamp)) return false;
   return true;
+}
+
+function parseClaimProof(value: unknown): ClaimHandleProof | undefined {
+  if (!isRecord(value)) return undefined;
+  if (
+    typeof value.publicKey !== 'string' ||
+    value.publicKey.length === 0 ||
+    value.publicKey.length > 512
+  ) {
+    return undefined;
+  }
+  if (
+    typeof value.signature !== 'string' ||
+    value.signature.length === 0 ||
+    value.signature.length > 512
+  ) {
+    return undefined;
+  }
+  if (typeof value.signedAt !== 'number' || !Number.isFinite(value.signedAt)) {
+    return undefined;
+  }
+  return {
+    publicKey: value.publicKey,
+    signature: value.signature,
+    signedAt: value.signedAt,
+  };
 }
 
 export function parseClientMessage(raw: string): ParseResult {
@@ -116,6 +145,49 @@ export function parseClientMessage(raw: string): ParseResult {
       return {
         ok: true,
         message: { type: ClientEvent.LEAVE_SESSION, payload: { sessionId } },
+      };
+    }
+    case ClientEvent.CLAIM_HANDLE: {
+      if (
+        !isRecord(payload) ||
+        typeof payload.handle !== 'string' ||
+        !isHandleSlug(payload.handle)
+      ) {
+        return { ok: false, code: 'HANDLE_INVALID', message: 'Invalid handle' };
+      }
+      const secret = typeof payload.secret === 'string' ? payload.secret : undefined;
+      const proof = parseClaimProof(payload.proof);
+      if (payload.proof !== undefined && !proof) {
+        return { ok: false, code: 'HANDLE_FORBIDDEN', message: 'Invalid handle proof' };
+      }
+      return {
+        ok: true,
+        message: {
+          type: ClientEvent.CLAIM_HANDLE,
+          payload: {
+            handle: normalizeHandle(payload.handle),
+            ...(secret ? { secret } : {}),
+            ...(proof ? { proof } : {}),
+          },
+        },
+      };
+    }
+    case ClientEvent.UNCLAIM_HANDLE:
+      return { ok: true, message: { type: ClientEvent.UNCLAIM_HANDLE, payload: {} } };
+    case ClientEvent.RING_HANDLE: {
+      if (
+        !isRecord(payload) ||
+        typeof payload.handle !== 'string' ||
+        !isHandleSlug(payload.handle)
+      ) {
+        return { ok: false, code: 'HANDLE_INVALID', message: 'Invalid handle' };
+      }
+      return {
+        ok: true,
+        message: {
+          type: ClientEvent.RING_HANDLE,
+          payload: { handle: normalizeHandle(payload.handle) },
+        },
       };
     }
     default:

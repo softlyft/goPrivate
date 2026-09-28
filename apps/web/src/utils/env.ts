@@ -13,3 +13,16 @@ export function getShareUrl(sessionId: string): string {
   }
   return `${window.location.origin}/chat/${sessionId}`;
 }
+
+export function getHandleShareUrl(handle: string): string {
+  if (typeof window === 'undefined') {
+    return `/${handle}`;
+  }
+  return `${window.location.origin}/${handle}`;
+}
+
+export function getHandleClaimSecret(): string | undefined {
+  const value =
+    typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_HANDLE_CLAIM_SECRET?.trim() : '';
+  return value ? value : undefined;
+}
