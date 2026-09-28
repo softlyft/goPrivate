@@ -10,64 +10,117 @@ export interface StoredMessage {
   fromPeer: boolean;
 }
 
-interface SessionState {
+export interface ChatRecord {
+  sessionId: string;
+  isHost: boolean;
   status: ConnectionStatus;
-  sessionId: string | null;
   shareUrl: string | null;
   messages: StoredMessage[];
   error: string | null;
   partnerPresent: boolean;
   expiresAt: number | null;
-  /** Public vault metadata (salt + wrapped key). Not enough to read messages alone. */
+  unreadCount: number;
+  localFingerprint: string | null;
+  peerFingerprint: string | null;
+  createdAt: number;
+}
+
+interface SessionState {
+  chats: Record<string, ChatRecord>;
+  activeSessionId: string | null;
   vaultMeta: VaultMeta | null;
-  /** True once local vault is set up / unlocked for this session. */
   vaultReady: boolean;
 
-  setStatus: (status: ConnectionStatus) => void;
-  setSessionId: (sessionId: string | null) => void;
-  setShareUrl: (url: string | null) => void;
-  addMessage: (message: StoredMessage) => void;
-  setError: (error: string | null) => void;
-  setPartnerPresent: (present: boolean) => void;
-  setExpiresAt: (expiresAt: number | null) => void;
+  upsertChat: (sessionId: string, patch?: Partial<ChatRecord>) => void;
+  addMessage: (sessionId: string, message: StoredMessage) => void;
+  removeChat: (sessionId: string) => void;
+  setActiveSessionId: (sessionId: string | null) => void;
   setVaultMeta: (meta: VaultMeta | null) => void;
   setVaultReady: (ready: boolean) => void;
-  reset: () => void;
   clearVault: () => void;
 }
 
-const initial = {
-  status: 'disconnected' as ConnectionStatus,
-  sessionId: null,
-  shareUrl: null,
-  messages: [] as StoredMessage[],
-  error: null,
-  partnerPresent: false,
-  expiresAt: null as number | null,
-  vaultMeta: null as VaultMeta | null,
-  vaultReady: false,
-};
+function emptyChat(sessionId: string): ChatRecord {
+  return {
+    sessionId,
+    isHost: false,
+    status: 'connecting',
+    shareUrl: null,
+    messages: [],
+    error: null,
+    partnerPresent: false,
+    expiresAt: null,
+    unreadCount: 0,
+    localFingerprint: null,
+    peerFingerprint: null,
+    createdAt: Date.now(),
+  };
+}
+
+export function listChats(chats: Record<string, ChatRecord>): ChatRecord[] {
+  return Object.values(chats).sort((a, b) => b.createdAt - a.createdAt);
+}
 
 export const useSessionStore = create<SessionState>((set) => ({
-  ...initial,
-  setStatus: (status) => set({ status }),
-  setSessionId: (sessionId) => set({ sessionId }),
-  setShareUrl: (shareUrl) => set({ shareUrl }),
-  addMessage: (message) =>
+  chats: {},
+  activeSessionId: null,
+  vaultMeta: null,
+  vaultReady: false,
+
+  upsertChat: (sessionId, patch) =>
     set((state) => {
-      if (state.messages.some((m) => m.id === message.id)) return state;
-      return { messages: [...state.messages, message] };
+      const prev = state.chats[sessionId] ?? emptyChat(sessionId);
+      return {
+        chats: {
+          ...state.chats,
+          [sessionId]: { ...prev, ...patch, sessionId },
+        },
+      };
     }),
-  setError: (error) => set({ error }),
-  setPartnerPresent: (partnerPresent) => set({ partnerPresent }),
-  setExpiresAt: (expiresAt) => set({ expiresAt }),
+
+  addMessage: (sessionId, message) =>
+    set((state) => {
+      const prev = state.chats[sessionId] ?? emptyChat(sessionId);
+      if (prev.messages.some((m) => m.id === message.id)) return state;
+      const unreadCount =
+        state.activeSessionId === sessionId ? prev.unreadCount : prev.unreadCount + 1;
+      return {
+        chats: {
+          ...state.chats,
+          [sessionId]: {
+            ...prev,
+            messages: [...prev.messages, message],
+            unreadCount,
+          },
+        },
+      };
+    }),
+
+  removeChat: (sessionId) =>
+    set((state) => {
+      const chats = { ...state.chats };
+      delete chats[sessionId];
+      return {
+        chats,
+        activeSessionId: state.activeSessionId === sessionId ? null : state.activeSessionId,
+      };
+    }),
+
+  setActiveSessionId: (sessionId) =>
+    set((state) => {
+      if (!sessionId) return { activeSessionId: null };
+      const chat = state.chats[sessionId];
+      if (!chat) return { activeSessionId: sessionId };
+      return {
+        activeSessionId: sessionId,
+        chats: {
+          ...state.chats,
+          [sessionId]: { ...chat, unreadCount: 0 },
+        },
+      };
+    }),
+
   setVaultMeta: (vaultMeta) => set({ vaultMeta }),
   setVaultReady: (vaultReady) => set({ vaultReady }),
-  reset: () =>
-    set((state) => ({
-      ...initial,
-      vaultMeta: state.vaultMeta,
-      vaultReady: state.vaultReady,
-    })),
   clearVault: () => set({ vaultMeta: null, vaultReady: false }),
 }));

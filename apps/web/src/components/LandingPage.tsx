@@ -2,13 +2,19 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/AppShell';
+import { ConversationList } from '@/components/ConversationList';
 import { CreateSessionButton } from '@/components/CreateSessionButton';
 import { Header } from '@/components/Header';
 import { JoinSessionForm } from '@/components/JoinSessionForm';
 import { Glass } from '@/components/ui/glass';
+import { useChatSession } from '@/hooks/use-chat-session';
 
 export function LandingPage() {
+  const router = useRouter();
+  const { chats } = useChatSession();
+
   return (
     <AppShell>
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -51,11 +57,13 @@ export function LandingPage() {
                 </p>
               </div>
               <p className="text-sm leading-relaxed text-muted sm:text-[15px]">
-                Ephemeral chat that vanishes when you leave.
+                Ephemeral 1:1 chat that vanishes when you leave.
                 <br />
-                No accounts. No history. End-to-end encrypted.
+                Run several conversations at once. No accounts.
               </p>
             </div>
+
+            <ConversationList chats={chats} onOpen={(id) => router.push(`/chat/${id}`)} />
 
             <CreateSessionButton />
 
