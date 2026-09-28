@@ -2,17 +2,15 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/AppShell';
-import { ConversationList } from '@/components/ConversationList';
 import { CreateSessionButton } from '@/components/CreateSessionButton';
 import { Header } from '@/components/Header';
 import { JoinSessionForm } from '@/components/JoinSessionForm';
 import { Glass } from '@/components/ui/glass';
 import { useChatSession } from '@/hooks/use-chat-session';
+import type { ChatRecord } from '@/store/session';
 
 export function LandingPage() {
-  const router = useRouter();
   const { chats } = useChatSession();
 
   return (
@@ -63,7 +61,7 @@ export function LandingPage() {
               </p>
             </div>
 
-            <ConversationList chats={chats} onOpen={(id) => router.push(`/chat/${id}`)} />
+            <ConversationInboxLink chats={chats} />
 
             <CreateSessionButton />
 
@@ -92,5 +90,28 @@ export function LandingPage() {
         </main>
       </div>
     </AppShell>
+  );
+}
+
+function ConversationInboxLink({ chats }: { chats: ChatRecord[] }) {
+  if (chats.length === 0) return null;
+  const unread = chats.reduce((sum, chat) => sum + chat.unreadCount, 0);
+  const label = chats.length === 1 ? '1 open conversation' : `${chats.length} open conversations`;
+
+  return (
+    <Link
+      href="/chats"
+      className="flex w-full items-center justify-between gap-3 rounded-full border border-black/8 bg-white/55 px-4 py-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-colors hover:bg-white/80"
+    >
+      <span className="text-sm font-medium text-foreground">{label}</span>
+      <span className="flex items-center gap-2 text-xs font-medium text-muted">
+        {unread > 0 ? (
+          <span className="min-w-5 rounded-full bg-accent px-1.5 py-0.5 text-center text-[10px] font-semibold text-accent-fg">
+            {unread}
+          </span>
+        ) : null}
+        View
+      </span>
+    </Link>
   );
 }

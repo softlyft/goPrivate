@@ -310,6 +310,22 @@ describe('RelayClient', () => {
     expect(client.status).toBe('error');
   });
 
+  it('does not reopen a live socket on reconnect', async () => {
+    await client.connect('ws://relay/ws');
+    const sessionId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1';
+    const pending = client.createSession(sessionId);
+    await waitForClientEvent(transport, ClientEvent.CREATE_SESSION);
+    transport.emitJson({
+      type: RelayEvent.SESSION_CREATED,
+      payload: { sessionId, expiresAt: Date.now() + 60_000 },
+    });
+    await pending;
+    const sent = transport.sent.length;
+    await client.reconnect();
+    expect(transport.sent.length).toBe(sent);
+    expect(client.status).toBe('awaiting_partner');
+  });
+
   it('reconnects into an existing session and decrypts peer chat', async () => {
     await client.connect('ws://relay/ws');
     const sessionId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1';

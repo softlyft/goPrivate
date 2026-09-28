@@ -3,7 +3,6 @@ import { View, Text, Pressable, StyleSheet, Modal, Image, useWindowDimensions } 
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PinPad } from '../components/PinPad';
-import { ConversationList } from '../components/ConversationList';
 import { messageVault } from '../services/vault';
 import { startHostChat } from '../services/chat-hub';
 import { listChats, useSessionStore } from '../store/session';
@@ -87,7 +86,17 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.actions}>
-          <ConversationList chats={chats} onOpen={(id) => router.push(chatHref(id))} />
+          {chats.length > 0 ? (
+            <Pressable
+              style={({ pressed }) => [styles.inboxButton, pressed && styles.buttonPressed]}
+              onPress={() => router.push('/chats')}
+            >
+              <Text style={styles.inboxButtonText}>
+                {chats.length === 1 ? '1 open conversation' : `${chats.length} open conversations`}
+              </Text>
+              <Text style={styles.inboxButtonView}>View</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
             onPress={handleStartConversation}
@@ -233,6 +242,27 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: Colors.primary,
     fontSize: 17,
+    fontWeight: '600',
+  },
+  inboxButton: {
+    backgroundColor: Colors.backgroundWhite,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  inboxButtonText: {
+    color: Colors.brandDark,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  inboxButtonView: {
+    color: Colors.primary,
+    fontSize: 15,
     fontWeight: '600',
   },
   buttonPressed: {

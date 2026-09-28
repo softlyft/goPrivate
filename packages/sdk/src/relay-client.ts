@@ -128,6 +128,16 @@ export class RelayClient implements IRelayClient {
     }
   }
 
+  private isLiveStatus(status: ConnectionStatus): boolean {
+    return (
+      status === 'connecting' ||
+      status === 'connected' ||
+      status === 'awaiting_partner' ||
+      status === 'handshaking' ||
+      status === 'ready'
+    );
+  }
+
   private setStatus(status: ConnectionStatus): void {
     this._status = status;
     this.emit('status', status);
@@ -172,6 +182,9 @@ export class RelayClient implements IRelayClient {
     }
     if (this._status === 'expired') {
       throw new Error('Session expired');
+    }
+    if (this.connected && this.isLiveStatus(this._status)) {
+      return;
     }
     if (this.reconnectInFlight) {
       return this.reconnectInFlight;

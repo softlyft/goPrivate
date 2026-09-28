@@ -20,7 +20,6 @@ export function ChatPage() {
   const sessionId = params.sessionId;
   const router = useRouter();
   const {
-    chats,
     vaultReady,
     setupVault,
     joinSession,
@@ -77,19 +76,19 @@ export function ChatPage() {
     setEndedByLeave(true);
     const remaining = useSessionStore.getState().chats;
     if (Object.keys(remaining).length > 0) {
-      router.push('/');
+      router.push('/chats');
     }
   }
 
   function handleInbox() {
-    router.push('/');
+    router.push('/chats');
   }
 
   async function handleDismissEnded() {
     if (sessionId) {
       await leaveSession(sessionId);
     }
-    router.push('/');
+    router.push('/chats');
   }
 
   async function handleCopy() {
@@ -165,16 +164,18 @@ export function ChatPage() {
   return (
     <AppShell className="animate-fade-in">
       <Header
-        title="goPrivate"
-        onHomeClick={handleInbox}
+        leading={
+          <button
+            type="button"
+            onClick={handleInbox}
+            className="rounded-full px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-black/[0.04]"
+          >
+            ← Back
+          </button>
+        }
         center={<SessionTimer expiresAt={expiresAt} onExpire={handleExpire} />}
         right={
           <div className="flex items-center gap-3 sm:gap-4">
-            {chats.length > 1 ? (
-              <Button variant="ghost" onClick={handleInbox} className="hidden sm:inline-flex">
-                Chats
-              </Button>
-            ) : null}
             <ConnectionStatus status={status} />
             <Button variant="danger" onClick={() => void handleLeave()}>
               Leave
@@ -186,8 +187,8 @@ export function ChatPage() {
       {showShare && (
         <div className="border-b border-black/[0.06] bg-white/35 px-4 py-3 backdrop-blur-xl">
           <p className="text-sm text-muted">
-            Share this link with one person. You can start more 1:1 chats from home. Sessions end
-            after 30 minutes or when everyone leaves.
+            Share this link with one person. You can start more 1:1 chats from Open conversations.
+            Sessions end after 30 minutes or when everyone leaves.
           </p>
           <div className="mt-2 flex items-center gap-2">
             <code className="flex-1 truncate rounded-full border border-black/8 bg-white/60 px-3 py-1.5 font-mono text-xs shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">

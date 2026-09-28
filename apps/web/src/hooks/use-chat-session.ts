@@ -117,9 +117,10 @@ function bindLifecycle(): void {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') onResume();
   });
-  window.addEventListener('pageshow', onResume);
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) onResume();
+  });
   window.addEventListener('online', onResume);
-  window.addEventListener('focus', onResume);
 }
 
 function ensureHub(): ChatHub {
@@ -182,7 +183,7 @@ export function useChatSession() {
   async function sendMessage(sessionId: string, text: string): Promise<void> {
     const hub = ensureHub();
     const client: IRelayClient | undefined = hub.getClient(sessionId);
-    if (client && client.status !== 'ready') {
+    if (client && !client.connected) {
       await hub.reconnect(sessionId);
     }
     await hub.sendMessage(sessionId, text);

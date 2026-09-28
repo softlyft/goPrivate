@@ -16,13 +16,17 @@ import { allowAction, resetRateLimitsForTests } from '../services/limits.js';
 
 type FakeSocket = {
   sent: unknown[];
+  readyState: number;
+  OPEN: number;
   send: (data: string) => void;
   close: ReturnType<typeof vi.fn>;
 };
 
-function fakeSocket(): FakeSocket {
+function fakeSocket(readyState = 1): FakeSocket {
   const socket: FakeSocket = {
     sent: [],
+    readyState,
+    OPEN: 1,
     send(data: string) {
       socket.sent.push(JSON.parse(data));
     },
@@ -177,6 +181,39 @@ describe('message handlers', () => {
       'j4',
     );
     expect(lastError(joiner)).toBe('ALREADY_IN_SESSION');
+  });
+
+  it('lets a new socket join after a previous participant socket has closed', () => {
+    const store = new InMemorySessionStore();
+    const handle = createMessageHandler(store);
+    const host = fakeSocket();
+    const stale = fakeSocket();
+    const replacement = fakeSocket();
+    const sessionId = sid('c');
+
+    handle(
+      host as never,
+      JSON.stringify({ type: ClientEvent.CREATE_SESSION, payload: { sessionId } }),
+      'h1',
+    );
+    handle(
+      stale as never,
+      JSON.stringify({ type: ClientEvent.JOIN_SESSION, payload: { sessionId } }),
+      'j1',
+    );
+    expect(store.get(sessionId)?.participants).toHaveLength(2);
+
+    stale.readyState = 3;
+    handle(
+      replacement as never,
+      JSON.stringify({ type: ClientEvent.JOIN_SESSION, payload: { sessionId } }),
+      'j2',
+    );
+    expect(lastError(replacement)).toBeUndefined();
+    expect(store.get(sessionId)?.participants).toHaveLength(2);
+    expect(
+      replacement.sent.some((m) => (m as { type: string }).type === RelayEvent.PARTNER_JOINED),
+    ).toBe(true);
   });
 
   it('rejects send when not in session and expires on send', () => {

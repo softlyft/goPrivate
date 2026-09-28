@@ -201,6 +201,16 @@ describe('ChatHub', () => {
     expect(hub.size).toBe(MAX_CONCURRENT_CHATS);
   });
 
+  it('does not reconnect a live conversation when opening another', async () => {
+    const a = await hub.createSession('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+    await hub.createSession('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+    await hub.reconnectAll();
+
+    expect(hub.has(a)).toBe(true);
+    expect(clients[0]?.reconnectCalls).toBe(0);
+    expect(clients[1]?.reconnectCalls).toBe(0);
+  });
+
   it('joinSession uses a guest client without touching other chats', async () => {
     const hosted = await hub.createSession('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
     await hub.joinSession('cccccccccccccccccccccccccccccccc');
