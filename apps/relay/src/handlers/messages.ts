@@ -240,6 +240,70 @@ function pruneDeadParticipants(session: Session): void {
   session.participants = session.participants.filter((p) => isSocketOpen(p.socket));
 }
 
+function sendJoinError(
+  socket: WebSocket,
+  code: 'SESSION_FULL' | 'JOIN_FAILED' | 'SESSION_NOT_FOUND' | 'SESSION_EXPIRED',
+  message: string,
+): void {
+  sendToSocket(socket, {
+    type: RelayEvent.ERROR,
+    payload: { code, message },
+  });
+}
+
+/** Wait for a racing close so a reconnect is not counted as a third person. */
+const JOIN_RETRY_MS = 40;
+
+function tryJoinSession(
+  store: ISessionStore,
+  socket: WebSocket,
+  session: Session,
+  ip: string,
+): 'ok' | 'full' | 'failed' {
+  pruneDeadParticipants(session);
+  cancelPendingDestroy(session.id);
+
+  const participant: Participant = { id: createParticipantId(), socket };
+  if (session.participants.length === 0) {
+    session.participants.push(participant);
+    sendToSocket(socket, {
+      type: RelayEvent.SESSION_CREATED,
+      payload: { sessionId: session.id, expiresAt: session.expiresAt },
+    });
+    return 'ok';
+  }
+
+  try {
+    store.addParticipant(session.id, participant);
+    const updated = store.get(session.id)!;
+    const sockets = updated.participants.map((p) => p.socket);
+
+    logger.info({
+      event: 'partner_joined',
+      sessionId: obfuscateSessionId(session.id),
+      participantCount: updated.participants.length,
+      ip: obfuscateIP(ip),
+      timestamp: Date.now(),
+    });
+
+    broadcast(sockets, {
+      type: RelayEvent.PARTNER_JOINED,
+      payload: {
+        sessionId: session.id,
+        participantCount: updated.participants.length,
+        expiresAt: updated.expiresAt,
+      },
+    });
+    return 'ok';
+  } catch (err) {
+    if (err instanceof Error && err.message === 'SESSION_FULL') {
+      return 'full';
+    }
+    sendJoinError(socket, 'JOIN_FAILED', 'Failed to join');
+    return 'failed';
+  }
+}
+
 function handleJoinSession(
   store: ISessionStore,
   socket: WebSocket,
@@ -257,77 +321,40 @@ function handleJoinSession(
 
   const session = store.get(sessionId);
   if (!session) {
-    // Security logging: Failed join (session not found)
     logger.info({
       event: 'join_failed_not_found',
       sessionId: obfuscateSessionId(sessionId),
       ip: obfuscateIP(ip),
       timestamp: Date.now(),
     });
-    sendToSocket(socket, {
-      type: RelayEvent.ERROR,
-      payload: { code: 'SESSION_NOT_FOUND', message: 'Session does not exist' },
-    });
+    sendJoinError(socket, 'SESSION_NOT_FOUND', 'Session does not exist');
     return;
   }
 
   if (expireIfNeeded(store, session)) {
-    sendToSocket(socket, {
-      type: RelayEvent.ERROR,
-      payload: { code: 'SESSION_EXPIRED', message: 'Session has expired' },
-    });
+    sendJoinError(socket, 'SESSION_EXPIRED', 'Session has expired');
     return;
   }
 
-  pruneDeadParticipants(session);
+  const result = tryJoinSession(store, socket, session, ip);
+  if (result !== 'full') return;
 
-  cancelPendingDestroy(sessionId);
-
-  try {
-    const participant: Participant = { id: createParticipantId(), socket };
-    if (session.participants.length === 0) {
-      session.participants.push(participant);
-      sendToSocket(socket, {
-        type: RelayEvent.SESSION_CREATED,
-        payload: { sessionId, expiresAt: session.expiresAt },
-      });
+  setTimeout(() => {
+    if (store.findBySocket(socket)) return;
+    const current = store.get(sessionId);
+    if (!current) {
+      sendJoinError(socket, 'SESSION_NOT_FOUND', 'Session does not exist');
       return;
     }
-
-    store.addParticipant(sessionId, participant);
-
-    const updated = store.get(sessionId)!;
-    const sockets = updated.participants.map((p) => p.socket);
-
-    // Security logging: Partner joined
-    logger.info({
-      event: 'partner_joined',
-      sessionId: obfuscateSessionId(sessionId),
-      participantCount: updated.participants.length,
-      ip: obfuscateIP(ip),
-      timestamp: Date.now(),
-    });
-
-    broadcast(sockets, {
-      type: RelayEvent.PARTNER_JOINED,
-      payload: {
-        sessionId,
-        participantCount: updated.participants.length,
-        expiresAt: updated.expiresAt,
-      },
-    });
-  } catch (err) {
-    const code =
-      err instanceof Error && err.message === 'SESSION_FULL' ? 'SESSION_FULL' : 'JOIN_FAILED';
-    sendToSocket(socket, {
-      type: RelayEvent.ERROR,
-      payload: {
-        code,
-        message:
-          code === 'SESSION_FULL' ? 'Session already has two participants' : 'Failed to join',
-      },
-    });
-  }
+    if (expireIfNeeded(store, current)) {
+      sendJoinError(socket, 'SESSION_EXPIRED', 'Session has expired');
+      return;
+    }
+    const retry = tryJoinSession(store, socket, current, ip);
+    if (retry === 'full') {
+      sendJoinError(socket, 'SESSION_FULL', 'Session already has two participants');
+    }
+  }, JOIN_RETRY_MS);
 }
 
 function handleSendMessage(

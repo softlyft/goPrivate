@@ -69,6 +69,7 @@ export class ChatHub {
   private readonly getRelayUrl: () => string;
   private readonly clients = new Map<string, IRelayClient>();
   private readonly snapshots = new Map<string, ChatSnapshot>();
+  private readonly opening = new Map<string, Promise<void>>();
   private readonly handlers: HandlerMap = {
     snapshot: new Set(),
     message: new Set(),
@@ -143,7 +144,9 @@ export class ChatHub {
     const client = this.clients.get(sessionId);
     if (!client) return;
     if (client.status === 'expired') return;
-    if (client.connected && isLiveStatus(client.status)) return;
+    // Status stays live until onclose; readyState can flap while the relay
+    // still counts this socket, so never JOIN a conversation that is already up.
+    if (isLiveStatus(client.status)) return;
     await client.reconnect();
   }
 
@@ -170,13 +173,27 @@ export class ChatHub {
   }
 
   private async open(sessionId: string, role: 'host' | 'guest'): Promise<void> {
+    const inFlight = this.opening.get(sessionId);
+    if (inFlight) {
+      await inFlight;
+      if (this.clients.has(sessionId)) return;
+    }
+
+    const run = this.openNow(sessionId, role);
+    this.opening.set(sessionId, run);
+    try {
+      await run;
+    } finally {
+      if (this.opening.get(sessionId) === run) {
+        this.opening.delete(sessionId);
+      }
+    }
+  }
+
+  private async openNow(sessionId: string, role: 'host' | 'guest'): Promise<void> {
     const existing = this.clients.get(sessionId);
     if (existing) {
-      if (
-        !existing.connected ||
-        existing.status === 'disconnected' ||
-        existing.status === 'error'
-      ) {
+      if (existing.status !== 'expired' && !isLiveStatus(existing.status)) {
         await existing.reconnect();
       }
       return;

@@ -143,7 +143,7 @@ describe('message handlers', () => {
     expect(lastError(other)).toBe('SESSION_EXISTS');
   });
 
-  it('covers join error paths', () => {
+  it('covers join error paths', async () => {
     const store = new InMemorySessionStore();
     const handle = createMessageHandler(store);
     const host = fakeSocket();
@@ -173,7 +173,7 @@ describe('message handlers', () => {
       JSON.stringify({ type: ClientEvent.JOIN_SESSION, payload: { sessionId } }),
       'j3',
     );
-    expect(lastError(third)).toBe('SESSION_FULL');
+    await vi.waitFor(() => expect(lastError(third)).toBe('SESSION_FULL'));
 
     handle(
       joiner as never,
@@ -209,6 +209,44 @@ describe('message handlers', () => {
       JSON.stringify({ type: ClientEvent.JOIN_SESSION, payload: { sessionId } }),
       'j2',
     );
+    expect(lastError(replacement)).toBeUndefined();
+    expect(store.get(sessionId)?.participants).toHaveLength(2);
+    expect(
+      replacement.sent.some((m) => (m as { type: string }).type === RelayEvent.PARTNER_JOINED),
+    ).toBe(true);
+  });
+
+  it('lets a reconnecting socket in after the old seat closes during join retry', async () => {
+    vi.useFakeTimers();
+    const store = new InMemorySessionStore();
+    const handle = createMessageHandler(store);
+    const host = fakeSocket();
+    const stale = fakeSocket();
+    const replacement = fakeSocket();
+    const sessionId = `${'ab'.repeat(16)}`;
+
+    handle(
+      host as never,
+      JSON.stringify({ type: ClientEvent.CREATE_SESSION, payload: { sessionId } }),
+      'h1',
+    );
+    handle(
+      stale as never,
+      JSON.stringify({ type: ClientEvent.JOIN_SESSION, payload: { sessionId } }),
+      'j1',
+    );
+    expect(store.get(sessionId)?.participants).toHaveLength(2);
+
+    handle(
+      replacement as never,
+      JSON.stringify({ type: ClientEvent.JOIN_SESSION, payload: { sessionId } }),
+      'j2',
+    );
+    expect(lastError(replacement)).toBeUndefined();
+
+    stale.readyState = 3;
+    await vi.advanceTimersByTimeAsync(50);
+
     expect(lastError(replacement)).toBeUndefined();
     expect(store.get(sessionId)?.participants).toHaveLength(2);
     expect(

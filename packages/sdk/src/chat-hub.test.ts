@@ -211,6 +211,23 @@ describe('ChatHub', () => {
     expect(clients[1]?.reconnectCalls).toBe(0);
   });
 
+  it('does not JOIN a live conversation when the socket looks closed', async () => {
+    const a = await hub.createSession('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+    const client = clients[0]!;
+    client.connected = false;
+    await hub.reconnect(a);
+    await hub.reconnectAll();
+    expect(client.reconnectCalls).toBe(0);
+  });
+
+  it('coalesces concurrent opens of the same session', async () => {
+    const id = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const [first, second] = await Promise.all([hub.createSession(id), hub.createSession(id)]);
+    expect(first).toBe(second);
+    expect(clients).toHaveLength(1);
+    expect(clients[0]?.createCalls).toBe(1);
+  });
+
   it('joinSession uses a guest client without touching other chats', async () => {
     const hosted = await hub.createSession('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
     await hub.joinSession('cccccccccccccccccccccccccccccccc');
