@@ -4,6 +4,16 @@ import {
   DEEP_LINK_SCHEME,
   HANDLE_ALLOWLIST,
   MAX_CONCURRENT_CHATS,
+  PREMIUM_MAX_CONCURRENT_CHATS,
+  FREE_MAX_CONCURRENT_CHATS,
+  concurrentChatLimitError,
+  maxConcurrentChats,
+  formatUsdt,
+  premiumPriceUsdtYearly,
+  PREMIUM_PRICE_USDT_MONTHLY,
+  PREMIUM_YEARLY_DISCOUNT,
+  OPERATOR_CONTACT_HANDLE,
+  USDT_PAYMENT_ADDRESS,
   PIN_LENGTH,
   SESSION_TTL_MS,
   customSchemeHandleUrl,
@@ -21,7 +31,20 @@ import {
 describe('@goprivate/config', () => {
   it('exposes product defaults', () => {
     expect(APP_NAME.length).toBeGreaterThan(0);
-    expect(MAX_CONCURRENT_CHATS).toBeGreaterThan(0);
+    expect(FREE_MAX_CONCURRENT_CHATS).toBe(3);
+    expect(PREMIUM_MAX_CONCURRENT_CHATS).toBe(7);
+    expect(MAX_CONCURRENT_CHATS).toBe(PREMIUM_MAX_CONCURRENT_CHATS);
+    expect(maxConcurrentChats(false)).toBe(FREE_MAX_CONCURRENT_CHATS);
+    expect(maxConcurrentChats(true)).toBe(PREMIUM_MAX_CONCURRENT_CHATS);
+    expect(concurrentChatLimitError(false)).toContain(String(FREE_MAX_CONCURRENT_CHATS));
+    expect(concurrentChatLimitError(true)).toContain(String(PREMIUM_MAX_CONCURRENT_CHATS));
+    expect(PREMIUM_PRICE_USDT_MONTHLY).toBe(2);
+    expect(PREMIUM_YEARLY_DISCOUNT).toBe(0.1);
+    expect(premiumPriceUsdtYearly()).toBe(21.6);
+    expect(formatUsdt(PREMIUM_PRICE_USDT_MONTHLY)).toBe('2 USDT');
+    expect(formatUsdt(premiumPriceUsdtYearly())).toBe('21.6 USDT');
+    expect(OPERATOR_CONTACT_HANDLE).toBe('goprivate');
+    expect(USDT_PAYMENT_ADDRESS.length).toBeGreaterThan(8);
     expect(PIN_LENGTH).toBeGreaterThan(0);
     expect(SESSION_TTL_MS).toBeGreaterThan(0);
   });
@@ -38,6 +61,7 @@ describe('@goprivate/config', () => {
   it('validates lasting-link handles and share URLs', () => {
     expect(isHandleSlug('alice')).toBe(true);
     expect(isHandleSlug('olumide-1')).toBe(true);
+    expect(isHandleSlug('about')).toBe(false);
     expect(isHandleSlug('chat')).toBe(false);
     expect(isHandleSlug('Guide')).toBe(false);
     expect(isHandleSlug('A')).toBe(false);
@@ -54,6 +78,7 @@ describe('@goprivate/config', () => {
     expect(extractHandle(`${DEEP_LINK_SCHEME}://alice`)).toBe('alice');
     expect(extractHandle('https://goprivate.vercel.app/chat/aa')).toBeNull();
     expect(extractHandle(`https://goprivate.vercel.app/chat/${'a'.repeat(32)}`)).toBeNull();
+    expect(extractHandle('https://goprivate.vercel.app/about')).toBeNull();
     expect(extractHandle('https://goprivate.vercel.app/guide')).toBeNull();
   });
 });

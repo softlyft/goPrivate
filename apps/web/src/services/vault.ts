@@ -50,6 +50,38 @@ function fromBase64(base64: string): ArrayBuffer {
   return bytes.buffer;
 }
 
+const VAULT_META_KEY = 'goprivate.vault.meta';
+
+function storage(): Storage | null {
+  try {
+    return (globalThis as { localStorage?: Storage }).localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function loadPersistedMeta(): VaultMeta | null {
+  const raw = storage()?.getItem(VAULT_META_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as VaultMeta;
+    if (typeof parsed.salt !== 'string' || typeof parsed.wrappedKey !== 'string') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function persistMeta(meta: VaultMeta | null): void {
+  const store = storage();
+  if (!store) return;
+  if (!meta) {
+    store.removeItem(VAULT_META_KEY);
+    return;
+  }
+  store.setItem(VAULT_META_KEY, JSON.stringify(meta));
+}
+
 function subtle(): SubtleCrypto {
   if (!globalThis.crypto?.subtle) {
     throw new Error('Web Crypto API unavailable');
@@ -101,21 +133,31 @@ class MessageVault {
   private meta: VaultMeta | null = null;
   private failedAttempts = 0;
   private lockUntil = 0;
+  private hydrated = false;
+
+  private ensureHydrated(): void {
+    if (this.hydrated) return;
+    this.hydrated = true;
+    this.meta = loadPersistedMeta();
+  }
 
   get isUnlocked(): boolean {
     return this.vaultKey !== null;
   }
 
   get hasVault(): boolean {
+    this.ensureHydrated();
     return this.meta !== null;
   }
 
   getMeta(): VaultMeta | null {
+    this.ensureHydrated();
     return this.meta;
   }
 
   /** Create a new vault from a PIN. Keeps the vault unlocked in this module. */
   async setup(pin: string): Promise<VaultMeta> {
+    this.ensureHydrated();
     if (!pinPattern().test(pin)) {
       throw new Error(`PIN must be ${PIN_LENGTH} digits`);
     }
@@ -130,11 +172,28 @@ class MessageVault {
     this.meta = { salt: toBase64(salt.buffer), wrappedKey };
     this.failedAttempts = 0;
     this.lockUntil = 0;
+    persistMeta(this.meta);
+    return this.meta;
+  }
+
+  /** Re-wrap the current vault key with a new PIN. Vault must already be unlocked. */
+  async rewrap(newPin: string): Promise<VaultMeta> {
+    this.ensureHydrated();
+    if (!this.vaultKey) throw new Error('Vault is locked');
+    if (!pinPattern().test(newPin)) {
+      throw new Error(`PIN must be ${PIN_LENGTH} digits`);
+    }
+    const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
+    const pinKey = await derivePinKey(newPin, salt.buffer);
+    const wrappedKey = await wrapVaultKey(this.vaultKey, pinKey);
+    this.meta = { salt: toBase64(salt.buffer), wrappedKey };
+    persistMeta(this.meta);
     return this.meta;
   }
 
   /** Unlock an existing vault with PIN. Returns false if PIN is wrong. */
   async unlock(pin: string, meta?: VaultMeta): Promise<boolean> {
+    this.ensureHydrated();
     if (Date.now() < this.lockUntil) {
       throw new Error('Too many attempts. Wait a moment and try again.');
     }
@@ -147,6 +206,7 @@ class MessageVault {
       const vaultKey = await unwrapVaultKey(useMeta.wrappedKey, pinKey);
       this.vaultKey = vaultKey;
       this.meta = useMeta;
+      persistMeta(this.meta);
       this.failedAttempts = 0;
       return true;
     } catch {
@@ -161,6 +221,7 @@ class MessageVault {
 
   /** Verify PIN without changing unlock state if already unlocked with same vault. */
   async verifyPin(pin: string): Promise<boolean> {
+    this.ensureHydrated();
     if (!this.meta) return false;
     if (Date.now() < this.lockUntil) {
       throw new Error('Too many attempts. Wait a moment and try again.');
@@ -180,11 +241,21 @@ class MessageVault {
     }
   }
 
+  /** Forget the unwrapped key for this tab. The saved PIN vault stays on the device. */
   lock(): void {
+    this.vaultKey = null;
+    this.failedAttempts = 0;
+    this.lockUntil = 0;
+  }
+
+  /** Remove the vault from memory and this device. Used by tests. */
+  wipe(): void {
     this.vaultKey = null;
     this.meta = null;
     this.failedAttempts = 0;
     this.lockUntil = 0;
+    persistMeta(null);
+    this.hydrated = false;
   }
 
   async encrypt(plaintext: string): Promise<string> {

@@ -18,10 +18,10 @@ export function ConversationEnded({ onHome }: { onHome: () => void }) {
   return (
     <div
       data-scroll
-      className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto overscroll-contain px-5 py-8 animate-fade-in"
+      className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto overscroll-contain px-5 py-8 animate-fade-in"
     >
       <Glass
-        className="w-full max-w-sm"
+        className="my-auto w-full max-w-sm shrink-0"
         contentClassName="flex flex-col items-center gap-6 px-6 py-8 text-center sm:px-8 sm:py-10"
       >
         <div className="space-y-4">

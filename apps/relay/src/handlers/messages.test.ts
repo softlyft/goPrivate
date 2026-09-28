@@ -6,6 +6,7 @@ import {
   RelayEvent,
   handleClaimMessage,
 } from '@goprivate/protocol';
+import { PREMIUM_MAX_CONCURRENT_CHATS } from '@goprivate/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createMessageHandler,
@@ -564,7 +565,7 @@ describe('message handlers', () => {
     );
     expect(lastError(other)).toBe('HANDLE_TAKEN');
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < PREMIUM_MAX_CONCURRENT_CHATS; i++) {
       const caller = fakeSocket();
       handle(
         caller as never,

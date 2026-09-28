@@ -3,13 +3,19 @@ import { View, Text, TextInput, Pressable, StyleSheet, Clipboard } from 'react-n
 import {
   HANDLE_ALLOWLIST,
   PUBLIC_WEB_ORIGIN,
+  concurrentChatLimitHint,
   isAllowedHandle,
   normalizeHandle,
   sessionTtlLabel,
 } from '@goprivate/config';
 import { Colors } from '../constants/Colors';
 import { claimHandle, getChatHub, unclaimHandle } from '../services/chat-hub';
-import { saveHandleLeaseFromPaste } from '../services/handle-lease';
+import {
+  clearPreferredHandle,
+  loadHandleLease,
+  loadPreferredHandle,
+  saveHandleLeaseFromPaste,
+} from '../services/handle-lease';
 import { messageVault } from '../services/vault';
 
 function handleUrl(handle: string): string {
@@ -24,17 +30,31 @@ export function ClaimHandleCard({
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(HANDLE_ALLOWLIST[0] ?? '');
   const [claimed, setClaimed] = useState<string | null>(null);
+  const [preferredHandle, setPreferredHandle] = useState<string | null>(null);
+  const [hasStoredLease, setHasStoredLease] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [leasePaste, setLeasePaste] = useState('');
+  const displayHandle = claimed ?? preferredHandle;
 
   useEffect(() => {
     const hub = getChatHub();
     setClaimed(hub.handle);
+    void loadPreferredHandle().then(async (remembered) => {
+      if (!remembered) return;
+      setPreferredHandle(remembered);
+      setValue(remembered);
+      setHasStoredLease(Boolean(await loadHandleLease(remembered)));
+    });
     const onStatus = (handle: string | null) => {
       setClaimed(handle);
-      if (handle) setOpen(true);
+      if (handle) {
+        setPreferredHandle(handle);
+        setValue(handle);
+        setOpen(true);
+        void loadHandleLease(handle).then((lease) => setHasStoredLease(Boolean(lease)));
+      }
     };
     hub.on('handleStatus', onStatus);
     return () => hub.off('handleStatus', onStatus);
@@ -58,13 +78,18 @@ export function ClaimHandleCard({
     const run = async () => {
       if (leasePaste.trim()) {
         await saveHandleLeaseFromPaste(handle, leasePaste);
-      } else if (!isAllowedHandle(handle)) {
-        setError(
-          HANDLE_ALLOWLIST.length > 0
-            ? 'This instance only allows reserved names'
-            : 'Use a short name like alice',
-        );
-        return;
+        setHasStoredLease(true);
+        setLeasePaste('');
+      } else {
+        const stored = await loadHandleLease(handle);
+        if (!stored && !isAllowedHandle(handle)) {
+          setError(
+            HANDLE_ALLOWLIST.length > 0
+              ? 'This instance only allows reserved names'
+              : 'Use a short name like alice',
+          );
+          return;
+        }
       }
       await goAvailable(handle);
     };
@@ -77,15 +102,31 @@ export function ClaimHandleCard({
     });
   }
 
-  if (claimed) {
-    const url = handleUrl(claimed);
+  async function forgetName(): Promise<void> {
+    await clearPreferredHandle();
+    setPreferredHandle(null);
+    setHasStoredLease(false);
+    setValue(HANDLE_ALLOWLIST[0] ?? '');
+    setLeasePaste('');
+    setError(null);
+    setOpen(false);
+  }
+
+  if (displayHandle) {
+    const url = handleUrl(displayHandle);
+    const online = Boolean(claimed);
     return (
       <View style={styles.card}>
-        <Text style={styles.kicker}>Available as</Text>
+        <Text style={styles.kicker}>{online ? 'Available as' : 'Your lasting link'}</Text>
         <Text style={styles.url}>{url}</Text>
         <Text style={styles.hint}>
-          Works only while this app stays connected. If you leave, the name goes offline.
+          {online
+            ? `${concurrentChatLimitHint(true)} Works only while this app stays connected. Closing it takes the name offline. Come back here to go available again — this device keeps the name and key.`
+            : hasStoredLease
+              ? `${concurrentChatLimitHint(false)} This device still has your name and key. Go available to receive chats — you will not need the private key again.`
+              : `${concurrentChatLimitHint(false)} This device still has your name. Go available to receive chats.`}
         </Text>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
         <View style={styles.row}>
           <Pressable
             style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
@@ -97,17 +138,32 @@ export function ClaimHandleCard({
           >
             <Text style={styles.secondaryText}>{copied ? 'Copied' : 'Copy link'}</Text>
           </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
-            onPress={() => {
-              setBusy(true);
-              void unclaimHandle().finally(() => setBusy(false));
-            }}
-            disabled={busy}
-          >
-            <Text style={styles.ghostText}>Go offline</Text>
-          </Pressable>
+          {online ? (
+            <Pressable
+              style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
+              onPress={() => {
+                setBusy(true);
+                void unclaimHandle().finally(() => setBusy(false));
+              }}
+              disabled={busy}
+            >
+              <Text style={styles.ghostText}>Go offline</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
+              onPress={handleGo}
+              disabled={busy}
+            >
+              <Text style={styles.ghostText}>{busy ? 'Connecting…' : 'Go available'}</Text>
+            </Pressable>
+          )}
         </View>
+        {online ? null : (
+          <Pressable onPress={() => void forgetName()}>
+            <Text style={styles.link}>Use a different name</Text>
+          </Pressable>
+        )}
       </View>
     );
   }
@@ -127,21 +183,31 @@ export function ClaimHandleCard({
         onChangeText={(text) => {
           setValue(text);
           setError(null);
+          const handle = normalizeHandle(text);
+          if (!handle) {
+            setHasStoredLease(false);
+            return;
+          }
+          void loadHandleLease(handle).then((lease) => setHasStoredLease(Boolean(lease)));
         }}
         placeholder="your-name"
         autoCapitalize="none"
         autoCorrect={false}
         style={styles.input}
       />
-      <TextInput
-        value={leasePaste}
-        onChangeText={setLeasePaste}
-        placeholder="Lease key from your operator"
-        autoCapitalize="none"
-        autoCorrect={false}
-        multiline
-        style={[styles.input, styles.leaseInput]}
-      />
+      {hasStoredLease ? (
+        <Text style={styles.hint}>This device already has the key for this name.</Text>
+      ) : (
+        <TextInput
+          value={leasePaste}
+          onChangeText={setLeasePaste}
+          placeholder="Lease key from your operator"
+          autoCapitalize="none"
+          autoCorrect={false}
+          multiline
+          style={[styles.input, styles.leaseInput]}
+        />
+      )}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <View style={styles.row}>
         <Pressable
@@ -161,7 +227,7 @@ export function ClaimHandleCard({
       </View>
       <Text style={styles.hint}>
         Reserved names need a time-limited lease key. Visitors start a normal {sessionTtlLabel()}{' '}
-        chat.
+        chat. {concurrentChatLimitHint(false)}
       </Text>
     </View>
   );

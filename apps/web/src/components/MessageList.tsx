@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { MessageBubble, type MaskLevel } from '@/components/MessageBubble';
 import { PinPad, PinPadViewport } from '@/components/PinPad';
 import { messageVault } from '@/services/vault';
+import { useDeviceSettings } from '@/hooks/use-device-settings';
 import type { StoredMessage } from '@/store/session';
 
 const CLEAR_COUNT = 1;
@@ -24,6 +25,7 @@ export function MessageList({
   messages: StoredMessage[];
   vaultReady: boolean;
 }) {
+  const { scrambleMessages } = useDeviceSettings();
   const bottomRef = useRef<HTMLDivElement>(null);
   const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
   const [pendingRevealId, setPendingRevealId] = useState<string | null>(null);
@@ -93,7 +95,7 @@ export function MessageList({
       data-scroll
     >
       {messages.map((message, index) => {
-        const level = maskLevelFor(index, messages.length);
+        const level = scrambleMessages ? maskLevelFor(index, messages.length) : 'clear';
         const revealed = revealedIds.has(message.id);
         return (
           <MessageBubble
@@ -120,6 +122,7 @@ export function MessageList({
             <PinPad
               title="Reveal message"
               subtitle="Enter your reveal PIN to decrypt this message temporarily."
+              confirmLabel="Reveal"
               mode="verify"
               externalError={pinError}
               onComplete={(pin) => void handlePinSuccess(pin)}

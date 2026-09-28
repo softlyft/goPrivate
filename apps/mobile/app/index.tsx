@@ -1,12 +1,18 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Modal, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { pinLengthLabel, sessionTtlLabel, TAGLINE } from '@goprivate/config';
+import {
+  pinLengthLabel,
+  sessionTtlLabel,
+  TAGLINE,
+  concurrentChatLimitHint,
+  maxConcurrentChats,
+} from '@goprivate/config';
 import { BrandMark } from '../components/BrandMark';
 import { PinPad } from '../components/PinPad';
 import { messageVault } from '../services/vault';
-import { startHostChat } from '../services/chat-hub';
+import { startHostChat, getChatHub } from '../services/chat-hub';
 import { ClaimHandleCard } from '../components/ClaimHandleCard';
 import { listChats, useSessionStore } from '../store/session';
 import { Colors } from '../constants/Colors';
@@ -23,6 +29,17 @@ export default function HomeScreen() {
   const setVaultMeta = useSessionStore((s) => s.setVaultMeta);
   const setVaultReady = useSessionStore((s) => s.setVaultReady);
   const chats = useSessionStore((s) => listChats(s.chats));
+  const [claimedHandle, setClaimedHandle] = useState<string | null>(null);
+  const premium = Boolean(claimedHandle);
+  const atCap = chats.length >= maxConcurrentChats(premium);
+
+  useEffect(() => {
+    const hub = getChatHub();
+    setClaimedHandle(hub.handle);
+    const onStatus = (handle: string | null) => setClaimedHandle(handle);
+    hub.on('handleStatus', onStatus);
+    return () => hub.off('handleStatus', onStatus);
+  }, []);
 
   async function openHostChat() {
     const sessionId = await startHostChat();
@@ -30,6 +47,10 @@ export default function HomeScreen() {
   }
 
   async function handleStartConversation() {
+    if (atCap) {
+      setPinError(concurrentChatLimitHint(premium));
+      return;
+    }
     if (messageVault.isUnlocked) {
       setIsCreating(true);
       setPinError(null);
@@ -81,8 +102,8 @@ export default function HomeScreen() {
           <BrandMark />
           <Text style={styles.tagline}>{TAGLINE}</Text>
           <Text style={styles.subtitle}>
-            Ephemeral 1:1 chats that vanish in {sessionTtlLabel()}. Run several conversations at
-            once.
+            Ephemeral 1:1 chats that vanish in {sessionTtlLabel()}.{' '}
+            {concurrentChatLimitHint(premium)}
           </Text>
         </View>
 
@@ -99,9 +120,13 @@ export default function HomeScreen() {
             </Pressable>
           ) : null}
           <Pressable
-            style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
+            style={({ pressed }) => [
+              styles.primaryButton,
+              (isCreating || atCap) && styles.buttonDisabled,
+              pressed && styles.buttonPressed,
+            ]}
             onPress={handleStartConversation}
-            disabled={isCreating}
+            disabled={isCreating || atCap}
           >
             <Text style={styles.primaryButtonText}>
               {isCreating ? 'Starting…' : 'Start Private Conversation'}
@@ -249,6 +274,9 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     opacity: 0.7,
+  },
+  buttonDisabled: {
+    opacity: 0.4,
   },
   footer: {
     alignItems: 'center',

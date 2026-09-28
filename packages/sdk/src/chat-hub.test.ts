@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ChatHub, MAX_CONCURRENT_CHATS } from './chat-hub.js';
+import { ChatHub } from './chat-hub.js';
+import {
+  FREE_MAX_CONCURRENT_CHATS,
+  PREMIUM_MAX_CONCURRENT_CHATS,
+} from '@goprivate/config';
 import type {
   ConnectionStatus,
   DecryptedChatMessage,
@@ -203,14 +207,15 @@ describe('ChatHub', () => {
     expect(clients[1]?.leaveCalls).toBe(0);
   });
 
-  it('rejects more than MAX_CONCURRENT_CHATS live conversations', async () => {
-    for (let i = 0; i < MAX_CONCURRENT_CHATS; i++) {
+  it('rejects more than the free concurrent-chat cap', async () => {
+    for (let i = 0; i < FREE_MAX_CONCURRENT_CHATS; i++) {
       await hub.createSession(`${i}`.padStart(32, 'a'));
     }
     await expect(hub.createSession('ffffffffffffffffffffffffffffffff')).rejects.toThrow(
-      new RegExp(`at most ${MAX_CONCURRENT_CHATS} conversations`),
+      new RegExp(`at most ${FREE_MAX_CONCURRENT_CHATS} conversations`),
     );
-    expect(hub.size).toBe(MAX_CONCURRENT_CHATS);
+    expect(hub.size).toBe(FREE_MAX_CONCURRENT_CHATS);
+    expect(hub.chatLimit).toBe(FREE_MAX_CONCURRENT_CHATS);
   });
 
   it('does not reconnect a live conversation when opening another', async () => {
@@ -297,6 +302,54 @@ describe('ChatHub', () => {
       transport.emit({ type: 'HANDLE_CLAIMED', payload: { handle: 'alice' } });
       await expect(pending).resolves.toBe('alice');
       expect(mailboxHub.handle).toBe('alice');
+    } finally {
+      await mailboxHub.unclaimHandle();
+    }
+  });
+
+  it('raises the concurrent-chat cap after a handle is claimed', async () => {
+    const transport: ITransport & { emit: (data: unknown) => void; sent: string[] } = {
+      readyState: 1,
+      sent: [],
+      emit: () => undefined,
+      async connect() {
+        this.readyState = 1;
+      },
+      send(data: string) {
+        this.sent.push(data);
+      },
+      onMessage(handler: (data: string) => void) {
+        this.emit = (data: unknown) => handler(JSON.stringify(data));
+      },
+      onClose() {},
+      onError() {},
+      close() {
+        this.readyState = 3;
+      },
+    };
+
+    const mailboxHub = new ChatHub({
+      getRelayUrl: () => 'ws://relay/ws',
+      createClient: () => new FakeClient(),
+      createTransport: () => transport,
+    });
+
+    const pending = mailboxHub.claimHandle('alice');
+    try {
+      await vi.waitFor(() => {
+        expect(transport.sent.length).toBeGreaterThan(0);
+      });
+      transport.emit({ type: 'HANDLE_CLAIMED', payload: { handle: 'alice' } });
+      await pending;
+      expect(mailboxHub.chatLimit).toBe(PREMIUM_MAX_CONCURRENT_CHATS);
+
+      for (let i = 0; i < PREMIUM_MAX_CONCURRENT_CHATS; i++) {
+        await mailboxHub.createSession(`${i}`.padStart(32, 'b'));
+      }
+      await expect(mailboxHub.createSession('ffffffffffffffffffffffffffffffff')).rejects.toThrow(
+        new RegExp(`at most ${PREMIUM_MAX_CONCURRENT_CHATS} conversations`),
+      );
+      expect(mailboxHub.size).toBe(PREMIUM_MAX_CONCURRENT_CHATS);
     } finally {
       await mailboxHub.unclaimHandle();
     }

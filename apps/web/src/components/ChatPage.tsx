@@ -22,7 +22,7 @@ export function ChatPage() {
   const router = useRouter();
   const {
     vaultReady,
-    setupVault,
+    unlockOrSetupVault,
     joinSession,
     sendMessage,
     leaveSession,
@@ -105,7 +105,7 @@ export function ChatPage() {
   }
 
   async function handlePinSetup(pin: string) {
-    await setupVault(pin);
+    await unlockOrSetupVault(pin);
     setPinReady(true);
   }
 
@@ -127,10 +127,14 @@ export function ChatPage() {
         />
         <PinPadViewport>
           <PinPad
-            title="Set reveal PIN"
-            subtitle="This PIN encrypts messages on your device and unlocks older ones."
+            title={messageVault.hasVault ? 'Enter your PIN' : 'Set reveal PIN'}
+            subtitle={
+              messageVault.hasVault
+                ? 'Unlock the PIN saved on this device to join this chat.'
+                : 'This PIN encrypts messages on your device and unlocks older ones.'
+            }
             confirmLabel="Join Session"
-            mode="setup"
+            mode={messageVault.hasVault ? 'verify' : 'setup'}
             onComplete={(pin) => void handlePinSetup(pin)}
             onCancel={handleCancelPinSetup}
           />

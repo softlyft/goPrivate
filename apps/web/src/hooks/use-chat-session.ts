@@ -5,7 +5,7 @@ import { ChatHub, type ChatSnapshot, type IRelayClient } from '@goprivate/sdk';
 import { messageVault } from '@/services/vault';
 import { listChats, useSessionStore } from '@/store/session';
 import { getHandleClaimSecret, getRelayUrl, getShareUrl } from '@/utils/env';
-import { createHandleProof } from '@/services/handle-lease';
+import { createHandleProof, savePreferredHandle } from '@/services/handle-lease';
 
 let hubSingleton: ChatHub | null = null;
 let wired = false;
@@ -85,8 +85,6 @@ function maybeLockVault(): void {
   if (Object.keys(useSessionStore.getState().chats).length > 0) return;
   if (getChatHub().size > 0) return;
   if (getChatHub().handle) return;
-  messageVault.lock();
-  useSessionStore.getState().clearVault();
 }
 
 function scheduleResume(delayMs = 0): void {
@@ -149,13 +147,38 @@ export function useChatSession() {
     bindLifecycle();
     const hub = ensureHub();
     setClaimedHandle(hub.handle);
+    const meta = messageVault.getMeta();
+    if (meta) {
+      store.setVaultMeta(meta);
+      store.setVaultReady(messageVault.isUnlocked);
+    }
     const onStatus = (handle: string | null) => setClaimedHandle(handle);
     hub.on('handleStatus', onStatus);
     return () => hub.off('handleStatus', onStatus);
   }, []);
 
   async function setupVault(pin: string): Promise<void> {
-    const meta = await messageVault.setup(pin);
+    await unlockOrSetupVault(pin);
+  }
+
+  async function unlockOrSetupVault(pin: string): Promise<void> {
+    if (messageVault.hasVault) {
+      const ok = await messageVault.unlock(pin);
+      if (!ok) {
+        throw new Error('Incorrect PIN');
+      }
+    } else {
+      await messageVault.setup(pin);
+    }
+    store.setVaultMeta(messageVault.getMeta());
+    store.setVaultReady(true);
+  }
+
+  async function changeVaultPin(nextPin: string): Promise<void> {
+    if (!messageVault.isUnlocked) {
+      throw new Error('Unlock your current PIN first');
+    }
+    const meta = await messageVault.rewrap(nextPin);
     store.setVaultMeta(meta);
     store.setVaultReady(true);
   }
@@ -218,7 +241,9 @@ export function useChatSession() {
     if (!messageVault.isUnlocked) {
       throw new Error('Set your reveal PIN before going available');
     }
-    return ensureHub().claimHandle(handle);
+    const claimed = await ensureHub().claimHandle(handle);
+    savePreferredHandle(claimed);
+    return claimed;
   }
 
   async function unclaimHandle(): Promise<void> {
@@ -253,6 +278,8 @@ export function useChatSession() {
     vaultReady: store.vaultReady,
     vaultMeta: store.vaultMeta,
     setupVault,
+    unlockOrSetupVault,
+    changeVaultPin,
     createSession,
     joinSession,
     sendMessage,

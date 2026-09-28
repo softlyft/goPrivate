@@ -165,7 +165,7 @@ export function PinPad({
 
       <div className="flex w-full flex-col gap-2">
         <Button onClick={submit} disabled={activeValue.length !== PIN_LENGTH} className="w-full">
-          {mode === 'verify' ? 'Reveal' : step === 'confirm' ? confirmLabel : 'Next'}
+          {mode === 'verify' ? confirmLabel : step === 'confirm' ? confirmLabel : 'Next'}
         </Button>
         {onCancel && (
           <Button variant="ghost" onClick={onCancel} className="w-full">

@@ -14,14 +14,54 @@ export interface StoredHandleLease {
 }
 
 const PREFIX = 'goprivate.lease.';
+const PREFERRED_KEY = 'goprivate.handle.preferred';
+
+function storage(): Storage | null {
+  try {
+    return (globalThis as { localStorage?: Storage }).localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
 
 function keyFor(handle: string): string {
   return `${PREFIX}${handle}`;
 }
 
+function recoverHandleFromLeases(store: Storage): string | null {
+  for (let i = 0; i < store.length; i++) {
+    const key = store.key(i);
+    if (!key?.startsWith(PREFIX)) continue;
+    const handle = key.slice(PREFIX.length).trim().toLowerCase();
+    if (handle) return handle;
+  }
+  return null;
+}
+
+export function loadPreferredHandle(): string | null {
+  const store = storage();
+  if (!store) return null;
+  const raw = store.getItem(PREFERRED_KEY);
+  if (raw === '') return null;
+  const handle = raw?.trim().toLowerCase();
+  if (handle) return handle;
+  const recovered = recoverHandleFromLeases(store);
+  if (recovered) savePreferredHandle(recovered);
+  return recovered;
+}
+
+export function savePreferredHandle(handle: string): void {
+  const normalized = handle.trim().toLowerCase();
+  if (!normalized) return;
+  storage()?.setItem(PREFERRED_KEY, normalized);
+}
+
+export function clearPreferredHandle(): void {
+  storage()?.setItem(PREFERRED_KEY, '');
+}
+
 export function loadHandleLease(handle: string): StoredHandleLease | null {
-  if (typeof localStorage === 'undefined') return null;
-  const raw = localStorage.getItem(keyFor(handle));
+  const raw = storage()?.getItem(keyFor(handle));
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as StoredHandleLease;
@@ -33,7 +73,10 @@ export function loadHandleLease(handle: string): StoredHandleLease | null {
 }
 
 export function saveHandleLease(lease: StoredHandleLease): void {
-  localStorage.setItem(keyFor(lease.handle), JSON.stringify(lease));
+  const store = storage();
+  if (!store) return;
+  store.setItem(keyFor(lease.handle), JSON.stringify(lease));
+  savePreferredHandle(lease.handle);
 }
 
 export function saveHandleLeaseFromPaste(handle: string, paste: string): StoredHandleLease {

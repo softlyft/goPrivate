@@ -1,7 +1,9 @@
+import { concurrentChatLimitHint } from '@goprivate/config';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ConversationList } from '../components/ConversationList';
+import { getChatHub } from '../services/chat-hub';
 import { listChats, useSessionStore } from '../store/session';
 import { Colors } from '../constants/Colors';
 import { chatHref } from '../utils/session-link';
@@ -19,7 +21,8 @@ export default function ChatsScreen() {
         <Text style={styles.kicker}>Inbox</Text>
         <Text style={styles.title}>Open conversations</Text>
         <Text style={styles.subtitle}>
-          Each chat is still 1:1. Leave one without closing the others.
+          Each chat is still 1:1. Leave one without closing the others.{' '}
+          {concurrentChatLimitHint(Boolean(getChatHub().handle))}
         </Text>
       </View>
 

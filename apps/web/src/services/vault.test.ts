@@ -3,7 +3,7 @@ import { configureVaultForTests, messageVault, resetVaultTestConfig } from './va
 
 describe('messageVault', () => {
   beforeEach(() => {
-    messageVault.lock();
+    messageVault.wipe();
     configureVaultForTests({ iterations: 1_000 });
   });
 
@@ -45,6 +45,24 @@ describe('messageVault', () => {
       expect(await messageVault.unlock('000000', meta)).toBe(false);
     }
     await expect(messageVault.unlock('555555', meta)).rejects.toThrow(/too many attempts/i);
+  });
+
+  it('keeps the saved PIN vault after lock', async () => {
+    await messageVault.setup('123456');
+    messageVault.lock();
+    expect(messageVault.isUnlocked).toBe(false);
+    expect(messageVault.hasVault).toBe(true);
+    expect(await messageVault.unlock('123456')).toBe(true);
+  });
+
+  it('rewrapping PIN still decrypts existing ciphertext', async () => {
+    await messageVault.setup('111111');
+    const cipher = await messageVault.encrypt('secret');
+    await messageVault.rewrap('222222');
+    expect(await messageVault.decrypt(cipher)).toBe('secret');
+    messageVault.lock();
+    expect(await messageVault.unlock('111111')).toBe(false);
+    expect(await messageVault.unlock('222222')).toBe(true);
   });
 
   it('throws when encrypting while locked', async () => {

@@ -5,6 +5,7 @@ import { AppShell } from '@/components/AppShell';
 import { BrandMark } from '@/components/BrandMark';
 import { ClaimHandleControl } from '@/components/ClaimHandleControl';
 import { CreateSessionButton } from '@/components/CreateSessionButton';
+import { SettingsControl } from '@/components/SettingsControl';
 import { Header } from '@/components/Header';
 import { JoinSessionForm } from '@/components/JoinSessionForm';
 import { Glass } from '@/components/ui/glass';
@@ -20,20 +21,29 @@ export function LandingPage() {
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         <Header
           right={
-            <Link
-              href="/guide"
-              className="rounded-full px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-black/[0.04] hover:text-foreground"
-            >
-              How it works
-            </Link>
+            <div className="flex items-center gap-0.5">
+              <SettingsControl />
+              <Link
+                href="/about"
+                className="rounded-full px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-black/[0.04] hover:text-foreground"
+              >
+                About
+              </Link>
+              <Link
+                href="/guide"
+                className="rounded-full px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-black/[0.04] hover:text-foreground"
+              >
+                How it works
+              </Link>
+            </div>
           }
         />
         <main
           data-scroll
-          className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto overscroll-contain px-5 py-6 animate-fade-in"
+          className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto overscroll-contain px-5 py-6 animate-fade-in"
         >
           <Glass
-            className="w-full max-w-sm"
+            className="my-auto w-full max-w-sm shrink-0"
             contentClassName="flex flex-col items-center gap-7 px-6 py-8 text-center sm:gap-8 sm:px-8 sm:py-10"
           >
             <div className="space-y-4">
@@ -62,7 +72,7 @@ export function LandingPage() {
             </div>
 
             <p className="text-[11px] leading-relaxed text-muted">
-              Set a {pinLengthLabel()} PIN to reveal older masked messages on your device.
+              Set your {pinLengthLabel()} PIN in Settings once. It stays on this device.
             </p>
 
             <Link

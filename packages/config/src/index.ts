@@ -84,6 +84,7 @@ export const RESERVED_PATHS = [
   'chat',
   'chats',
   'guide',
+  'about',
   'join',
   'api',
   'login',
@@ -94,8 +95,56 @@ export const RESERVED_PATHS = [
   'favicon.ico',
 ] as const;
 
-/** Live 1:1 chats on one device. */
-export const MAX_CONCURRENT_CHATS = 5;
+/** Live 1:1 chats on one device without a claimed lasting name. */
+export const FREE_MAX_CONCURRENT_CHATS = 3;
+/** Live 1:1 chats while a lasting name is claimed (premium). */
+export const PREMIUM_MAX_CONCURRENT_CHATS = 7;
+/** Absolute ceiling — same as premium / inbound rings on a claimed handle. */
+export const MAX_CONCURRENT_CHATS = PREMIUM_MAX_CONCURRENT_CHATS;
+
+export function maxConcurrentChats(premium: boolean): number {
+  return premium ? PREMIUM_MAX_CONCURRENT_CHATS : FREE_MAX_CONCURRENT_CHATS;
+}
+
+export function concurrentChatLimitError(premium: boolean): string {
+  const max = maxConcurrentChats(premium);
+  if (premium) {
+    return `You can have at most ${max} conversations at once`;
+  }
+  return `You can have at most ${max} conversations at once. Go available with a lasting name for up to ${PREMIUM_MAX_CONCURRENT_CHATS}.`;
+}
+
+export function concurrentChatLimitHint(premium: boolean): string {
+  if (premium) {
+    return `You can keep up to ${PREMIUM_MAX_CONCURRENT_CHATS} chats open with this name.`;
+  }
+  return `Up to ${FREE_MAX_CONCURRENT_CHATS} chats at a time. A lasting name allows ${PREMIUM_MAX_CONCURRENT_CHATS}.`;
+}
+
+/** Hosted premium lasting-name plan. Paid in USDT. */
+export const PREMIUM_PRICE_USDT_MONTHLY = 2;
+/** Fraction off 12 months when billed yearly (0.1 = 10%). */
+export const PREMIUM_YEARLY_DISCOUNT = 0.1;
+
+export function premiumPriceUsdtYearly(): number {
+  return (
+    Math.round(PREMIUM_PRICE_USDT_MONTHLY * 12 * (1 - PREMIUM_YEARLY_DISCOUNT) * 100) / 100
+  );
+}
+
+export function formatUsdt(amount: number): string {
+  const text = Number.isInteger(amount) ? String(amount) : amount.toFixed(1);
+  return `${text} USDT`;
+}
+
+/** Lasting name used for operator contact on the hosted app. */
+export const OPERATOR_CONTACT_HANDLE = 'goprivate';
+
+/**
+ * Temporary USDT settlement address for hosted Premium.
+ * Replace before accepting live payments.
+ */
+export const USDT_PAYMENT_ADDRESS = '0x1111111111111111111111111111111111111111';
 
 /** Session lifetime from creation. */
 export const SESSION_TTL_MS = 30 * 60 * 1000;
