@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import native from './native.json';
 import {
   APP_NAME,
   DEEP_LINK_SCHEME,
@@ -29,6 +30,12 @@ import {
 } from './index.js';
 
 describe('@goprivate/config', () => {
+  it('keeps Expo-requireable native.json in sync with exports', () => {
+    expect(APP_NAME).toBe(native.APP_NAME);
+    expect(DEEP_LINK_SCHEME).toBe(native.DEEP_LINK_SCHEME);
+    expect(native.PUBLIC_WEB_ORIGINS[0]).toBe('https://goprivate.vercel.app');
+  });
+
   it('exposes product defaults', () => {
     expect(APP_NAME.length).toBeGreaterThan(0);
     expect(FREE_MAX_CONCURRENT_CHATS).toBe(3);

@@ -5,6 +5,11 @@
  * point it at your relay, and tune session limits. Web, mobile, SDK, and relay
  * all read these values.
  *
+ * Native ids consumed by Expo `app.config.ts` live in `native.json` so
+ * `expo prebuild` can require them as CommonJS. This file re-exports those
+ * values — edit the JSON to rename the app, scheme, package ids, or public
+ * origins.
+ *
  * Still replace by hand:
  * - Logo files: apps/web/public/logo.jpg, apps/mobile/assets/**
  * - Native ids if you do not use apps/mobile/app.config.ts:
@@ -15,8 +20,10 @@
  *   NEXT_PUBLIC_HANDLE_CLAIM_SECRET, EXPO_PUBLIC_HANDLE_CLAIM_SECRET
  */
 
+import native from './native.json';
+
 /** Shown in the header, share sheets, and metadata. */
-export const APP_NAME = 'goPrivate';
+export const APP_NAME = native.APP_NAME;
 /** First colored span of the wordmark. Set to '' for a single-color name. */
 export const APP_NAME_LEAD = 'go';
 /** Rest of the wordmark. */
@@ -31,26 +38,22 @@ export const SUPPORT_URL = 'https://github.com/sponsors/softlyft';
 export const SUPPORT_LABEL = `Support ${APP_NAME}`;
 
 /** Public web origin used in share links and CORS defaults. */
-export const PUBLIC_WEB_ORIGIN = 'https://goprivate.vercel.app';
+export const PUBLIC_WEB_ORIGIN = native.PUBLIC_WEB_ORIGINS[0]!;
 /** Extra HTTPS origins that may appear on share links / CORS. */
-export const PUBLIC_WEB_ORIGINS = [
-  PUBLIC_WEB_ORIGIN,
-  'https://goprivate.app',
-  'https://www.goprivate.app',
-] as const;
+export const PUBLIC_WEB_ORIGINS = native.PUBLIC_WEB_ORIGINS;
 
 /** Custom URL scheme for the mobile app (`goprivate://chat/...`). */
-export const DEEP_LINK_SCHEME = 'goprivate';
+export const DEEP_LINK_SCHEME = native.DEEP_LINK_SCHEME;
 
-export const IOS_BUNDLE_ID = 'com.goprivate.mobile';
-export const ANDROID_PACKAGE = 'com.goprivate.mobile';
+export const IOS_BUNDLE_ID = native.IOS_BUNDLE_ID;
+export const ANDROID_PACKAGE = native.ANDROID_PACKAGE;
 
 export const WEB_LOGO_SRC = '/logo.jpg';
 
 export const DEFAULT_DEV_RELAY_URL = 'ws://localhost:3001/ws';
 /** Android emulator loopback to the host machine. */
 export const DEFAULT_ANDROID_EMULATOR_RELAY_URL = 'ws://10.0.2.2:3001/ws';
-export const DEFAULT_PROD_RELAY_URL = 'wss://goprivate-relay.onrender.com/ws';
+export const DEFAULT_PROD_RELAY_URL = native.DEFAULT_PROD_RELAY_URL;
 
 /** Extra WSS hosts allowed in the web CSP connect-src. */
 export const CSP_CONNECT_WSS = [
