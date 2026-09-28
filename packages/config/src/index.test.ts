@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import native from './native.json';
+import native from './native.json' with { type: 'json' };
 import {
   APP_NAME,
   DEEP_LINK_SCHEME,
