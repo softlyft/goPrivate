@@ -96,6 +96,8 @@ export const RESERVED_PATHS = [
   'ws',
   '_next',
   'favicon.ico',
+  // Expo dev-client launch URL uses the app scheme (`goprivate://expo-development-client`).
+  'expo-development-client',
 ] as const;
 
 /** Live 1:1 chats on one device without a claimed lasting name. */

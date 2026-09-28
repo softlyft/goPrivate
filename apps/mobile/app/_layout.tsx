@@ -7,6 +7,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { parseDeepLink } from '../utils/deeplink';
 import { chatHref } from '../utils/session-link';
 
+const STACK_SCREEN_OPTIONS = {
+  headerShown: false,
+  animation: 'slide_from_right' as const,
+};
+
 export default function RootLayout() {
   const router = useRouter();
 
@@ -31,34 +36,30 @@ export default function RootLayout() {
   useEffect(() => {
     async function handleInitialURL() {
       const initialUrl = await Linking.getInitialURL();
+      if (!initialUrl || /expo-development-client/i.test(initialUrl)) {
+        return;
+      }
 
-      if (initialUrl) {
-        const { sessionId, handle } = parseDeepLink(initialUrl);
+      const { sessionId, handle } = parseDeepLink(initialUrl);
 
-        if (sessionId) {
-          setTimeout(() => {
-            router.push(chatHref(sessionId));
-          }, 100);
-        } else if (handle) {
-          setTimeout(() => {
-            router.push(`/${handle}`);
-          }, 100);
-        }
+      if (sessionId) {
+        setTimeout(() => {
+          router.push(chatHref(sessionId));
+        }, 100);
+      } else if (handle) {
+        setTimeout(() => {
+          router.push(`/${handle}`);
+        }, 100);
       }
     }
 
-    handleInitialURL();
-  }, []);
+    void handleInitialURL();
+  }, [router]);
 
   return (
     <SafeAreaProvider>
       <StatusBar style="auto" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: 'slide_from_right',
-        }}
-      >
+      <Stack screenOptions={STACK_SCREEN_OPTIONS}>
         <Stack.Screen name="index" />
         <Stack.Screen name="chats" />
         <Stack.Screen name="join" />

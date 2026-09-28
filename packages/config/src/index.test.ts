@@ -87,5 +87,9 @@ describe('@goprivate/config', () => {
     expect(extractHandle(`https://goprivate.vercel.app/chat/${'a'.repeat(32)}`)).toBeNull();
     expect(extractHandle('https://goprivate.vercel.app/about')).toBeNull();
     expect(extractHandle('https://goprivate.vercel.app/guide')).toBeNull();
+    expect(isHandleSlug('expo-development-client')).toBe(false);
+    expect(
+      extractHandle(`${DEEP_LINK_SCHEME}://expo-development-client/?url=http://localhost:8081`),
+    ).toBeNull();
   });
 });

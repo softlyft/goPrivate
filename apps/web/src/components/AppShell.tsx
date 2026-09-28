@@ -38,6 +38,10 @@ export function AppShell({
         <AmbientCanvas />
         <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden">
           {children}
+          <div
+            id="goprivate-overlay-root"
+            className="pointer-events-none absolute inset-0 z-50"
+          />
         </div>
       </div>
     </div>

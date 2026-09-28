@@ -80,7 +80,7 @@ export function SettingsControl() {
 
       {open && mounted
         ? createPortal(
-            <div className="fixed inset-0 z-50 flex min-h-0 flex-col bg-background/55 backdrop-blur-xl animate-fade-in">
+            <div className="pointer-events-auto absolute inset-0 z-50 flex min-h-0 flex-col bg-background animate-fade-in">
               {pinStep !== 'closed' ? (
                 <PinPadViewport>
                   <PinPad
@@ -130,8 +130,8 @@ export function SettingsControl() {
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-black/8 bg-white/45 px-4 py-3">
-                      <div className="min-w-0 text-left">
+                    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-black/8 bg-white/45 px-4 py-3">
+                      <div className="min-w-0 flex-1 text-left">
                         <p className="text-sm font-medium text-foreground">
                           {pinLengthLabel()} PIN
                         </p>
@@ -154,8 +154,8 @@ export function SettingsControl() {
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-black/8 bg-white/45 px-4 py-3">
-                      <div className="min-w-0 text-left">
+                    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-black/8 bg-white/45 px-4 py-3">
+                      <div className="min-w-0 flex-1 text-left">
                         <p className="text-sm font-medium text-foreground">Scramble messages</p>
                         <p className="text-[11px] leading-relaxed text-muted">
                           Hide older chat text on screen. Turn off to keep messages readable.
@@ -169,14 +169,14 @@ export function SettingsControl() {
                           saveDeviceSettings({ scrambleMessages: !settings.scrambleMessages })
                         }
                         className={cn(
-                          'relative h-7 w-12 shrink-0 rounded-full transition-colors',
+                          'flex h-7 w-11 shrink-0 items-center overflow-hidden rounded-full p-0.5 transition-colors',
                           settings.scrambleMessages ? 'bg-accent' : 'bg-black/15',
                         )}
                       >
                         <span
                           className={cn(
-                            'absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform',
-                            settings.scrambleMessages ? 'translate-x-5' : 'translate-x-0.5',
+                            'h-6 w-6 rounded-full bg-white shadow-sm transition-transform',
+                            settings.scrambleMessages ? 'translate-x-4' : 'translate-x-0',
                           )}
                         />
                       </button>
@@ -185,7 +185,7 @@ export function SettingsControl() {
                 </div>
               )}
             </div>,
-            document.body,
+            document.getElementById('goprivate-overlay-root') ?? document.body,
           )
         : null}
     </>

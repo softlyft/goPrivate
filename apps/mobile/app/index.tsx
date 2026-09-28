@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Modal, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,7 +28,8 @@ export default function HomeScreen() {
   const afterPinRef = useRef<(() => Promise<void>) | null>(null);
   const setVaultMeta = useSessionStore((s) => s.setVaultMeta);
   const setVaultReady = useSessionStore((s) => s.setVaultReady);
-  const chats = useSessionStore((s) => listChats(s.chats));
+  const chatMap = useSessionStore((s) => s.chats);
+  const chats = useMemo(() => listChats(chatMap), [chatMap]);
   const [claimedHandle, setClaimedHandle] = useState<string | null>(null);
   const premium = Boolean(claimedHandle);
   const atCap = chats.length >= maxConcurrentChats(premium);
