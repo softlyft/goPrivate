@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { concurrentChatLimitHint } from '@goprivate/config';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -10,7 +11,8 @@ import { chatHref } from '../utils/session-link';
 
 export default function ChatsScreen() {
   const router = useRouter();
-  const chats = useSessionStore((s) => listChats(s.chats));
+  const chatMap = useSessionStore((s) => s.chats);
+  const chats = useMemo(() => listChats(chatMap), [chatMap]);
 
   return (
     <SafeAreaView style={styles.container}>
