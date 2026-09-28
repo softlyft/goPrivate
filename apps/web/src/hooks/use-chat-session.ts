@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ChatHub, type ChatSnapshot, type IRelayClient } from '@goprivate/sdk';
 import { messageVault } from '@/services/vault';
 import { listChats, useSessionStore } from '@/store/session';
-import { getRelayUrl, getShareUrl } from '@/utils/env';
+import { getHandleClaimSecret, getRelayUrl, getShareUrl } from '@/utils/env';
+import { createHandleProof } from '@/services/handle-lease';
 
 let hubSingleton: ChatHub | null = null;
 let wired = false;
@@ -14,7 +15,11 @@ let resumeInFlight: Promise<void> | null = null;
 
 export function getChatHub(): ChatHub {
   if (!hubSingleton) {
-    hubSingleton = new ChatHub({ getRelayUrl });
+    hubSingleton = new ChatHub({
+      getRelayUrl,
+      getClaimSecret: getHandleClaimSecret,
+      getHandleProof: (handle) => createHandleProof(handle),
+    });
   }
   return hubSingleton;
 }
@@ -79,6 +84,7 @@ function wireHub(hub: ChatHub): void {
 function maybeLockVault(): void {
   if (Object.keys(useSessionStore.getState().chats).length > 0) return;
   if (getChatHub().size > 0) return;
+  if (getChatHub().handle) return;
   messageVault.lock();
   useSessionStore.getState().clearVault();
 }
@@ -137,9 +143,15 @@ export function useChatSession() {
   const store = useSessionStore();
   const chats = listChats(store.chats);
   const activeChat = store.activeSessionId ? (store.chats[store.activeSessionId] ?? null) : null;
+  const [claimedHandle, setClaimedHandle] = useState<string | null>(null);
 
   useEffect(() => {
     bindLifecycle();
+    const hub = ensureHub();
+    setClaimedHandle(hub.handle);
+    const onStatus = (handle: string | null) => setClaimedHandle(handle);
+    hub.on('handleStatus', onStatus);
+    return () => hub.off('handleStatus', onStatus);
   }, []);
 
   async function setupVault(pin: string): Promise<void> {
@@ -202,6 +214,34 @@ export function useChatSession() {
     await ensureHub().leaveSession(sessionId);
   }
 
+  async function claimHandle(handle: string): Promise<string> {
+    if (!messageVault.isUnlocked) {
+      throw new Error('Set your reveal PIN before going available');
+    }
+    return ensureHub().claimHandle(handle);
+  }
+
+  async function unclaimHandle(): Promise<void> {
+    await ensureHub().unclaimHandle();
+    maybeLockVault();
+  }
+
+  async function ringHandle(handle: string): Promise<string> {
+    if (!messageVault.isUnlocked) {
+      throw new Error('Set your reveal PIN before reaching this person');
+    }
+    const hub = ensureHub();
+    const sessionId = await hub.ringHandle(handle);
+    store.upsertChat(sessionId, {
+      isHost: true,
+      shareUrl: getShareUrl(sessionId),
+      status: hub.get(sessionId)?.status ?? 'awaiting_partner',
+      expiresAt: hub.get(sessionId)?.expiresAt ?? null,
+    });
+    store.setActiveSessionId(sessionId);
+    return sessionId;
+  }
+
   function openSession(sessionId: string): void {
     store.setActiveSessionId(sessionId);
   }
@@ -219,5 +259,9 @@ export function useChatSession() {
     leaveSession,
     expireSession,
     openSession,
+    claimHandle,
+    unclaimHandle,
+    ringHandle,
+    claimedHandle,
   };
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { extractHandle } from '@goprivate/config';
 import { SESSION_ID_PATTERN } from '@goprivate/protocol';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
@@ -32,6 +33,12 @@ export function JoinSessionForm() {
     e.preventDefault();
     const sessionId = extractSessionId(value);
     if (!sessionId) return;
+    const handle = extractHandle(value);
+    if (handle) {
+      setError(null);
+      router.push(`/${handle}`);
+      return;
+    }
     if (!SESSION_ID_PATTERN.test(sessionId)) {
       setError('Enter a valid session link or ID');
       return;

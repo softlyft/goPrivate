@@ -1,8 +1,10 @@
+import { APP_NAME } from '@goprivate/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
 import { MAX_WS_MESSAGE_BYTES } from '@goprivate/protocol';
 import { sweepExpiredSessions } from './handlers/messages.js';
+import { InMemoryHandleStore } from './session/handles.js';
 import { InMemorySessionStore } from './session/store.js';
 import { sweepRateLimits } from './services/limits.js';
 import { isAllowedOrigin } from './services/origins.js';
@@ -48,10 +50,11 @@ async function main() {
     ok: true,
   }));
 
-  await registerWebsocket(app, store, connectionCounter);
+  const handles = new InMemoryHandleStore();
+  await registerWebsocket(app, store, handles, connectionCounter);
 
   const sweeper = setInterval(() => {
-    const removed = sweepExpiredSessions(store);
+    const removed = sweepExpiredSessions(store, handles);
     if (removed > 0) {
       app.log.info({ removed }, 'expired sessions swept');
     }
@@ -74,7 +77,7 @@ async function main() {
   process.on('SIGINT', () => void shutdown('SIGINT'));
 
   await app.listen({ port: PORT, host: HOST });
-  app.log.info(`goPrivate relay listening on ${HOST}:${PORT}`);
+  app.log.info(`${APP_NAME} relay listening on ${HOST}:${PORT}`);
 }
 
 main().catch((err) => {

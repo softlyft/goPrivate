@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatHub, MAX_CONCURRENT_CHATS } from './chat-hub.js';
 import type {
   ConnectionStatus,
   DecryptedChatMessage,
   IRelayClient,
+  ITransport,
   RelayClientEvents,
 } from './types.js';
 import type { EncryptedMessage } from '@goprivate/protocol';
@@ -19,6 +20,7 @@ class FakeClient implements IRelayClient {
   connected = false;
   createCalls = 0;
   joinCalls = 0;
+  ringCalls = 0;
   reconnectCalls = 0;
   leaveCalls = 0;
   sent: string[] = [];
@@ -50,6 +52,16 @@ class FakeClient implements IRelayClient {
   async createSession(sessionId?: string): Promise<string> {
     this.createCalls += 1;
     this.sessionId = sessionId ?? 'generated-session';
+    this.expiresAt = 1_700_000_000_000;
+    this.status = 'awaiting_partner';
+    this.emit('sessionCreated', this.sessionId, this.expiresAt);
+    this.emit('status', this.status);
+    return this.sessionId;
+  }
+
+  async ringHandle(handle: string): Promise<string> {
+    this.ringCalls += 1;
+    this.sessionId = `ring-${handle}-${this.ringCalls}`;
     this.expiresAt = 1_700_000_000_000;
     this.status = 'awaiting_partner';
     this.emit('sessionCreated', this.sessionId, this.expiresAt);
@@ -196,7 +208,7 @@ describe('ChatHub', () => {
       await hub.createSession(`${i}`.padStart(32, 'a'));
     }
     await expect(hub.createSession('ffffffffffffffffffffffffffffffff')).rejects.toThrow(
-      /at most 5 conversations/,
+      new RegExp(`at most ${MAX_CONCURRENT_CHATS} conversations`),
     );
     expect(hub.size).toBe(MAX_CONCURRENT_CHATS);
   });
@@ -237,5 +249,56 @@ describe('ChatHub', () => {
     expect(clients[1]?.joinCalls).toBe(1);
     expect(hub.get(hosted)?.isHost).toBe(true);
     expect(hub.get('cccccccccccccccccccccccccccccccc')?.partnerPresent).toBe(true);
+  });
+
+  it('rings a handle as a new host conversation', async () => {
+    const sessionId = await hub.ringHandle('alice');
+    expect(sessionId).toBe('ring-alice-1');
+    expect(clients[0]?.ringCalls).toBe(1);
+    expect(hub.get(sessionId)?.isHost).toBe(true);
+  });
+
+  it('claims a handle over the mailbox socket', async () => {
+    const transport: ITransport & { emit: (data: unknown) => void; sent: string[] } = {
+      readyState: 1,
+      sent: [],
+      emit: () => undefined,
+      async connect() {
+        this.readyState = 1;
+      },
+      send(data: string) {
+        this.sent.push(data);
+      },
+      onMessage(handler: (data: string) => void) {
+        this.emit = (data: unknown) => handler(JSON.stringify(data));
+      },
+      onClose() {},
+      onError() {},
+      close() {
+        this.readyState = 3;
+      },
+    };
+
+    const mailboxHub = new ChatHub({
+      getRelayUrl: () => 'ws://relay/ws',
+      createClient: () => new FakeClient(),
+      createTransport: () => transport,
+    });
+
+    const pending = mailboxHub.claimHandle('alice');
+    try {
+      await vi.waitFor(() => {
+        expect(transport.sent.length).toBeGreaterThan(0);
+      });
+      expect(JSON.parse(transport.sent[0] ?? '{}')).toMatchObject({
+        type: 'CLAIM_HANDLE',
+        payload: { handle: 'alice' },
+      });
+      transport.emit({ type: 'HANDLE_CLAIMED', payload: { handle: 'alice' } });
+      await expect(pending).resolves.toBe('alice');
+      expect(mailboxHub.handle).toBe('alice');
+    } finally {
+      await mailboxHub.unclaimHandle();
+    }
   });
 });

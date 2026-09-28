@@ -1,13 +1,21 @@
+import { MAX_CONCURRENT_CHATS } from '@goprivate/config';
+import {
+  ClientEvent,
+  RelayEvent,
+  type ClaimHandleProof,
+  type RelayToClientMessage,
+} from '@goprivate/protocol';
 import type {
   ConnectionStatus,
   DecryptedChatMessage,
   IRelayClient,
+  ITransport,
   RelayClientEvents,
 } from './types.js';
 import { createRelayClient } from './relay-client.js';
+import { WebSocketTransport } from './transport.js';
 
-/** Client-side cap on simultaneous 1:1 conversations (matches per-IP create limit). */
-export const MAX_CONCURRENT_CHATS = 5;
+export { MAX_CONCURRENT_CHATS };
 
 export interface ChatSnapshot {
   sessionId: string;
@@ -23,6 +31,8 @@ export interface ChatHubEvents {
   message: (sessionId: string, message: DecryptedChatMessage) => void;
   fingerprints: (sessionId: string, local: string, peer: string) => void;
   removed: (sessionId: string) => void;
+  incomingRing: (sessionId: string, handle: string) => void;
+  handleStatus: (handle: string | null) => void;
 }
 
 type HandlerMap = {
@@ -31,7 +41,10 @@ type HandlerMap = {
 
 export interface ChatHubOptions {
   createClient?: () => IRelayClient;
+  createTransport?: () => ITransport;
   getRelayUrl: () => string;
+  getClaimSecret?: () => string | undefined;
+  getHandleProof?: (handle: string) => Promise<ClaimHandleProof | null | undefined>;
 }
 
 function generateSessionId(): string {
@@ -64,22 +77,49 @@ function emptySnapshot(sessionId: string, isHost: boolean): ChatSnapshot {
 /**
  * One RelayClient (one WebSocket) per 1:1 session so several chats can stay live.
  */
+const MAILBOX_PING_MS = 20_000;
+const MAILBOX_RPC_TIMEOUT_MS = 45_000;
+
 export class ChatHub {
   private readonly createClient: () => IRelayClient;
+  private readonly createTransport: () => ITransport;
   private readonly getRelayUrl: () => string;
+  private readonly getClaimSecret?: () => string | undefined;
+  private readonly getHandleProof?: (
+    handle: string,
+  ) => Promise<ClaimHandleProof | null | undefined>;
   private readonly clients = new Map<string, IRelayClient>();
   private readonly snapshots = new Map<string, ChatSnapshot>();
   private readonly opening = new Map<string, Promise<void>>();
+  private mailbox: ITransport | null = null;
+  private mailboxPing: ReturnType<typeof setInterval> | null = null;
+  private claimedHandle: string | null = null;
+  private desiredHandle: string | null = null;
+  private claimInFlight: Promise<string> | null = null;
+  private pendingClaim: {
+    handle: string;
+    resolve: (handle: string) => void;
+    reject: (error: Error) => void;
+  } | null = null;
   private readonly handlers: HandlerMap = {
     snapshot: new Set(),
     message: new Set(),
     fingerprints: new Set(),
     removed: new Set(),
+    incomingRing: new Set(),
+    handleStatus: new Set(),
   };
 
   constructor(options: ChatHubOptions) {
     this.createClient = options.createClient ?? (() => createRelayClient());
+    this.createTransport = options.createTransport ?? (() => new WebSocketTransport());
     this.getRelayUrl = options.getRelayUrl;
+    this.getClaimSecret = options.getClaimSecret;
+    this.getHandleProof = options.getHandleProof;
+  }
+
+  get handle(): string | null {
+    return this.claimedHandle;
   }
 
   get size(): number {
@@ -120,6 +160,63 @@ export class ChatHub {
     await this.open(sessionId, 'guest');
   }
 
+  async ringHandle(handle: string): Promise<string> {
+    if (this.clients.size >= MAX_CONCURRENT_CHATS) {
+      throw new Error(`You can have at most ${MAX_CONCURRENT_CHATS} conversations at once`);
+    }
+    const client = this.createClient();
+    try {
+      if (
+        client.status === 'disconnected' ||
+        client.status === 'error' ||
+        client.status === 'expired'
+      ) {
+        await client.connect(this.getRelayUrl());
+      }
+      const sessionId = await client.ringHandle(handle);
+      this.clients.set(sessionId, client);
+      this.patch(sessionId, {
+        ...emptySnapshot(sessionId, true),
+        status: client.status,
+        expiresAt: client.expiresAt,
+      });
+      this.attach(sessionId, client);
+      return sessionId;
+    } catch (err) {
+      try {
+        client.disconnect();
+      } catch {
+        // ignore
+      }
+      throw err;
+    }
+  }
+
+  async claimHandle(handle: string): Promise<string> {
+    this.desiredHandle = handle;
+    if (this.claimInFlight) {
+      return this.claimInFlight;
+    }
+    this.claimInFlight = this.claimHandleNow(handle).finally(() => {
+      this.claimInFlight = null;
+    });
+    return this.claimInFlight;
+  }
+
+  async unclaimHandle(): Promise<void> {
+    const transport = this.mailbox;
+    this.desiredHandle = null;
+    this.claimedHandle = null;
+    this.emit('handleStatus', null);
+    if (!transport) return;
+    try {
+      transport.send(JSON.stringify({ type: ClientEvent.UNCLAIM_HANDLE, payload: {} }));
+    } catch {
+      // ignore
+    }
+    this.closeMailbox();
+  }
+
   async sendMessage(sessionId: string, text: string): Promise<void> {
     await this.requireClient(sessionId).sendMessage(text);
   }
@@ -151,16 +248,20 @@ export class ChatHub {
   }
 
   async reconnectAll(): Promise<void> {
-    await Promise.all(
-      Array.from(this.clients.keys()).map((id) =>
+    await Promise.all([
+      this.reclaimHandle().catch(() => {
+        // mailbox is best-effort
+      }),
+      ...Array.from(this.clients.keys()).map((id) =>
         this.reconnect(id).catch(() => {
           // keep other chats alive
         }),
       ),
-    );
+    ]);
   }
 
   disconnectAll(): void {
+    void this.unclaimHandle();
     for (const id of Array.from(this.clients.keys())) {
       const client = this.clients.get(id);
       try {
@@ -169,6 +270,136 @@ export class ChatHub {
         // ignore
       }
       this.drop(id);
+    }
+  }
+
+  private async claimHandleNow(handle: string): Promise<string> {
+    await this.ensureMailbox();
+    const transport = this.mailbox;
+    if (!transport) {
+      throw new Error('Mailbox is not connected');
+    }
+
+    const secret = this.getClaimSecret?.();
+    const proof = await this.getHandleProof?.(handle);
+    const claimed = new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (this.pendingClaim?.handle === handle) {
+          this.pendingClaim = null;
+        }
+        reject(new Error('Timed out claiming handle'));
+      }, MAILBOX_RPC_TIMEOUT_MS);
+      this.pendingClaim = {
+        handle,
+        resolve: (value) => {
+          clearTimeout(timer);
+          resolve(value);
+        },
+        reject: (error) => {
+          clearTimeout(timer);
+          reject(error);
+        },
+      };
+    });
+
+    transport.send(
+      JSON.stringify({
+        type: ClientEvent.CLAIM_HANDLE,
+        payload: {
+          handle,
+          ...(secret ? { secret } : {}),
+          ...(proof ? { proof } : {}),
+        },
+      }),
+    );
+    return claimed;
+  }
+
+  private async ensureMailbox(): Promise<void> {
+    if (this.mailbox && this.mailbox.readyState === 1) return;
+    this.closeMailbox();
+    const transport = this.createTransport();
+    this.mailbox = transport;
+    transport.onMessage((data) => this.handleMailboxMessage(data));
+    transport.onClose(() => {
+      if (this.mailbox !== transport) return;
+      this.mailbox = null;
+      this.stopMailboxPing();
+      if (this.claimedHandle) {
+        this.claimedHandle = null;
+        this.emit('handleStatus', null);
+      }
+    });
+    transport.onError(() => {
+      // close handler will run
+    });
+    await transport.connect(this.getRelayUrl());
+    this.startMailboxPing();
+  }
+
+  private handleMailboxMessage(data: string): void {
+    let event: RelayToClientMessage;
+    try {
+      event = JSON.parse(data) as RelayToClientMessage;
+    } catch {
+      return;
+    }
+
+    if (event.type === RelayEvent.HANDLE_CLAIMED) {
+      this.claimedHandle = event.payload.handle;
+      this.pendingClaim?.resolve(event.payload.handle);
+      this.pendingClaim = null;
+      this.emit('handleStatus', event.payload.handle);
+      return;
+    }
+
+    if (event.type === RelayEvent.ERROR) {
+      const error = new Error(`${event.payload.code}: ${event.payload.message}`);
+      this.pendingClaim?.reject(error);
+      this.pendingClaim = null;
+      return;
+    }
+
+    if (event.type === RelayEvent.INCOMING_RING) {
+      const { sessionId, handle } = event.payload;
+      this.emit('incomingRing', sessionId, handle);
+      void this.joinSession(sessionId).catch(() => {
+        // inbox join is best-effort; visitor still waits in the session
+      });
+    }
+  }
+
+  private async reclaimHandle(): Promise<void> {
+    if (!this.desiredHandle) return;
+    await this.claimHandleNow(this.desiredHandle);
+  }
+
+  private startMailboxPing(): void {
+    this.stopMailboxPing();
+    this.mailboxPing = setInterval(() => {
+      try {
+        this.mailbox?.send(JSON.stringify({ type: ClientEvent.PING, payload: {} }));
+      } catch {
+        this.closeMailbox();
+      }
+    }, MAILBOX_PING_MS);
+  }
+
+  private stopMailboxPing(): void {
+    if (this.mailboxPing) {
+      clearInterval(this.mailboxPing);
+      this.mailboxPing = null;
+    }
+  }
+
+  private closeMailbox(): void {
+    this.stopMailboxPing();
+    const transport = this.mailbox;
+    this.mailbox = null;
+    try {
+      transport?.close();
+    } catch {
+      // ignore
     }
   }
 

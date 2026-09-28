@@ -1,5 +1,7 @@
+import { CSP_CONNECT_WSS } from '@goprivate/config';
+
 /**
- * Content Security Policy (CSP) configuration for goPrivate.
+ * Content Security Policy (CSP) configuration.
  *
  * CSP provides defense-in-depth against XSS attacks by controlling which
  * resources the browser is allowed to load and execute.
@@ -43,10 +45,8 @@ export function getCSPDirectives(isDevelopment = false): string {
 
     // Connections: Allow self, WebSocket to relay, and analytics
     isDevelopment
-      ? // Localhost plus hosted relays so .env.local can target either
-        "connect-src 'self' ws://localhost:* ws://127.0.0.1:* wss://localhost:* wss://127.0.0.1:* wss://*.onrender.com wss://*.render.com wss://*.vercel.app https:"
-      : // Production: Restrict to known relay hosts and analytics
-        "connect-src 'self' wss://*.vercel.app wss://*.render.com wss://*.onrender.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com",
+      ? `connect-src 'self' ws://localhost:* ws://127.0.0.1:* wss://localhost:* wss://127.0.0.1:* ${CSP_CONNECT_WSS.join(' ')} https:`
+      : `connect-src 'self' ${CSP_CONNECT_WSS.join(' ')} https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com`,
 
     // Frame restrictions
     "frame-ancestors 'none'",

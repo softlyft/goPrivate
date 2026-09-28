@@ -28,6 +28,10 @@ Tap **Start Private Conversation**, choose a 6-digit PIN, and you’ll get a lin
 
 Open the link they sent you (or paste it on the home screen and tap **Join**). You’ll set your own PIN, then you’re in.
 
+### Use a lasting name
+
+If you want a stable address like `goprivate.vercel.app/alice`, tap **Use a lasting link**. If the operator reserved that name, paste the lease key they sent you — it lives on your device and expires on a date they chose. People who open that URL start a normal 30-minute 1:1 with you **if you are online**. Closing the tab still takes the name offline; the reservation itself survives a server restart.
+
 ### Chat securely
 
 Once both of you are connected, messages are end-to-end encrypted. That means only the two of you can read them — not the service in the middle.
@@ -78,7 +82,7 @@ goPrivate keeps things simple on purpose. It doesn’t support:
 
 - Photos, files, voice, or video
 - Group chats
-- Contact lists or usernames
+- Contact lists or offline inboxes
 - Message history after you leave
 - Notifications after the chat is over
 - Premium / enterprise editions of the protocol

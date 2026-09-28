@@ -1,16 +1,17 @@
 'use client';
 
+import { SUPPORT_LABEL, SUPPORT_URL as DEFAULT_SUPPORT_URL } from '@goprivate/config';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Glass } from '@/components/ui/glass';
 
-const SUPPORT_URL = process.env.NEXT_PUBLIC_SUPPORT_URL ?? 'https://github.com/sponsors/softlyft';
+const SUPPORT_URL = process.env.NEXT_PUBLIC_SUPPORT_URL ?? DEFAULT_SUPPORT_URL;
 
 export function ConversationEnded({ onHome }: { onHome: () => void }) {
   const support = (
     <span className="inline-flex items-center gap-1.5 font-medium tracking-tight text-foreground">
       <span aria-hidden>❤️</span>
-      Support goPrivate
+      {SUPPORT_LABEL}
     </span>
   );
 

@@ -36,6 +36,8 @@ Or run packages/apps individually — see the root [README](../README.md).
 | `HOST`            | `0.0.0.0` | Bind address                                                                                           |
 | `NODE_ENV`        | —         | Set `production` in deployed environments                                                              |
 | `ALLOWED_ORIGINS` | unset     | Extra CORS origins (comma-separated). Localhost is always allowed so local web can use a hosted relay. |
+| `HANDLE_CLAIM_SECRET` | unset | If set, `CLAIM_HANDLE` for **unregistered** names must include this secret. |
+| `HANDLE_REGISTRY_PATH` | `handles.json` in the relay working directory | JSON map of reserved names → `{ publicKey, expiresAt }`. Reloaded on each claim. |
 
 ### Reference client (`apps/web`)
 
@@ -43,6 +45,7 @@ Or run packages/apps individually — see the root [README](../README.md).
 | ------------------------------- | ------------------------ | ---------------------------------------------------------------------- |
 | `NEXT_PUBLIC_RELAY_URL`         | `ws://localhost:3001/ws` | WebSocket URL (`ws://` or `wss://`, must include `/ws`)                |
 | `NEXT_PUBLIC_SUPPORT_URL`       | unset                    | Optional link for “Support goPrivate” on the conversation-ended screen |
+| `NEXT_PUBLIC_HANDLE_CLAIM_SECRET` | unset | Same value as relay `HANDLE_CLAIM_SECRET` if the operator requires it to claim a name |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | unset                    | Optional GA4 id (`G-…`); loads analytics on the home page only         |
 
 ### Reference mobile client (`apps/mobile`)
@@ -50,6 +53,7 @@ Or run packages/apps individually — see the root [README](../README.md).
 | Variable                | Default                                                    | Purpose                                                                                          |
 | ----------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `EXPO_PUBLIC_RELAY_URL` | Dev: `ws://10.0.2.2:3001/ws`. Release: hosted `wss://…/ws` | Relay URL. Release APKs reject `ws://` and fall back to `wss://goprivate-relay.onrender.com/ws`. |
+| `EXPO_PUBLIC_HANDLE_CLAIM_SECRET` | unset | Same value as relay `HANDLE_CLAIM_SECRET` if the operator requires it to claim a name |
 
 `NEXT_PUBLIC_*` values are baked in at **build** time for Next.js. `EXPO_PUBLIC_*` is baked in at APK / native build time.
 
@@ -57,7 +61,8 @@ Sessions last **30 minutes** (`SESSION_TTL_MS` in `@goprivate/protocol`). They l
 
 ## Relay configuration notes
 
-- Sessions are **in-memory only** — process restarts wipe active conversations
+- Sessions are **in-memory only** — process restarts wipe active conversations and claimed handles
+- Lasting `/{handle}` links are presence mailboxes. Reserve a name (and who currently owns it) in `apps/relay/handles.json` via `pnpm handle:issue <name> --days 30`. Commit the JSON (public key + expiry only). Send the printed private key to the assignee; they paste it once in the app. When the lease expires, issue a new key to the next person — hire/rehire without changing the URL.
 - Payload, rate-limit, and connection caps are defined in `@goprivate/protocol`
 - Health endpoint returns `{ "status": "ok", "ok": true }` (no session count)
 

@@ -88,6 +88,20 @@ describe('RelayClient', () => {
     expect(transport.lastSent().type).toBe(ClientEvent.CREATE_SESSION);
   });
 
+  it('rings a handle and treats RING_READY as a hosted session', async () => {
+    await client.connect('ws://relay/ws');
+    const pending = client.ringHandle('alice');
+    await waitForClientEvent(transport, ClientEvent.RING_HANDLE);
+    transport.emitJson({
+      type: RelayEvent.RING_READY,
+      payload: { sessionId: 'cccccccccccccccccccccccccccccccc', expiresAt: Date.now() + 60_000 },
+    });
+    const id = await pending;
+    expect(id).toBe('cccccccccccccccccccccccccccccccc');
+    expect(client.isHost).toBe(true);
+    expect(client.status).toBe('awaiting_partner');
+  });
+
   it('completes ECDH handshake after join', async () => {
     await client.connect('ws://relay/ws');
     const pending = client.joinSession('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');

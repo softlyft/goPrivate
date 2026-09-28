@@ -1,3 +1,4 @@
+import { inviteShareMessage, customSchemeUrl } from '@goprivate/config';
 import { Pressable, Text, StyleSheet, Share, Alert } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { webChatUrl } from '../utils/public-url';
@@ -9,14 +10,8 @@ interface ShareButtonProps {
 
 export function ShareButton({ sessionId, onCopyFallback }: ShareButtonProps) {
   const shareUrl = webChatUrl(sessionId);
-  const appUrl = `goprivate://chat/${sessionId}`;
-
-  const shareMessage = `You've been invited to a private conversation on goPrivate.
-
-Web: ${shareUrl}
-App: ${appUrl}
-
-This session expires in 30 minutes.`;
+  const appUrl = customSchemeUrl(sessionId);
+  const shareMessage = inviteShareMessage({ web: shareUrl, app: appUrl });
 
   async function handleShare() {
     try {

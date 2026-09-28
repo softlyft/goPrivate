@@ -1,11 +1,9 @@
+import { PUBLIC_WEB_ORIGINS } from '@goprivate/config';
+
 const LOCAL_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
 const LAN_ORIGIN = /^https?:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+):\d+$/;
 
-const DEFAULT_ORIGINS = [
-  'https://goprivate.vercel.app',
-  'https://goprivate.app',
-  'https://www.goprivate.app',
-];
+const DEFAULT_ORIGINS = [...PUBLIC_WEB_ORIGINS];
 
 export function isAllowedOrigin(
   origin: string | undefined,

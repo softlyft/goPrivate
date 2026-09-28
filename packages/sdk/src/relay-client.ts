@@ -253,6 +253,40 @@ export class RelayClient implements IRelayClient {
     return created;
   }
 
+  async ringHandle(handle: string): Promise<string> {
+    this._isHost = true;
+    this.keyPair = await this.crypto.generateKeyPair();
+
+    const ready = new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error('Timed out ringing handle'));
+      }, SESSION_RPC_TIMEOUT_MS);
+
+      const onCreated = (createdId: string) => {
+        cleanup();
+        resolve(createdId);
+      };
+
+      const onError = (code: string, message: string) => {
+        cleanup();
+        reject(new Error(`${code}: ${message}`));
+      };
+
+      const cleanup = () => {
+        clearTimeout(timer);
+        this.off('sessionCreated', onCreated);
+        this.off('error', onError);
+      };
+
+      this.on('sessionCreated', onCreated);
+      this.on('error', onError);
+    });
+
+    this.send({ type: ClientEvent.RING_HANDLE, payload: { handle } });
+    return ready;
+  }
+
   async joinSession(sessionId: string, options?: { retainHost?: boolean }): Promise<void> {
     if (
       this._sessionId === sessionId &&
@@ -443,6 +477,7 @@ export class RelayClient implements IRelayClient {
   private async handleEvent(event: RelayToClientMessage): Promise<void> {
     switch (event.type) {
       case RelayEvent.SESSION_CREATED:
+      case RelayEvent.RING_READY:
         this._sessionId = event.payload.sessionId;
         this._expiresAt = event.payload.expiresAt;
         this._isHost = true;
@@ -488,6 +523,8 @@ export class RelayClient implements IRelayClient {
         break;
 
       case RelayEvent.PONG:
+      case RelayEvent.HANDLE_CLAIMED:
+      case RelayEvent.INCOMING_RING:
         break;
     }
   }

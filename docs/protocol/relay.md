@@ -19,10 +19,11 @@ A relay MUST NOT:
 
 - WebSocket `maxPayload`
 - Schema validation for client events
-- Per-IP rate limits on create / join / send
+- Per-IP rate limits on create / join / send / claim / ring
 - Caps on concurrent sessions and connections
 - Graceful shutdown on `SIGTERM` / `SIGINT`
 - Reconnect grace for empty sessions
+- In-memory presence handles (`CLAIM_HANDLE` / `RING_HANDLE`); no durable name registry
 
 ## Health
 

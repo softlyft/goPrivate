@@ -1,5 +1,6 @@
 'use client';
 
+import { sessionTtlLabel } from '@goprivate/config';
 import { useEffect, useState } from 'react';
 import { cn } from '@/utils/cn';
 
@@ -55,7 +56,7 @@ export function SessionTimer({
           ? 'rounded-full bg-red-50/80 px-2 py-0.5 text-danger'
           : 'rounded-full bg-white/40 px-2 py-0.5 text-muted backdrop-blur-md',
       )}
-      title="Session ends automatically after 30 minutes"
+      title={`Session ends automatically after ${sessionTtlLabel()}`}
       aria-live="polite"
       aria-label={`Session time remaining ${formatRemaining(remainingMs)}`}
     >

@@ -8,6 +8,7 @@
  * Uses expo-secure-store for secure key storage and react-native-quick-crypto for operations.
  */
 
+import { PIN_LENGTH, pinPattern } from '@goprivate/config';
 import * as SecureStore from 'expo-secure-store';
 import * as ExpoCrypto from 'expo-crypto';
 import { Buffer } from 'buffer';
@@ -148,8 +149,8 @@ class MessageVault {
   }
 
   async setup(pin: string): Promise<VaultMeta> {
-    if (!/^\d{6}$/.test(pin)) {
-      throw new Error('PIN must be 6 digits');
+    if (!pinPattern().test(pin)) {
+      throw new Error(`PIN must be ${PIN_LENGTH} digits`);
     }
     const salt = ExpoCrypto.getRandomBytes(16);
     const saltBuffer = salt.buffer as ArrayBuffer;

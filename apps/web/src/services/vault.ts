@@ -9,6 +9,8 @@
  * offline guessing; the UI also rate-limits PIN attempts.
  */
 
+import { PIN_LENGTH, pinPattern } from '@goprivate/config';
+
 const PBKDF2_ITERATIONS_DEFAULT = 600_000;
 let pbkdf2Iterations = PBKDF2_ITERATIONS_DEFAULT;
 
@@ -114,8 +116,8 @@ class MessageVault {
 
   /** Create a new vault from a PIN. Keeps the vault unlocked in this module. */
   async setup(pin: string): Promise<VaultMeta> {
-    if (!/^\d{6}$/.test(pin)) {
-      throw new Error('PIN must be 6 digits');
+    if (!pinPattern().test(pin)) {
+      throw new Error(`PIN must be ${PIN_LENGTH} digits`);
     }
     const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
     const pinKey = await derivePinKey(pin, salt.buffer);

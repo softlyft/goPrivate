@@ -46,6 +46,7 @@ export interface IRelayClient {
   reconnect(): Promise<void>;
   createSession(sessionId?: string): Promise<string>;
   joinSession(sessionId: string): Promise<void>;
+  ringHandle(handle: string): Promise<string>;
   sendMessage(text: string): Promise<EncryptedMessage>;
   leaveSession(): Promise<void>;
   disconnect(): void;

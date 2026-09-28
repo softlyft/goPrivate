@@ -13,10 +13,12 @@ export default function RootLayout() {
   // Handle deep links when app is already open
   useEffect(() => {
     const subscription = Linking.addEventListener('url', ({ url }) => {
-      const { sessionId } = parseDeepLink(url);
+      const { sessionId, handle } = parseDeepLink(url);
 
       if (sessionId) {
         router.push(chatHref(sessionId));
+      } else if (handle) {
+        router.push(`/${handle}`);
       }
     });
 
@@ -31,11 +33,15 @@ export default function RootLayout() {
       const initialUrl = await Linking.getInitialURL();
 
       if (initialUrl) {
-        const { sessionId } = parseDeepLink(initialUrl);
+        const { sessionId, handle } = parseDeepLink(initialUrl);
 
         if (sessionId) {
           setTimeout(() => {
             router.push(chatHref(sessionId));
+          }, 100);
+        } else if (handle) {
+          setTimeout(() => {
+            router.push(`/${handle}`);
           }, 100);
         }
       }
@@ -56,6 +62,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="chats" />
         <Stack.Screen name="join" />
+        <Stack.Screen name="[handle]" />
         <Stack.Screen name="chat/[sessionId]" />
         <Stack.Screen name="+not-found" />
       </Stack>
