@@ -11,6 +11,7 @@ import {
 } from '@goprivate/config';
 import { BrandMark } from '../components/BrandMark';
 import { PinPad } from '../components/PinPad';
+import { SettingsControl } from '../components/SettingsControl';
 import { messageVault } from '../services/vault';
 import { startHostChat, getChatHub } from '../services/chat-hub';
 import { ClaimHandleCard } from '../components/ClaimHandleCard';
@@ -98,6 +99,9 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.settingsPosition}>
+        <SettingsControl />
+      </View>
       <View style={styles.content}>
         <View style={styles.header}>
           <BrandMark />
@@ -196,6 +200,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  settingsPosition: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 10,
   },
   content: {
     flex: 1,

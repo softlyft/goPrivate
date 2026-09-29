@@ -232,6 +232,22 @@ class MessageVault {
     this.lockUntil = 0;
   }
 
+  async rewrap(nextPin: string): Promise<VaultMeta> {
+    if (!this.vaultKey) {
+      throw new Error('Vault must be unlocked to change PIN');
+    }
+    if (!pinPattern().test(nextPin)) {
+      throw new Error(`PIN must be ${PIN_LENGTH} digits`);
+    }
+    const salt = ExpoCrypto.getRandomBytes(16);
+    const saltBuffer = salt.buffer as ArrayBuffer;
+    const pinKey = await derivePinKey(nextPin, saltBuffer);
+    const wrappedKey = await wrapVaultKey(this.vaultKey, pinKey);
+    this.meta = { salt: toBase64(saltBuffer), wrappedKey };
+    await SecureStore.setItemAsync(VAULT_META_KEY, JSON.stringify(this.meta));
+    return this.meta;
+  }
+
   async clearVault(): Promise<void> {
     await this.lock();
     await SecureStore.deleteItemAsync(VAULT_META_KEY);
