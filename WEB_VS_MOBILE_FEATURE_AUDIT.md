@@ -13,12 +13,14 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 ### Feature Parity: **~65%** 🟡
 
 **Missing on Mobile:**
+
 - 🔴 **Settings UI** (PIN management, preferences)
 - 🟡 **Claimed Handles** (profile system)
 - 🟡 **About page**
 - 🟡 Some UI polish
 
 **Present on Both:**
+
 - ✅ Multi-chat / Conversations list
 - ✅ PIN setup on first use
 - ✅ Message encryption/decryption
@@ -35,6 +37,7 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 **File:** `apps/web/src/components/SettingsControl.tsx`
 
 **Features:**
+
 ```typescript
 1. PIN Management
    - Set initial PIN
@@ -49,6 +52,7 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 ```
 
 **UI:**
+
 - Settings icon (gear) in header
 - Modal overlay with settings panel
 - Clean, accessible interface
@@ -57,12 +61,14 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 #### Mobile: ❌ **MISSING**
 
 **Current State:**
+
 - No settings UI at all
 - No way to change PIN after initial setup
 - No preference controls
 - No settings icon/button
 
 **Impact:**
+
 - 🔴 **HIGH**: Users cannot change their PIN
 - 🔴 **HIGH**: No control over message scrambling
 - 🟡 **MEDIUM**: Poor UX parity with web
@@ -76,11 +82,13 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 **Recent PRs:** #32-#41 (Multi-chat feature)
 
 **Files:**
+
 - `apps/web/src/components/ConversationsPage.tsx`
 - `apps/web/src/components/ConversationList.tsx`
 - `apps/web/src/app/chats/page.tsx`
 
 **Features:**
+
 - Conversations inbox view
 - List of active chats
 - Navigate between chats
@@ -92,6 +100,7 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 **File:** `apps/mobile/app/chats.tsx`
 
 **Features:**
+
 - Conversations inbox view
 - List of active chats
 - Navigate between chats
@@ -107,11 +116,13 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 #### Web: ✅ **COMPLETE**
 
 **Files:**
+
 - `apps/web/src/components/ClaimHandleControl.tsx`
 - `apps/web/src/components/HandlePage.tsx`
 - `apps/web/src/app/[handle]/page.tsx`
 
 **Features:**
+
 - Claim a unique handle
 - Profile page at `/{handle}`
 - Share profile link
@@ -120,15 +131,18 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 #### Mobile: ⚠️ **PARTIAL**
 
 **Files:**
+
 - `apps/mobile/components/ClaimHandleCard.tsx`
 - `apps/mobile/app/[handle].tsx`
 
 **Features:**
+
 - Claim handle UI exists
 - Handle page exists
 - Same backend logic
 
 **Gaps:**
+
 - 🟡 Less polish than web
 - 🟡 May need UX improvements
 
@@ -139,11 +153,13 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 #### Web: ✅ **COMPLETE**
 
 **Files:**
+
 - `apps/web/src/app/about/page.tsx`
 - `apps/web/src/app/guide/page.tsx`
 - `apps/web/src/components/MarketingPage.tsx`
 
 **Features:**
+
 - About page with project info
 - User guide
 - Marketing content
@@ -151,6 +167,7 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 #### Mobile: ❌ **MISSING**
 
 **Current State:**
+
 - No about page
 - No guide page
 - Limited onboarding
@@ -196,9 +213,10 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 ### High Priority 🔴
 
 1. **Settings UI on Mobile**
+
    ```
    Missing: apps/mobile/components/SettingsControl.tsx
-   
+
    Required Features:
    - PIN change functionality
    - Scramble messages toggle
@@ -208,7 +226,7 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 2. **Device Settings Service on Mobile**
    ```
    Missing: apps/mobile/services/device-settings.ts
-   
+
    Required:
    - Save/load scramble preference
    - Persist device settings
@@ -218,6 +236,7 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 ### Medium Priority 🟡
 
 3. **About/Guide Pages on Mobile**
+
    ```
    Missing:
    - apps/mobile/app/about.tsx
@@ -360,18 +379,20 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
 **Tasks:**
 
 1. **Create `apps/mobile/services/device-settings.ts`**
+
    ```typescript
    // Persist device settings to AsyncStorage
    interface DeviceSettings {
      scrambleMessages: boolean;
    }
-   
+
    - loadDeviceSettings()
    - saveDeviceSettings()
    - useDeviceSettings() hook
    ```
 
 2. **Create `apps/mobile/components/SettingsControl.tsx`**
+
    ```typescript
    // React Native settings modal
    - Settings button in header
@@ -381,6 +402,7 @@ The web and mobile apps have **significant feature gaps**. Recent "multi-chat" f
    ```
 
 3. **Update `apps/mobile/app/_layout.tsx`**
+
    ```typescript
    // Add settings button to navigation
    ```
@@ -447,12 +469,14 @@ import { concurrentChatLimitHint, pinLengthLabel } from '@goprivate/config';
 ## Testing Gaps
 
 ### Web Tests
+
 ```
 Settings component: ❓ No tests found
 Device settings service: ❓ No tests found
 ```
 
 ### Mobile Tests
+
 ```
 N/A - components don't exist yet
 ```
@@ -529,6 +553,7 @@ N/A - components don't exist yet
 ### Platform-Specific
 
 **Web:**
+
 ```typescript
 react-dom              - React web
 next                   - Framework
@@ -536,6 +561,7 @@ lucide-react          - Icons (Settings icon)
 ```
 
 **Mobile:**
+
 ```typescript
 react-native           - Mobile framework
 expo                   - Build/deploy
@@ -548,12 +574,14 @@ react-native-quick-crypto - Crypto
 ## Design System Comparison
 
 ### Web
+
 - Glass morphism UI
 - Tailwind CSS
 - Custom UI components
 - Settings icon from lucide-react
 
 ### Mobile
+
 - StyleSheet-based
 - Colors constants
 - Native components

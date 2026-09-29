@@ -4,6 +4,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ConversationList } from '../components/ConversationList';
+import { SettingsControl } from '../components/SettingsControl';
 import { getChatHub } from '../services/chat-hub';
 import { listChats, useSessionStore } from '../store/session';
 import { Colors } from '../constants/Colors';
@@ -17,9 +18,12 @@ export default function ChatsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.replace('/')} hitSlop={12}>
-          <Text style={styles.homeLink}>Home</Text>
-        </Pressable>
+        <View style={styles.headerTop}>
+          <Pressable onPress={() => router.replace('/')} hitSlop={12}>
+            <Text style={styles.homeLink}>Home</Text>
+          </Pressable>
+          <SettingsControl />
+        </View>
         <Text style={styles.kicker}>Inbox</Text>
         <Text style={styles.title}>Open conversations</Text>
         <Text style={styles.subtitle}>
@@ -67,11 +71,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 20,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   homeLink: {
     fontSize: 16,
     color: Colors.primary,
     fontWeight: '600',
-    marginBottom: 16,
   },
   kicker: {
     fontSize: 11,
