@@ -269,6 +269,15 @@ export function MarketingPage() {
                 Guide
               </Link>
               <Link
+                href="/privacy"
+                className="text-foreground/70 underline-offset-4 hover:underline"
+              >
+                Privacy
+              </Link>
+              <Link href="/terms" className="text-foreground/70 underline-offset-4 hover:underline">
+                Terms
+              </Link>
+              <Link
                 href={contactHref}
                 className="text-foreground/70 underline-offset-4 hover:underline"
               >
