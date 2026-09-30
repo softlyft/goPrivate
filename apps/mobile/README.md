@@ -6,6 +6,9 @@ Reference Expo (SDK 57) client for goPrivate ephemeral 1:1 chat. It uses the sam
 
 - Create / join a session, PIN vault (SecureStore + PBKDF2), end-to-end ECDH P-256 + AES-GCM
 - Chat UI, deep links (`https://goprivate.vercel.app/chat/…`, `goprivate://…`)
+- **Settings UI**: Change PIN anytime, toggle message scrambling, device-local preferences (AsyncStorage)
+- Multi-chat support: Conversations list, up to 3/7 chats depending on claimed handle status
+- Claimed handles: Use a lasting name like `goprivate.vercel.app/alice` for inbound calls
 - App icon and splash extracted from the official logo (`tools/generate-mobile-icons.mjs`)
 - Release APK talks to the **hosted** relay (`wss://goprivate-relay.onrender.com/ws`) so it can chat with production web
 
@@ -80,10 +83,17 @@ apps/mobile/
 ├── app/                    # Expo Router
 │   ├── _layout.tsx         # Stack + deep links
 │   ├── index.tsx           # Home — create session
+│   ├── chats.tsx           # Conversations list
 │   ├── join.tsx            # Paste link / ID
+│   ├── [handle].tsx        # Claimed handle page
 │   └── chat/[sessionId].tsx
-├── components/             # PinPad, MessageList, MessageComposer
-├── services/vault.ts       # PIN-wrapped AES vault (SecureStore)
+├── components/             # PinPad, MessageList, SettingsControl, etc.
+├── services/
+│   ├── vault.ts            # PIN-wrapped AES vault (SecureStore + rewrap)
+│   ├── device-settings.ts  # AsyncStorage for preferences
+│   └── chat-hub.ts         # Multi-chat manager
+├── hooks/
+│   └── use-device-settings.ts
 ├── store/session.ts
 ├── utils/env.ts            # getRelayUrl()
 └── assets/                 # Icon, splash, logo

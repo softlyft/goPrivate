@@ -36,9 +36,14 @@ If you want a stable address like `goprivate.vercel.app/alice`, tap **Use a last
 
 Once both of you are connected, messages are end-to-end encrypted. That means only the two of you can read them — not the service in the middle.
 
-### Keep older messages out of sight
+### Adjust your settings
 
-Only your newest message stays easy to read. Older ones blur and hide automatically, so someone glancing at your screen sees less.
+Tap the settings icon (⚙️) to:
+
+- **Change your PIN** — You can update your PIN anytime. You'll need to enter your current PIN first.
+- **Scramble messages toggle** — Turn message scrambling on or off. When on (default), older messages blur and hide automatically so someone glancing at your screen sees less. When off, messages stay readable.
+
+Your settings are saved on this device only and don't sync across devices.
 
 ### Peek at an older message (only you)
 
