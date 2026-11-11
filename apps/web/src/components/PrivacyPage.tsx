@@ -289,8 +289,8 @@ export function PrivacyPage() {
           <Section title="Changes to This Policy">
             <p>
               We may update this Privacy Policy from time to time. Changes will be posted at this
-              URL with an updated &ldquo;Last updated&rdquo; date. Continued use of {APP_NAME} after changes
-              constitutes acceptance of the revised policy.
+              URL with an updated &ldquo;Last updated&rdquo; date. Continued use of {APP_NAME} after
+              changes constitutes acceptance of the revised policy.
             </p>
           </Section>
 
