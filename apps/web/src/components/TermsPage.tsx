@@ -44,8 +44,9 @@ export function TermsPage() {
 
           <Section title="Agreement to Terms">
             <p>
-              By accessing or using {APP_NAME} (the &ldquo;Service&rdquo;), you agree to be bound by these Terms
-              of Service (&ldquo;Terms&rdquo;). If you do not agree to these Terms, do not use the Service.
+              By accessing or using {APP_NAME} (the &ldquo;Service&rdquo;), you agree to be bound by
+              these Terms of Service (&ldquo;Terms&rdquo;). If you do not agree to these Terms, do
+              not use the Service.
             </p>
             <p>
               <strong className="font-medium text-foreground">Important:</strong> {APP_NAME} is
@@ -180,7 +181,8 @@ export function TermsPage() {
                 <h3 className="mb-1 text-sm font-medium text-foreground">Lasting Names</h3>
                 <ul className="list-disc space-y-1.5 pl-5">
                   <li>
-                    Premium subscribers receive a reserved handle (e.g., &ldquo;alice&rdquo;) for inbound calls
+                    Premium subscribers receive a reserved handle (e.g., &ldquo;alice&rdquo;) for
+                    inbound calls
                   </li>
                   <li>
                     Handles are subject to availability and must comply with our naming policy (no
@@ -259,7 +261,8 @@ export function TermsPage() {
           <Section title="Service Availability">
             <p>
               <strong className="font-medium text-foreground">
-                {APP_NAME} is provided &ldquo;as is&rdquo; without guarantees of uptime or availability.
+                {APP_NAME} is provided &ldquo;as is&rdquo; without guarantees of uptime or
+                availability.
               </strong>
             </p>
             <p>We may:</p>
@@ -280,9 +283,10 @@ export function TermsPage() {
               <div>
                 <h3 className="mb-1 text-sm font-medium text-foreground">No Warranty</h3>
                 <p className="uppercase">
-                  THE SERVICE IS PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT WARRANTIES OF ANY KIND,
-                  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
-                  FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+                  THE SERVICE IS PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT
+                  WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+                  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR
+                  NON-INFRINGEMENT.
                 </p>
                 <p>
                   We do not guarantee that the Service will be error-free, secure, or uninterrupted.
