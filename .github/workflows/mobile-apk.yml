@@ -68,9 +68,21 @@ jobs:
         working-directory: apps/mobile
         run: pnpm exec expo prebuild --platform android --clean --non-interactive
 
+      # expo prebuild --clean regenerates android/; bump JVM metaspace and skip
+      # release lint so CI does not OOM on :expo-modules-core:lintVitalAnalyzeRelease.
+      - name: Harden Gradle for CI
+        working-directory: apps/mobile/android
+        run: |
+          {
+            echo ''
+            echo '# CI: avoid Metaspace OOM during lintVitalAnalyzeRelease'
+            echo 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8'
+            echo 'android.lint.checkReleaseBuilds=false'
+          } >> gradle.properties
+
       - name: Assemble release APK
         working-directory: apps/mobile/android
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon -x lintVitalAnalyzeRelease
 
       - name: Locate APK
         id: apk
